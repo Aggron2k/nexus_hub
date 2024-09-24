@@ -60,10 +60,11 @@ const AuthForm = () => {
 <div className="bg-white px-4 py-8 shadow sm:rounded-lg sm:px-10">
     <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
         {variant === 'REGISTER' && (
-                <Input id="name" label="Name" register={register} errors={errors}/>
+                <Input id="name" label="Name" register={register} errors={errors}
+                disabled={isLoading}/>
             )}
-            <Input id="email" label="Email" type="email" register={register} errors={errors}/>
-            <Input id="password" label="Password" type="password" register={register} errors={errors}/>
+            <Input id="email" label="Email" type="email" register={register} errors={errors} disabled={isLoading}/>
+            <Input id="password" label="Password" type="password" register={register} errors={errors} disabled={isLoading}/>
             <div>
                 <Button
                 disabled={isLoading}
@@ -72,7 +73,7 @@ const AuthForm = () => {
                 >{variant === 'LOGIN' ? 'Sign in' : 'Register'}</Button>
             </div>
     </form>
-          {/* VAGYMAS */}
+          {/* SOCIAL + SWITCH (REG or LOG) */}
 
             <div className="mt-6">
                 <div className="relative">
@@ -114,12 +115,9 @@ const AuthForm = () => {
                 <div>{variant === 'LOGIN' ? 'New to Nexus? ': 'Alredy have an account?'}</div>
                 <div onClick={toggleVariant}
                 className="underline cursor-pointer">
-                    {variant === 'LOGIN' ? 'Create an account' : 'Login'}
+                    {variant === 'LOGIN' ? 'Create an account' : 'Log in'}
                 </div>
             </div>
-
-          {/* VAGYMASVEGE */}
-           
     </div>
     </div>
     );
