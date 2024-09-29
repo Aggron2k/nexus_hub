@@ -14,6 +14,7 @@ import Button from "@/app/components/Button";
 import AuthSocialButton from "./AuthSocialButton";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
 
 type Variant = 'LOGIN' | 'REGISTER';
 
@@ -56,6 +57,8 @@ const AuthForm = () => {
 
     if (variant === 'REGISTER') {
       axios.post('/api/register', data)
+      .catch(() => toast.error('Registration failed!'))
+      .finally(() => setIsLoading(false));
     }
 
     if (variant === 'LOGIN') {
