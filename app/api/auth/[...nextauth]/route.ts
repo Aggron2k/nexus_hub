@@ -1,11 +1,11 @@
 import bcrypt from "bcrypt";
-import nextAuth, {AuthOptions, AuthOptions} from "next-auth";
+import nextAuth, {AuthOptions} from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GithubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
-import {PrismaAdapter} from "next-auth/adapters/prisma";
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
 
-import prisma from "libs/prismadb";
+import prisma from "../../../libs/prismadb"
 import Google from "next-auth/providers/google";
 import NextAuth from "next-auth/next";
 

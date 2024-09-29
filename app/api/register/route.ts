@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 
-import prisma from "libs/prismadb"; //TODO: Fix this import
+import prisma from "../../libs/prismadb"
 import { NextResponse } from "next/server";
 
 export async function POST(
@@ -30,9 +30,13 @@ export async function POST(
     });
         return NextResponse.json(user);
 
-    }catch(error: any){ //TODO: ANY?
-        console.error(error, 'REGISTRATION_ERROR');
-        return new NextResponse('Internal ERORR', {status: 500});
+    }catch(error: unknown){
+        if (error instanceof Error) {
+            console.error(error.message, 'REGISTRATION_ERROR');
+        } else {
+            console.error('Unexpected error', 'REGISTRATION_ERROR');
+        }
+        return new NextResponse('Internal ERROR', {status: 500});
     }
 
 };
