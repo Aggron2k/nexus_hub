@@ -15,6 +15,7 @@ import AuthSocialButton from "./AuthSocialButton";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
+import { table } from "console";
 
 type Variant = 'LOGIN' | 'REGISTER';
 
@@ -62,7 +63,17 @@ const AuthForm = () => {
     }
 
     if (variant === 'LOGIN') {
-      // NexAuth signIN
+      signIn('credentials', {
+        ... data,
+        redirect: false
+      }).then((callback) => {
+        if (callback?.error) {
+            toast.error('Login failed!');
+        }
+        if (callback?.ok && !callback?.error) {
+            toast.success('Login successful!');
+        }
+      }).finally(() => setIsLoading(false));
     }
   }
 
