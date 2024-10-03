@@ -211,7 +211,7 @@ const AuthForm = () => {
           text-gray-500
         ">
           <div>
-            {variant === 'LOGIN' ? 'New to Messenger?' : 'Already have an account?'}
+            {variant === 'LOGIN' ? 'New to NexusHUB?' : 'Already have an account?'}
           </div>
           <div
             onClick={toggleVariant}
