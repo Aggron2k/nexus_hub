@@ -1,12 +1,16 @@
 "use client";
 
+import clsx from "clsx";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { MdOutlineGroupAdd } from "react-icons/md";
+
 import useConversation from "@/app/hooks/useConversation";
 import { FullConversationType } from "@/app/types";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import clsx from "clsx";
-import { MdOutlineGroupAdd } from "react-icons/md";
+
 import ConversationBox from "./ConversationBox";
+import { User } from "@prisma/client";
+import { useSession } from "next-auth/react";
 
 interface ConversationListProps {
     initialItems: FullConversationType[];
@@ -33,13 +37,13 @@ const ConversationList: React.FC<ConversationListProps> = ({
                     </div>
                 </div>
                 <div>
-                    {items.map((item) => (
-                        <ConversationBox
-                        key = {item.id}
-                        data = {item}
-                        selected = {conversationId === item.id}
-                        />
-                    ))}
+                {items.map((item) => (
+                    <ConversationBox
+                    key={item.id}
+                    data={item}
+                    selected={conversationId === item.id}
+                    />
+                ))}
                 </div>
             </div>
         </aside>
