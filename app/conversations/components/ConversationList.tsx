@@ -37,13 +37,17 @@ const ConversationList: React.FC<ConversationListProps> = ({
                     </div>
                 </div>
                 <div>
-                {items.map((item) => (
+                {items && items.length > 0 ? (
+                    items.map((item) => (
                     <ConversationBox
-                    key={item.id}
-                    data={item}
-                    selected={conversationId === item.id}
+                        key={item.id}
+                        data={item}
+                        selected={conversationId === item.id}
                     />
-                ))}
+                    ))
+                ) : (
+                    <div>No conversations found.</div>
+                )}
                 </div>
             </div>
         </aside>
