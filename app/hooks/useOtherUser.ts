@@ -13,8 +13,8 @@ const useOtherUser = (conversation: FullConversationType | {
 
     const otherUser = conversation?.users?.filter((user) => user.email !== currentUserEmail) || [];
 
-    return otherUser[0];
-  }, [session?.data?.user?.email, conversation.users]);
+    return otherUser.length > 0 ? otherUser[0] : null;
+  }, [session?.data?.user?.email, conversation?.users]);
 
   return otherUser;
 };
