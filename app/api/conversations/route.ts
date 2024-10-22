@@ -5,58 +5,58 @@ import prisma from "@/app/libs/prismadb";
 export async function POST(
     request: Request
 ) {
-    try{
+    try {
         const currentUser = await getCurrentUser();
         const body = await request.json();
-        const{
+        const {
             userId,
             isGroup,
             members,
             name
         } = body;
 
-        if(!currentUser?.id ||!currentUser?.email){
+        if (!currentUser?.id || !currentUser?.email) {
             return new NextResponse('Unauthorized', { status: 401 });
         }
 
-        if(isGroup && (!members || members.lenght < 2)){
+        if (isGroup && (!members || members.lenght < 2)) {
             return new NextResponse('Invalid Group', { status: 400 });
         }
 
-        if(isGroup){
+        if (isGroup) {
             const newConversation = await prisma.conversation.create({
-                data:{
+                data: {
                     name,
                     isGroup,
-                    users:{
+                    users: {
                         connect: [
-                                    ...members.map((member: { value: string}) => ({
-                                        id: member.value
-                                    })),
-                                    {
-                                        id: currentUser.id
-                                    }
-                                ]
+                            ...members.map((member: { value: string }) => ({
+                                id: member.value
+                            })),
+                            {
+                                id: currentUser.id
                             }
-                    },
-                    include:{
-                        users: true
+                        ]
                     }
+                },
+                include: {
+                    users: true
+                }
             });
 
             return NextResponse.json(newConversation);
         }
 
-        const exisitingConversations  = await prisma.conversation.findMany({
-            where:{
-                OR:[
+        const exisitingConversations = await prisma.conversation.findMany({
+            where: {
+                OR: [
                     {
-                        userIds:{
+                        userIds: {
                             equals: [currentUser.id, userId]
                         }
                     },
                     {
-                        userIds:{
+                        userIds: {
                             equals: [userId, currentUser.id]
                         }
                     }
@@ -66,14 +66,14 @@ export async function POST(
 
         const singleConversation = exisitingConversations[0];
 
-        if(singleConversation){
+        if (singleConversation) {
             return NextResponse.json(singleConversation);
         }
 
         const newConversation = await prisma.conversation.create({
             data: {
-                users:{
-                    connect:[
+                users: {
+                    connect: [
                         {
                             id: currentUser.id
                         },
@@ -83,14 +83,14 @@ export async function POST(
                     ]
                 }
             },
-            include:{
-                users:true
+            include: {
+                users: true
             }
         });
 
         return NextResponse.json(newConversation);
 
-    }catch(error:unknown){
+    } catch (error: unknown) {
         return new NextResponse('Internal Error: ' + error, { status: 500 });
     }
 }
