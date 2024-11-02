@@ -9,9 +9,10 @@ import clsx from "clsx";
 import { FullConversationType } from "@/app/types";
 import useOtherUser from "@/app/hooks/useOtherUser";
 import Avatar from "@/app/components/Avatar";
+import AvatarGroup from "@/app/components/AvatarGroup";
 
 interface ConversationBoxProps {
-    data:FullConversationType,
+    data: FullConversationType,
     selected?: boolean;
 }
 
@@ -30,21 +31,21 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
     const lastMessage = useMemo(() => {
         const messages = data.messages || [];
 
-        return messages [messages.length - 1];
+        return messages[messages.length - 1];
     }, [data.messages]);
 
     const userEmail = useMemo(() => {
-      return session.data?.user?.email;  
+        return session.data?.user?.email;
     }, [session.data?.user?.email]);
 
     const hasSeen = useMemo(() => {
-        if(!lastMessage){
+        if (!lastMessage) {
             return false;
         }
 
         const seenArray = lastMessage.seen || [];
 
-        if(!userEmail){
+        if (!userEmail) {
             return false;
         }
 
@@ -52,20 +53,23 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
     }, [userEmail, lastMessage]);
 
     const lastMessageText = useMemo(() => {
-        if(lastMessage?.image){
+        if (lastMessage?.image) {
             return "Képet küldött";
         }
 
-        if (lastMessage?.body){
+        if (lastMessage?.body) {
             return lastMessage.body;
         }
 
         return "Üzenet váltás elkezdve";
-    },[lastMessage]);
+    }, [lastMessage]);
 
     return (
         <div onClick={handleClick} className={clsx("w-full relative flex items-center space-x-3 hover:bg-neatura-100 rounded-lg transition cursor-pointer p-3", selected ? 'bg-neutral-100' : 'bg-white')}>
-            <Avatar user={otherUser}/>
+            {data.isGroup ? (
+                <AvatarGroup users={data.users} />
+            ) : <Avatar user={otherUser} />}
+
             <div className="min-w-0 flex-1">
                 <div className="focus:outline-none">
                     <div className="fkex justify-between items-center mb-1">
@@ -74,11 +78,11 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
                         </p>
                         {lastMessage?.createdAt && (
                             <p className=" text-xs text-gray-400 font-light">
-                                {format (new Date(lastMessage.createdAt), 'HH:mm')}    
+                                {format(new Date(lastMessage.createdAt), 'HH:mm')}
                             </p>
                         )}
                     </div>
-                    <p className={clsx('truncate text-sm', hasSeen? 'text-gray-500' : 'text-black font-medium')}>
+                    <p className={clsx('truncate text-sm', hasSeen ? 'text-gray-500' : 'text-black font-medium')}>
                         {lastMessageText}
                     </p>
                 </div>

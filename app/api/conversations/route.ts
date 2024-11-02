@@ -19,7 +19,7 @@ export async function POST(
             return new NextResponse('Unauthorized', { status: 401 });
         }
 
-        if (isGroup && (!members || members.lenght < 2)) {
+        if (isGroup && (!members || members.lenght < 2 || !name)) {
             return new NextResponse('Invalid Group', { status: 400 });
         }
 
