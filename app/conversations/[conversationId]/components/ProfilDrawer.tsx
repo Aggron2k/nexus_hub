@@ -118,6 +118,7 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
                                                                 </>
                                                             )}
                                                             <hr />
+                                                            {/* TODO: Ha Group chat akkor ne írja ki hogy Role */}
                                                             <div>
                                                                 <dt className="text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0">
                                                                     Role:
