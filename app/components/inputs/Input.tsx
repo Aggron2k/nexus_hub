@@ -12,7 +12,7 @@ interface InputProps {
     id: string;
     type?: string;
     required?: boolean;
-    register: UserFormRegister<FieldValues>;
+    register: UseFormRegister<FieldValues>;
     errors: FieldErrors;
     disabled? : boolean;
 }
