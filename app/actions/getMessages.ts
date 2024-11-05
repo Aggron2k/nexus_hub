@@ -17,7 +17,8 @@ const getMessages = async (
         });
         return messages;
     } catch (error: unknown) {
-        return error;
+        console.error("Error fetching message: ", error);
+        return [];
     }
 };
 export default getMessages;
