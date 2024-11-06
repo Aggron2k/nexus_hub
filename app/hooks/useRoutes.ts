@@ -1,7 +1,11 @@
 import { useMemo } from "react";
 import {usePathname} from "next/navigation";
 import { HiChat } from "react-icons/hi";
-import { HiArrowLeftOnRectangle, HiUsers } from "react-icons/hi2";
+import { HiArrowLeftOnRectangle, HiUsers, HiCalendarDays, HiClock, HiDocument } from "react-icons/hi2";
+import { HiCash } from "react-icons/hi";
+import { RiContactsBook3Fill } from "react-icons/ri";
+import { FaTasks } from "react-icons/fa";
+import { BiTrip } from "react-icons/bi";
 
 import {signOut } from "next-auth/react";
 
@@ -23,6 +27,41 @@ const useRoutes = () => {
             href: '/users',
             icon: HiUsers,
             active: pathname === '/users'
+        },
+        {
+            label: 'Contacts',
+            href: '#',
+            icon: RiContactsBook3Fill
+        },
+        {
+            label: 'Calendar',
+            href: '#',
+            icon: HiCalendarDays
+        },
+        {
+            label: 'Tasks',
+            href: '#',
+            icon: FaTasks
+        },
+        {
+            label: 'ClockIn/Out',
+            href: '#',
+            icon: HiClock
+        },
+        {
+            label: 'Documents',
+            href: '#',
+            icon: HiDocument
+        },
+        {
+            label: 'Time Off',
+            href: '#',
+            icon: BiTrip
+        },
+        {
+            label: 'Payroll',
+            href: '#',
+            icon: HiCash
         },
         {
             label: 'logOut',

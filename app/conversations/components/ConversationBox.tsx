@@ -65,7 +65,7 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
     }, [lastMessage]);
 
     return (
-        <div onClick={handleClick} className={clsx("w-full relative flex items-center space-x-3 hover:bg-neatura-100 rounded-lg transition cursor-pointer p-3", selected ? 'bg-neutral-100' : 'bg-white')}>
+        <div onClick={handleClick} className={clsx("w-full relative flex items-center space-x-3 hover:bg-[#D4BEE4] rounded-lg transition cursor-pointer p-3", selected ? 'bg-neutral-100' : 'bg-white')}>
             {data.isGroup ? (
                 <AvatarGroup users={data.users} />
             ) : <Avatar user={otherUser} />}

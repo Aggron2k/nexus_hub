@@ -39,12 +39,12 @@ const Form = () => {
     return (
         <div className="py-4 px-4 bg-white border-t flex items-center gap-2 lg:gap-4 w-full">
             <CldUploadButton options={{ maxFiles: 1 }} onUpload={handleUpload} uploadPreset="krkiyocl" >
-                <HiPhoto size={30} className="text-sky-500" />
+                <HiPhoto size={30} className="text-nexus-tertiary  hover:text-nexus-secondary" />
             </CldUploadButton>
 
             <form onSubmit={handleSubmit(onSubmit)} className="flex items-center gap-2 lg:gap-4 w-full">
                 <MessageInput id="message" register={register} errors={errors} required placeholder="Write a message"/>
-                <button type="submit" className="rounded-full p-2 bg-sky-500 cursor-pointer hover:bg-sky-600 transition">
+                <button type="submit" className="rounded-full p-2 bg-nexus-tertiary cursor-pointer hover:bg-nexus-secondary transition">
                     <HiPaperAirplane size={18} className="text-white" />
                 </button>
             </form>

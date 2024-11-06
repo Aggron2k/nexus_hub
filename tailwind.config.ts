@@ -7,7 +7,14 @@ const config: Config = {
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        "nexus-bg": "#EEEEEE",
+        "nexus-primary": "#D4BEE4",
+        "nexus-secondary": "#9B7EBD",
+        "nexus-tertiary": "#3B1E54",
+      },
+    },
   },
   plugins: [
     require("@tailwindcss/forms")({

@@ -14,7 +14,7 @@ const LoadingModal = () => {
                 <div className="fixed inset-0 z-10 overflow-y-auto">
                     <div className="flex min-h-full items-center justify-center p-4 text-center">
                         <DialogPanel> {/* Csak a szükséges Tailwind osztályok */}
-                            <ClockLoader color="#d71ac9" />
+                            <ClockLoader color="#3B1E54" />
                         </DialogPanel>
                     </div>
                 </div>
