@@ -12,7 +12,7 @@ const config: Config = {
         "nexus-bg": "#EEEEEE",
         "nexus-primary": "#D4BEE4",
         "nexus-secondary": "#9B7EBD",
-        "nexus-tertiary": "#3B1E54",
+        "nexus-tertiary": "#552E78", // now 552E78
       },
     },
   },
