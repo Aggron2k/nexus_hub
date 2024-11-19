@@ -3,7 +3,6 @@ import {usePathname} from "next/navigation";
 import { HiChat } from "react-icons/hi";
 import { HiArrowLeftOnRectangle, HiUsers, HiCalendarDays, HiClock, HiDocument } from "react-icons/hi2";
 import { HiCash } from "react-icons/hi";
-import { RiContactsBook3Fill } from "react-icons/ri";
 import { FaTasks } from "react-icons/fa";
 import { BiTrip } from "react-icons/bi";
 
@@ -27,11 +26,6 @@ const useRoutes = () => {
             href: '/users',
             icon: HiUsers,
             active: pathname === '/users'
-        },
-        {
-            label: 'Contacts',
-            href: '#',
-            icon: RiContactsBook3Fill
         },
         {
             label: 'Calendar',

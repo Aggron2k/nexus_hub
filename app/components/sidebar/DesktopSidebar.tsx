@@ -23,7 +23,7 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
             {/* Logo Section */}
             <nav className="flex items-center justify-center py-4">
                 <Link href="/dashboard" passHref>{/* Dashboard */}
-                    <Image alt="logo" height="48" width="48" className='mx-auto w-auto' src="/images/logo.png" />
+                    <Image alt="logo" height="48" width="48" className='mx-auto w-auto' src="/images/logo_revert.png" />
                 </Link>
             </nav>
 
