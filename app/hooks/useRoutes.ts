@@ -5,6 +5,7 @@ import { HiArrowLeftOnRectangle, HiUsers, HiCalendarDays, HiClock, HiDocument } 
 import { HiCash } from "react-icons/hi";
 import { FaTasks } from "react-icons/fa";
 import { BiTrip } from "react-icons/bi";
+import { MdSpaceDashboard } from "react-icons/md";
 
 import {signOut } from "next-auth/react";
 
@@ -15,6 +16,12 @@ const useRoutes = () => {
     const {conversationId} = useConversation();
 
     const routes = useMemo(() => [
+        {
+            label: 'Dashboard',
+            href: '/dashboard',
+            icon: MdSpaceDashboard,
+            active: pathname === '/dashboard'
+        },
         {
             label: 'Chat',
             href: '/conversations',
