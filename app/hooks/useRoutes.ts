@@ -6,6 +6,7 @@ import { HiCash } from "react-icons/hi";
 import { FaTasks } from "react-icons/fa";
 import { BiTrip } from "react-icons/bi";
 import { MdSpaceDashboard } from "react-icons/md";
+import { IoLanguage } from "react-icons/io5";
 
 import {signOut } from "next-auth/react";
 
@@ -65,7 +66,12 @@ const useRoutes = () => {
             icon: HiCash
         },
         {
-            label: 'logOut',
+            label: 'Language',
+            href: '#',
+            icon: IoLanguage,
+        },
+        {
+            label: 'Logout',
             href: '#',
             onClick: () => signOut(),
             icon: HiArrowLeftOnRectangle
