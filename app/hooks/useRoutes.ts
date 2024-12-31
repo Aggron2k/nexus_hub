@@ -11,11 +11,13 @@ import { IoLanguage } from "react-icons/io5";
 import {signOut } from "next-auth/react";
 
 import useConversation from "./useConversation";
+import { useLanguage } from "@/app/context/LanguageContext";
 
 const useRoutes = () => {
     const pathname = usePathname();
     const {conversationId} = useConversation();
-
+    const { language, toggleLanguage } = useLanguage();
+    
     const routes = useMemo(() => [
         {
             label: 'Dashboard',
@@ -66,9 +68,10 @@ const useRoutes = () => {
             icon: HiCash
         },
         {
-            label: 'Language',
-            href: '#',
+            label: "Language",
+            href: "#",
             icon: IoLanguage,
+            onClick: toggleLanguage, // Nyelvváltás
         },
         {
             label: 'Logout',
@@ -76,7 +79,7 @@ const useRoutes = () => {
             onClick: () => signOut(),
             icon: HiArrowLeftOnRectangle
         }
-    ],[pathname, conversationId]);
+    ], [pathname, conversationId, toggleLanguage]);
 
     return routes;
 }

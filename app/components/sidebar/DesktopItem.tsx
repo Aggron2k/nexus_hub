@@ -7,7 +7,7 @@ interface DesktopItemProps {
     label: string;
     icon: any;
     href: string;
-    onClick?: () => void;
+    onClick?: () => void; // `onClick` opcionális
     active?: boolean;
 }
 
@@ -16,13 +16,13 @@ const DesktopItem: React.FC<DesktopItemProps> = ({
     icon: Icon,
     href,
     onClick,
-    active
+    active,
 }) => {
     const [isHovered, setIsHovered] = useState(false);
 
     const handleClick = () => {
         if (onClick) {
-            return onClick();
+            onClick(); // Az `onClick` függvény hívása
         }
     };
 
@@ -37,18 +37,18 @@ const DesktopItem: React.FC<DesktopItemProps> = ({
                 href={href}
                 className={clsx(
                     "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-semibold text-nexus-bg hover:text-black hover:bg-nexus-primary",
-                    active && 'bg-nexus-secondary text-black'
+                    active && "bg-nexus-secondary text-black"
                 )}
             >
                 <Icon className="h-6 w-6 shrink-0" />
-                <span className='sr-only'>{label}</span>
+                <span className="sr-only">{label}</span>
             </Link>
             {isHovered && (
                 <div
                     className="absolute left-1/2 transform -translate-x-1/2 top-full mt-3 bg-black text-white text-xs rounded-md px-2 py-1 shadow-lg z-50 whitespace-nowrap"
                     style={{
-                        minWidth: '60px',
-                        textAlign: 'center',
+                        minWidth: "60px",
+                        textAlign: "center",
                     }}
                 >
                     {label}
@@ -56,6 +56,6 @@ const DesktopItem: React.FC<DesktopItemProps> = ({
             )}
         </li>
     );
-}
+};
 
 export default DesktopItem;
