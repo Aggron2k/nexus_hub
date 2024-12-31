@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import {usePathname} from "next/navigation";
+import { usePathname } from "next/navigation";
 import { HiChat } from "react-icons/hi";
 import { HiArrowLeftOnRectangle, HiUsers, HiCalendarDays, HiClock, HiDocument } from "react-icons/hi2";
 import { HiCash } from "react-icons/hi";
@@ -8,80 +8,110 @@ import { BiTrip } from "react-icons/bi";
 import { MdSpaceDashboard } from "react-icons/md";
 import { IoLanguage } from "react-icons/io5";
 
-import {signOut } from "next-auth/react";
+import { signOut } from "next-auth/react";
 
 import useConversation from "./useConversation";
 import { useLanguage } from "@/app/context/LanguageContext";
 
 const useRoutes = () => {
     const pathname = usePathname();
-    const {conversationId} = useConversation();
+    const { conversationId } = useConversation();
     const { language, toggleLanguage } = useLanguage();
-    
+
+    // Fordítások
+    const translations = {
+        en: {
+            dashboard: "Dashboard",
+            chat: "Chat",
+            users: "People",
+            calendar: "Calendar",
+            tasks: "Tasks",
+            clockInOut: "Clock In/Out",
+            documents: "Documents",
+            timeOff: "Time Off",
+            payroll: "Payroll",
+            language: "Language",
+            logout: "Logout",
+        },
+        hu: {
+            dashboard: "Irányítópult",
+            chat: "Csevegés",
+            users: "Emberek",
+            calendar: "Naptár",
+            tasks: "Feladatok",
+            clockInOut: "Be/Kilépés",
+            documents: "Iratok",
+            timeOff: "Szabadság",
+            payroll: "Bérezés",
+            language: "Nyelv",
+            logout: "Kijelentkezés",
+        },
+    };
+
     const routes = useMemo(() => [
         {
-            label: 'Dashboard',
+            label: translations[language].dashboard,
             href: '/dashboard',
             icon: MdSpaceDashboard,
-            active: pathname === '/dashboard'
+            active: pathname === '/dashboard',
         },
         {
-            label: 'Chat',
+            label: translations[language].chat,
             href: '/conversations',
             icon: HiChat,
-            active: pathname === '/conversations' || !!conversationId
+            active: pathname === '/conversations' || !!conversationId,
         },
         {
-            label: 'Users',
+            label: translations[language].users,
             href: '/users',
             icon: HiUsers,
-            active: pathname === '/users'
+            active: pathname === '/users',
         },
         {
-            label: 'Calendar',
+            label: translations[language].calendar,
             href: '#',
-            icon: HiCalendarDays
+            icon: HiCalendarDays,
         },
         {
-            label: 'Tasks',
+            label: translations[language].tasks,
             href: '#',
-            icon: FaTasks
+            icon: FaTasks,
         },
         {
-            label: 'ClockIn/Out',
+            label: translations[language].clockInOut,
             href: '#',
-            icon: HiClock
+            icon: HiClock,
         },
         {
-            label: 'Documents',
+            label: translations[language].documents,
             href: '#',
-            icon: HiDocument
+            icon: HiDocument,
         },
         {
-            label: 'Time Off',
+            label: translations[language].timeOff,
             href: '#',
-            icon: BiTrip
+            icon: BiTrip,
         },
         {
-            label: 'Payroll',
+            label: translations[language].payroll,
             href: '#',
-            icon: HiCash
+            icon: HiCash,
         },
         {
-            label: "Language",
+            label: translations[language].language,
             href: "#",
             icon: IoLanguage,
             onClick: toggleLanguage, // Nyelvváltás
         },
         {
-            label: 'Logout',
+            label: translations[language].logout,
             href: '#',
             onClick: () => signOut(),
-            icon: HiArrowLeftOnRectangle
-        }
-    ], [pathname, conversationId, toggleLanguage]);
+            icon: HiArrowLeftOnRectangle,
+        },
+    ], [pathname, conversationId, toggleLanguage, language]);
 
     return routes;
-}
+};
 
 export default useRoutes;
