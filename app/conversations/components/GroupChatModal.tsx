@@ -9,74 +9,107 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
+import { useLanguage } from "@/app/context/LanguageContext";
 
 interface GroupChatModalProps {
     isOpen?: boolean;
     onClose: () => void;
-    users: User[]
+    users: User[];
 }
 
 const GroupChatModal: React.FC<GroupChatModalProps> = ({
     isOpen,
     onClose,
-    users
+    users,
 }) => {
     const router = useRouter();
+    const { language } = useLanguage();
+
+    const translations = {
+        en: {
+            createGroupChat: "Create a Group Chat",
+            description: "Start a chat with more than 2 people.",
+            name: "Name",
+            members: "Members",
+            cancel: "Cancel",
+            create: "Create",
+            error: "Something went wrong.",
+        },
+        hu: {
+            createGroupChat: "Csoportos beszélgetés létrehozása",
+            description: "Hozzon létre egy csevegést több mint 2 személlyel.",
+            name: "Neve",
+            members: "Tagok",
+            cancel: "Mégse",
+            create: "Létrehozás",
+            error: "Valami hiba történt.",
+        },
+    };
 
     const [isLoading, setIsLoading] = useState(false);
-    
+
     const {
         register,
         handleSubmit,
         setValue,
         watch,
-        formState: {
-            errors
-        }
+        formState: { errors },
     } = useForm<FieldValues>({
         defaultValues: {
-            name: '',
-            members: []
-        }
+            name: "",
+            members: [],
+        },
     });
 
-    const members = watch('members');
+    const members = watch("members");
 
     const onSubmit: SubmitHandler<FieldValues> = (data) => {
         setIsLoading(true);
-        axios.post('/api/conversations', {
-            ...data,
-            isGroup: true
-        })
+        axios
+            .post("/api/conversations", {
+                ...data,
+                isGroup: true,
+            })
             .then(() => {
                 router.refresh();
                 onClose();
             })
-            .catch(() => toast.error('Valami hiba történt.'))
-            .finally(() => setIsLoading(false))
-    }
+            .catch(() => toast.error(translations[language].error))
+            .finally(() => setIsLoading(false));
+    };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} >
+        <Modal isOpen={isOpen} onClose={onClose}>
             <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="space-y-12">
                     <div className="border-b border-gray-900/10 pb-12">
                         <h2 className="text-base font-semibold leading-7 text-gray-900">
-                            Csoportos beszélgetés létrehozása
+                            {translations[language].createGroupChat}
                         </h2>
                         <p className="mt-1 text-sm leading-6 text-gray-600">
-                            Hozzon létre egy csevegést több mint 2 személlyel.
+                            {translations[language].description}
                         </p>
                         <div className="mt-10 flex flex-col gap-y-8">
-                            <Input register={register} label="Neve" id="name" disabled={isLoading} required errors={errors} />
-                            <Select disabled={isLoading} label="Tagok"
+                            <Input
+                                register={register}
+                                label={translations[language].name}
+                                id="name"
+                                disabled={isLoading}
+                                required
+                                errors={errors}
+                            />
+                            <Select
+                                disabled={isLoading}
+                                label={translations[language].members}
                                 options={users.map((user) => ({
                                     value: user.id,
-                                    label: user.name
+                                    label: user.name,
                                 }))}
-                                onChange={(value) => setValue('members', value, {
-                                    shouldValidate: true
-                                })}
+                                onChange={(value) =>
+                                    setValue("members", value, {
+                                        shouldValidate: true,
+                                    })
+                                }
                                 value={members}
                             />
                         </div>
@@ -84,15 +117,15 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
                 </div>
                 <div className="mt-6 flex items-center justify-end gap-x-6">
                     <Button disabled={isLoading} onClick={onClose} type="button" secondary>
-                        Cancel
+                        {translations[language].cancel}
                     </Button>
                     <Button disabled={isLoading} type="submit">
-                        Create
+                        {translations[language].create}
                     </Button>
                 </div>
             </form>
         </Modal>
     );
-}
+};
 
 export default GroupChatModal;

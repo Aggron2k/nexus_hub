@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { toast } from "react-hot-toast";
 import { FiAlertTriangle } from "react-icons/fi";
+import { useLanguage } from "@/app/context/LanguageContext";
 
 interface ConfirmModalProps {
     isOpen?: boolean;
@@ -19,10 +20,27 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
     onClose
 }) => {
     const router = useRouter();
-
     const { conversationId } = useConversation();
+    const { language } = useLanguage();
 
     const [isLoading, setIsLoading] = useState(false);
+
+    const translations = {
+        en: {
+            title: "Delete Conversation",
+            description: "Are you sure you want to delete this conversation? This action cannot be undone.",
+            delete: "Delete",
+            cancel: "Cancel",
+        },
+        hu: {
+            title: "Beszélgetés törlése",
+            description: "Biztos ki szeretnéd törölni ezt a beszélgetést? Ezt a műveletet nem lehet visszavonni.",
+            delete: "Törlés",
+            cancel: "Mégse",
+        },
+    };
+
+    const { title, description, delete: deleteText, cancel } = translations[language];
 
     const onDelete = useCallback(() => {
         setIsLoading(true);
@@ -33,9 +51,8 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                 router.refresh();
             })
             .catch(() => toast.error('Something went wrong!'))
-            .finally(() => setIsLoading(false))
+            .finally(() => setIsLoading(false));
     }, [conversationId, router, onClose]);
-
 
     return (
         <Modal isOpen={isOpen} onClose={onClose}>
@@ -44,23 +61,22 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                     <FiAlertTriangle className="h-6 w-6 text-red-600" />
                 </div>
                 <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
-                    <DialogTitle as="h3" className=" text-base font-semibold leading-6 text-gray-900">
-                        Beszélgetés törlése
+                    <DialogTitle as="h3" className="text-base font-semibold leading-6 text-gray-900">
+                        {title}
                     </DialogTitle>
                     <div className="mt-2">
                         <p className="text-sm text-gray-500">
-                            {/* Are you sure you want to delete this conversation? This action cannot be undone. */}
-                            Biztos ki szeretnéd törölni ez a beszélgetést? Ezt a műveletet nem lehet visszavonni.
+                            {description}
                         </p>
                     </div>
                 </div>
             </div>
             <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
                 <Button disabled={isLoading} danger onClick={onDelete}>
-                    Törlés
+                    {deleteText}
                 </Button>
                 <Button disabled={isLoading} secondary onClick={onClose}>
-                    Mégse
+                    {cancel}
                 </Button>
             </div>
         </Modal>
