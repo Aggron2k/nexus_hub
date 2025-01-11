@@ -1,7 +1,7 @@
 "use client";
 
 import useOtherUser from "@/app/hooks/useOtherUser";
-import { Conversation, User } from "@prisma/client";
+import { Conversation, Role, User } from "@prisma/client";
 import { Fragment, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Dialog, DialogPanel, Transition, TransitionChild } from "@headlessui/react";
@@ -188,7 +188,7 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
                                                                             {translations[language].role}
                                                                         </dt>
                                                                         <dd className="mt-1 text-sm text-gray-900 sm:col-span-2">
-                                                                            CEO
+                                                                            {otherUser.role}
                                                                         </dd>
                                                                     </div>
                                                                 </>

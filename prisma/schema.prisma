@@ -13,8 +13,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  Employee
+  Manager
+  GeneralManager
+  CEO
+}
 
-model User{
+model User {
   id String @id @default(auto()) @map("_id") @db.ObjectId
   name String?
   email String @unique
@@ -23,6 +29,8 @@ model User{
   hashedPassword String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  role Role @default(Employee)
 
   conversationIds String[] @db.ObjectId
   conversations Conversation[] @relation(fields: [conversationIds], references: [id])
