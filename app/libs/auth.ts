@@ -54,4 +54,10 @@ export const authOptions: AuthOptions = {
         strategy: "jwt" as const,
     },
     secret: process.env.NEXTAUTH_SECRET,
+    pages: {
+        signIn: "/", // Bejelentkezési oldal
+        signOut: "/", // Kijelentkezés után ide irányít
+        error: "/", // Hiba esetén átirányítás
+    },
 };
+
