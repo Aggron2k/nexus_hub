@@ -19,7 +19,7 @@ const UserDocuments: React.FC<UserDocumentsProps> = ({ userId }) => {
                 setDocuments(response.data);
             } catch (error) {
                 console.error(error);
-                alert("Failed to load documents.");
+                //alert("Failed to load documents.");
             } finally {
                 setIsLoading(false);
             }

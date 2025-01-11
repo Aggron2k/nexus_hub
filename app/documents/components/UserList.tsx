@@ -1,16 +1,16 @@
 "use client";
+
 import { User } from "@prisma/client";
 import UserBox from "./UserBox";
 import { useLanguage } from "@/app/context/LanguageContext";
 
 interface UserListProps {
-    items: User[];
+    items: User[]; // A felhasználók adatait a szerveroldalról kapjuk meg
 }
 
 const UserList: React.FC<UserListProps> = ({ items }) => {
     const { language } = useLanguage();
 
-    // Fordítások objektuma
     const translations = {
         en: "Documents",
         hu: "Dokumentumok",

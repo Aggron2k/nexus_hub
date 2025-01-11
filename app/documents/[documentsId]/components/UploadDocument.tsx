@@ -44,7 +44,7 @@ const UploadDocument: React.FC<UploadDocumentProps> = ({ userId }) => {
             setFile(null);
         } catch (error) {
             console.error(error);
-            alert("Failed to upload document.");
+            //alert("Failed to upload document.");
         } finally {
             setIsUploading(false);
         }
