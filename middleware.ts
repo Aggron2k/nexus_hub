@@ -13,5 +13,6 @@ export const config = {
         "/users/:path*",
         "/conversations/:path*",
         "/dashboard/:path*",
+        "/documents/:path*",
     ],
 };

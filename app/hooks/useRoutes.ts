@@ -87,8 +87,9 @@ const useRoutes = () => {
         },
         {
             label: translations[language].documents,
-            href: '#',
+            href: '/documents',
             icon: HiDocument,
+            active: pathname === '/documents',
         },
         {
             label: translations[language].timeOff,
