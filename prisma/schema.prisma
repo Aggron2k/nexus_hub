@@ -40,6 +40,8 @@ model User {
 
   accounts Account[]
   messages Message[]
+
+  documents  Document[]
 }
 
 model Account {
@@ -89,4 +91,15 @@ model Message {
 
   senderId String @db.ObjectId
   sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  name       String   // A dokumentum neve, pl. "CV", "Bérpapír"
+  fileType   String   // A fájl típusa, pl. "pdf" vagy "docx"
+  fileUrl    String   // A fájl elérési útvonala (pl. Amazon S3 URL vagy helyi fájlrendszer)
+  userId     String   @db.ObjectId
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
