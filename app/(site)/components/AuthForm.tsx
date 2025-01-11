@@ -2,11 +2,7 @@
 
 import axios from "axios";
 import { useCallback, useEffect, useState } from "react";
-import { 
-  FieldValues, 
-  SubmitHandler, 
-  useForm
-} from "react-hook-form";
+import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import { BsGithub, BsGoogle } from 'react-icons/bs';
 
 import Input from "../../components/inputs/Input";
@@ -24,7 +20,6 @@ const AuthForm = () => {
   const router = useRouter();
   const [variant, setVariant] = useState<Variant>('LOGIN');
   const [isLoading, setIsLoading] = useState(false);
-  
 
   const translations = {
     en: {
@@ -38,6 +33,11 @@ const AuthForm = () => {
       toggleLoginText: "Already have an account?",
       toggleRegisterText: "New to NexusHUB?",
       orContinueWith: "Or continue with",
+      loginSuccess: "Logged in!",
+      loginError: "Invalid credentials",
+      registerError: "Something went wrong!",
+      socialLoginSuccess: "Login successful!",
+      socialLoginError: "Login failed!",
     },
     hu: {
       signInTitle: "Jelentkezz be a fiókodba",
@@ -50,19 +50,23 @@ const AuthForm = () => {
       toggleLoginText: "Már van fiókod?",
       toggleRegisterText: "Új a NexusHUB-on?",
       orContinueWith: "Vagy folytasd itt",
+      loginSuccess: "Sikeres bejelentkezés!",
+      loginError: "Hibás adatok!",
+      registerError: "Hiba történt a regisztráció során!",
+      socialLoginSuccess: "Sikeres bejelentkezés!",
+      socialLoginError: "Sikertelen bejelentkezés!",
     },
   };
 
   const { language, toggleLanguage } = useLanguage();
   const t = translations[language];
 
-
   useEffect(() => {
     if (session?.status === 'authenticated') {
-      toast.success('Logged in!');
+      toast.success(t.loginSuccess); // Lokalizált üzenet
       router.push('/dashboard');
     }
-  }, [session?.status, router]);
+  }, [session?.status, router, t]);
 
   const toggleVariant = useCallback(() => {
     if (variant === 'LOGIN') {
@@ -75,61 +79,61 @@ const AuthForm = () => {
   const {
     register,
     handleSubmit,
-    formState: {
-      errors
-    }
+    formState: { errors },
   } = useForm<FieldValues>({
     defaultValues: {
       name: '',
       email: '',
-      password: ''
-    }
+      password: '',
+    },
   });
 
   const onSubmit: SubmitHandler<FieldValues> = (data) => {
     setIsLoading(true);
 
     if (variant === 'REGISTER') {
-      axios.post('/api/register', data)
-      .then(() => signIn('credentials', data))
-      .catch(() => toast.error('Something went wrong!'))
-      .finally(() => setIsLoading(false))
+      axios
+        .post('/api/register', data)
+        .then(() => signIn('credentials', data))
+        .catch(() => toast.error(t.registerError)) // Lokalizált hibaüzenet
+        .finally(() => setIsLoading(false));
     }
 
     if (variant === 'LOGIN') {
       signIn('credentials', {
         ...data,
-        redirect: false
+        redirect: false,
       })
-      .then((callback) => {
-        if (callback?.error) {
-          toast.error('Invalid credentials');
-        }
+        .then((callback) => {
+          if (callback?.error) {
+            toast.error(t.loginError); // Lokalizált hibaüzenet
+          }
 
-        if (callback?.ok && !callback?.error) {
-          toast.success('Logged in!');
-          router.push('/dashboard');
-        }
-      })
-      .finally(() => setIsLoading(false));
+          if (callback?.ok && !callback?.error) {
+            toast.success(t.loginSuccess); // Lokalizált sikerüzenet
+            router.push('/dashboard');
+          }
+        })
+        .finally(() => setIsLoading(false));
     }
-  }
+  };
 
   const socialAction = (action: string) => {
     setIsLoading(true);
 
     signIn(action, {
-        redirect:false
-    }).then((callback) => {
+      redirect: false,
+    })
+      .then((callback) => {
         if (callback?.error) {
-            toast.error('Login failed!');
+          toast.error(t.socialLoginError); // Lokalizált hibaüzenet
         }
         if (callback?.ok && !callback?.error) {
-            toast.success('Login successful!');
+          toast.success(t.socialLoginSuccess); // Lokalizált sikerüzenet
         }
-    })
-    .finally(() => setIsLoading(false));
-  }
+      })
+      .finally(() => setIsLoading(false));
+  };
 
   return (
     <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
@@ -179,9 +183,7 @@ const AuthForm = () => {
               <div className="w-full border-t border-gray-300" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-2 text-gray-500">
-                {t.orContinueWith}
-              </span>
+              <span className="bg-white px-2 text-gray-500">{t.orContinueWith}</span>
             </div>
           </div>
 
@@ -198,13 +200,8 @@ const AuthForm = () => {
         </div>
 
         <div className="flex gap-2 justify-center text-sm mt-6 px-2 text-gray-500">
-          <div>
-            {variant === "LOGIN" ? t.toggleRegisterText : t.toggleLoginText}
-          </div>
-          <div
-            onClick={toggleVariant}
-            className="underline cursor-pointer"
-          >
+          <div>{variant === "LOGIN" ? t.toggleRegisterText : t.toggleLoginText}</div>
+          <div onClick={toggleVariant} className="underline cursor-pointer">
             {variant === "LOGIN" ? t.registerTitle : t.signInTitle}
           </div>
         </div>
@@ -212,5 +209,5 @@ const AuthForm = () => {
     </div>
   );
 };
- 
+
 export default AuthForm;

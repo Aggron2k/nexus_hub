@@ -9,6 +9,7 @@ import { MdSpaceDashboard } from "react-icons/md";
 import { IoLanguage } from "react-icons/io5";
 
 import { signOut } from "next-auth/react";
+import { toast } from "react-hot-toast";
 
 import useConversation from "./useConversation";
 import { useLanguage } from "@/app/context/LanguageContext";
@@ -32,6 +33,7 @@ const useRoutes = () => {
             payroll: "Payroll",
             language: "Language",
             logout: "Logout",
+            logoutSuccess: "Successfully logged out!",
         },
         hu: {
             dashboard: "Irányítópult",
@@ -45,6 +47,7 @@ const useRoutes = () => {
             payroll: "Bérezés",
             language: "Nyelv",
             logout: "Kijelentkezés",
+            logoutSuccess: "Sikeresen kijelentkeztél!",
         },
     };
 
@@ -106,7 +109,10 @@ const useRoutes = () => {
         {
             label: translations[language].logout,
             href: '#',
-            onClick: () => signOut(),
+            onClick: () => {
+                toast.success(translations[language].logoutSuccess); // Toast értesítés
+                signOut();
+            },
             icon: HiArrowLeftOnRectangle,
         },
     ], [pathname, conversationId, toggleLanguage, language]);
