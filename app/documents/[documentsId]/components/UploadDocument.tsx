@@ -21,15 +21,17 @@ const UploadDocument: React.FC<UploadDocumentProps> = ({ userId }) => {
         setIsUploading(true);
 
         try {
-            // Feltöltés például AWS S3-ra vagy más tárhelyre
+            // Feltöltés a Cloudinary-hoz
             const formData = new FormData();
             formData.append("file", file);
+            formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_PRESET || "krkiyocl");
 
-            const uploadResponse = await axios.post("/api/upload", formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
+            const uploadResponse = await axios.post(
+                `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/upload`,
+                formData
+            );
 
-            const fileUrl = uploadResponse.data.url;
+            const fileUrl = uploadResponse.data.secure_url;
 
             // Dokumentum mentése az adatbázisba
             await axios.post("/api/documents", {
@@ -43,12 +45,14 @@ const UploadDocument: React.FC<UploadDocumentProps> = ({ userId }) => {
             setName("");
             setFile(null);
         } catch (error) {
-            console.error(error);
-            //alert("Failed to upload document.");
+            console.error("Error during file upload:", error);
+            alert("Failed to upload document.");
         } finally {
             setIsUploading(false);
         }
     };
+
+
 
     return (
         <div className="border p-4 rounded-md">
