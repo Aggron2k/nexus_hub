@@ -21,19 +21,21 @@ const UploadDocument: React.FC<UploadDocumentProps> = ({ userId }) => {
         setIsUploading(true);
 
         try {
-            // Feltöltés a Cloudinary-hoz
+            // File upload to Cloudinary
             const formData = new FormData();
             formData.append("file", file);
             formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_PRESET || "krkiyocl");
+            formData.append("resource_type", "raw"); // Specify raw for raw files
+            formData.append("public_id", name); // Set the name of the file as the public ID
 
             const uploadResponse = await axios.post(
-                `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/upload`,
+                `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/raw/upload`,
                 formData
             );
 
             const fileUrl = uploadResponse.data.secure_url;
 
-            // Dokumentum mentése az adatbázisba
+            // Save the document information to the database
             await axios.post("/api/documents", {
                 userId,
                 name,
