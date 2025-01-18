@@ -2,19 +2,21 @@
 
 import { useState } from "react";
 import axios from "axios";
+import { toast } from "react-hot-toast";
 
 interface UploadDocumentProps {
     userId: string;
+    onUploadSuccess?: () => void;
 }
 
-const UploadDocument: React.FC<UploadDocumentProps> = ({ userId }) => {
+const UploadDocument: React.FC<UploadDocumentProps> = ({ userId, onUploadSuccess }) => {
     const [name, setName] = useState("");
     const [file, setFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
 
     const handleUpload = async () => {
         if (!file || !name) {
-            alert("Please provide a document name and select a file.");
+            toast.error("Please provide a document name and select a file."); // Hibaüzenet toast
             return;
         }
 
@@ -43,18 +45,20 @@ const UploadDocument: React.FC<UploadDocumentProps> = ({ userId }) => {
                 fileUrl,
             });
 
-            alert("Document uploaded successfully.");
+            //toast.success("Document uploaded successfully!"); // Sikeres toast
             setName("");
             setFile(null);
+
+            if (onUploadSuccess) {
+                onUploadSuccess(); // Siker callback hívása
+            }
         } catch (error) {
             console.error("Error during file upload:", error);
-            alert("Failed to upload document.");
+            toast.error("Failed to upload document."); // Hiba toast
         } finally {
             setIsUploading(false);
         }
     };
-
-
 
     return (
         <div className="border p-4 rounded-md">

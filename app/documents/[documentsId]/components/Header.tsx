@@ -10,6 +10,7 @@ interface HeaderProps {
         name: string;
         email: string;
         image?: string;
+        role?: string;
     };
     documentsId: string;
 }
@@ -29,7 +30,7 @@ const Header: React.FC<HeaderProps> = ({ user, documentsId }) => {
                 <div className="flex flex-col">
                     <div className="text-lg font-bold">{user.name}'s Documents</div>
                     <div className="text-sm font-light text-neutral-500">
-                        {user.email}
+                        {user.role} | {user.email}
                     </div>
                 </div>
             </div>
