@@ -2,10 +2,25 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Worker, Viewer } from "@react-pdf-viewer/core";
+import dynamic from "next/dynamic";
+import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
+
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
-import PDFViewer from "./PDFViewer";
+
+const Worker = dynamic(
+    () => import("@react-pdf-viewer/core").then((mod) => mod.Worker),
+    { ssr: false }
+);
+
+const Viewer = dynamic(
+    () =>
+        import("@react-pdf-viewer/core").then((mod) => mod.Viewer) as Promise<React.ComponentType<{
+            fileUrl: string;
+            plugins: ReturnType<typeof defaultLayoutPlugin>[];
+        }>>,
+    { ssr: false }
+);
 
 interface Document {
     id: string;
@@ -23,6 +38,8 @@ const UserDocuments: React.FC<UserDocumentsProps> = ({ userId }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const [selectedDocument, setSelectedDocument] = useState<string | null>(null);
+
+    const defaultLayoutPluginInstance = defaultLayoutPlugin(); // Default layout plugin
 
     useEffect(() => {
         const fetchDocuments = async () => {
@@ -77,19 +94,29 @@ const UserDocuments: React.FC<UserDocumentsProps> = ({ userId }) => {
             )}
 
             {selectedDocument && (
-                <div className="mt-4 border p-4 rounded-md">
-                    <h3 className="text-lg font-bold mb-2">Preview Document</h3>
-                    <div className="h-96 w-full overflow-hidden">
-                        <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.16.105/build/pdf.worker.min.js">
-                            <Viewer fileUrl={selectedDocument} />
-                        </Worker>
+                // Modal Background
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-md shadow-lg w-[80vw] h-[80vh] relative">
+                        {/* Modal Header */}
+                        <div className="p-4 border-b flex justify-between items-center">
+                            <h3 className="text-lg font-bold">Preview Document</h3>
+                            <button
+                                onClick={() => setSelectedDocument(null)}
+                                className="text-red-500 hover:text-red-700 font-bold"
+                            >
+                                X
+                            </button>
+                        </div>
+                        {/* Modal Content */}
+                        <div className="h-full w-full">
+                            <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.16.105/build/pdf.worker.min.js">
+                                <Viewer
+                                    fileUrl={selectedDocument}
+                                    plugins={[defaultLayoutPluginInstance]}
+                                />
+                            </Worker>
+                        </div>
                     </div>
-                    <button
-                        onClick={() => setSelectedDocument(null)}
-                        className="mt-4 text-white bg-red-500 px-4 py-2 rounded hover:bg-red-600"
-                    >
-                        Close Preview
-                    </button>
                 </div>
             )}
         </div>
