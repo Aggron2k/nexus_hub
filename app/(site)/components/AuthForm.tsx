@@ -61,12 +61,16 @@ const AuthForm = () => {
   const { language, toggleLanguage } = useLanguage();
   const t = translations[language];
 
+  const [hasNotified, setHasNotified] = useState(false);
+
   useEffect(() => {
-    if (session?.status === 'authenticated') {
+    if (session?.status === 'authenticated' && !hasNotified) {
+      setHasNotified(true); // Csak egyszer hajtjuk végre
       toast.success(t.loginSuccess); // Lokalizált üzenet
       router.push('/dashboard');
     }
-  }, [session?.status, router, t]);
+  }, [session?.status, router, t, hasNotified]);
+
 
   const toggleVariant = useCallback(() => {
     if (variant === 'LOGIN') {
@@ -110,7 +114,7 @@ const AuthForm = () => {
           }
 
           if (callback?.ok && !callback?.error) {
-            toast.success(t.loginSuccess); // Lokalizált sikerüzenet
+            //toast.success(t.loginSuccess); // Lokalizált sikerüzenet
             router.push('/dashboard');
           }
         })
