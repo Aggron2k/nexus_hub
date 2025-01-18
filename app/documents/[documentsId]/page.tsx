@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import UploadDocument from "./components/UploadDocument";
 import UserDocuments from "./components/UserDocuments";
+import Header from "./components/Header"; // Header importálása
 
 interface User {
     id: string;
@@ -38,11 +39,9 @@ const DocumentsPage = () => {
 
     return (
         <div className="lg:pl-80 h-full">
-            <div className="h-full flex flex-col">
-                {/* Felhasználó adatai */}
-                <h1 className="text-2xl font-bold">{user.name}'s Documents</h1>
-                <p>Email: {user.email}</p>
-
+            {/* Header komponens */}
+            <Header user={user} documentsId={documentsId} />
+            <div className="h-full flex flex-col p-4">
                 {/* Feltöltési funkció */}
                 <UploadDocument userId={documentsId} />
 
