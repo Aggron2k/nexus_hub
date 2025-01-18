@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { Worker, Viewer } from "@react-pdf-viewer/core";
+import "@react-pdf-viewer/core/lib/styles/index.css";
+import "@react-pdf-viewer/default-layout/lib/styles/index.css";
+import PDFViewer from "./PDFViewer";
 
 interface Document {
     id: string;
@@ -18,6 +22,7 @@ const UserDocuments: React.FC<UserDocumentsProps> = ({ userId }) => {
     const [documents, setDocuments] = useState<Document[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
+    const [selectedDocument, setSelectedDocument] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchDocuments = async () => {
@@ -45,35 +50,49 @@ const UserDocuments: React.FC<UserDocumentsProps> = ({ userId }) => {
     }
 
     return (
-        <div className="border p-6 rounded-lg bg-white shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Uploaded Documents</h2>
+        <div className="border p-4 rounded-md">
+            <h2 className="text-xl font-bold mb-4">Documents</h2>
             {documents.length === 0 ? (
-                <p className="text-gray-500">No documents uploaded yet.</p>
+                <p>No documents uploaded yet.</p>
             ) : (
-                <ul className="space-y-4">
+                <ul className="space-y-2">
                     {documents.map((doc) => (
                         <li
                             key={doc.id}
-                            className="flex justify-between items-center bg-gray-50 p-3 rounded-md shadow-sm"
+                            className="flex justify-between items-center border-b py-2"
                         >
                             <div>
-                                <p className="font-semibold text-gray-700">{doc.name}</p>
+                                <p className="font-medium">{doc.name}</p>
                                 <p className="text-sm text-gray-500">{doc.fileType}</p>
                             </div>
-                            <a
-                                href={doc.fileUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline"
+                            <button
+                                onClick={() => setSelectedDocument(doc.fileUrl)}
+                                className="text-blue-500 hover:underline"
                             >
                                 View
-                            </a>
+                            </button>
                         </li>
                     ))}
                 </ul>
             )}
-        </div>
 
+            {selectedDocument && (
+                <div className="mt-4 border p-4 rounded-md">
+                    <h3 className="text-lg font-bold mb-2">Preview Document</h3>
+                    <div className="h-96 w-full overflow-hidden">
+                        <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.16.105/build/pdf.worker.min.js">
+                            <Viewer fileUrl={selectedDocument} />
+                        </Worker>
+                    </div>
+                    <button
+                        onClick={() => setSelectedDocument(null)}
+                        className="mt-4 text-white bg-red-500 px-4 py-2 rounded hover:bg-red-600"
+                    >
+                        Close Preview
+                    </button>
+                </div>
+            )}
+        </div>
     );
 };
 
