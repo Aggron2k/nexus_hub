@@ -55,13 +55,9 @@ const DocumentsPage = () => {
 
     return (
         <div className="lg:pl-80 h-full">
-            {/* Header komponens */}
-            <Header user={user!} documentsId={documentsId} />
-            <div className="h-full flex flex-col p-4">
-                {/* Feltöltési funkció */}
+            <div className="h-full flex flex-col">
+                <Header user={user!} documentsId={documentsId} />
                 <UploadDocument userId={documentsId} onUploadSuccess={handleDocumentUploadSuccess} />
-
-                {/* Dokumentumok listázása */}
                 <UserDocuments userId={documentsId} />
             </div>
         </div>

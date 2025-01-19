@@ -44,7 +44,7 @@ const Header: React.FC<HeaderProps> = ({ user, documentsId }) => {
             <div className="flex gap-3 items-center">
                 <Link
                     className="lg:hidden block text-nexus-tertiary hover:text-nexus-secondary transition cursor-pointer"
-                    href="/"
+                    href="/documents"
                 >
                     <HiChevronLeft size={32} />
                 </Link>
