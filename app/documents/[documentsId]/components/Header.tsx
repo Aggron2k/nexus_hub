@@ -1,10 +1,10 @@
 "use client";
 
 import { HiChevronLeft } from "react-icons/hi2";
-import Link from "next/link";
 import Avatar from "@/app/components/Avatar";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { User } from "@prisma/client";
+import { useRouter } from "next/navigation";
 
 interface HeaderProps {
     user: {
@@ -19,6 +19,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ user, documentsId }) => {
     const { language } = useLanguage();
+    const router = useRouter();
 
     const translations = {
         en: {
@@ -31,7 +32,6 @@ const Header: React.FC<HeaderProps> = ({ user, documentsId }) => {
 
     const t = translations[language];
 
-    // Minimalizált objektum az Avatar számára
     const avatarUser: Partial<User> = {
         id: user.id,
         name: user.name || null,
@@ -39,15 +39,20 @@ const Header: React.FC<HeaderProps> = ({ user, documentsId }) => {
         image: user.image || null,
     };
 
+    const handleBack = () => {
+        router.push("/documents");
+        router.refresh(); // Ez frissíti az oldalt
+    };
+
     return (
         <div className="bg-white w-full flex border-b-[1px] sm:px-4 py-3 px-4 lg:px-6 justify-between items-center shadow-sm">
             <div className="flex gap-3 items-center">
-                <Link
+                <button
                     className="lg:hidden block text-nexus-tertiary hover:text-nexus-secondary transition cursor-pointer"
-                    href="/documents"
+                    onClick={handleBack}
                 >
                     <HiChevronLeft size={32} />
-                </Link>
+                </button>
                 <Avatar user={avatarUser as User} />
                 <div className="flex flex-col">
                     <div className="text-lg font-bold">{`${user.name}${t.documents}`}</div>

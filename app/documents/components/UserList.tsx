@@ -1,11 +1,11 @@
 "use client";
 
 import clsx from "clsx";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { User } from "@prisma/client";
 import UserBox from "./UserBox";
 import { useLanguage } from "@/app/context/LanguageContext";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 interface UserListProps {
     items: User[];
@@ -13,6 +13,7 @@ interface UserListProps {
 
 const UserList: React.FC<UserListProps> = ({ items }) => {
     const router = useRouter();
+    const pathname = usePathname();
     const { language } = useLanguage();
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
@@ -26,11 +27,18 @@ const UserList: React.FC<UserListProps> = ({ items }) => {
         router.push(`/documents/${userId}`);
     };
 
+    // Reset selectedUserId when on /documents page
+    useEffect(() => {
+        if (pathname === "/documents") {
+            setSelectedUserId(null);
+        }
+    }, [pathname]);
+
     return (
         <aside
             className={clsx(
                 `fixed inset-y-0 pb-20 lg:pb-0 lg:left-20 lg:w-80 lg:block overflow-y-auto border-r border-gray-200`,
-                selectedUserId ? "hidden lg:block" : "block w-full left-0"
+                pathname === "/documents" ? "block w-full left-0" : "hidden lg:block"
             )}
         >
             <div className="px-5">
