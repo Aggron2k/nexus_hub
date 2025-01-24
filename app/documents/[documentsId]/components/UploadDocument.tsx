@@ -69,7 +69,7 @@ const UploadDocument: React.FC<UploadDocumentProps> = ({ userId, onUploadSuccess
                 fileUrl,
             });
 
-            toast.success(t.uploadSuccess);
+            //toast.success(t.uploadSuccess);
             setName("");
             setFile(null);
 

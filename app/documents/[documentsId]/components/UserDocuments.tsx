@@ -5,6 +5,8 @@ import axios from "axios";
 import dynamic from "next/dynamic";
 import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
 import { useLanguage } from "@/app/context/LanguageContext";
+import { pusherClient } from "@/app/libs/pusher";
+import { FullDocumentType } from "@/app/types";
 
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
@@ -23,19 +25,19 @@ const Viewer = dynamic(
     { ssr: false }
 );
 
-interface Document {
-    id: string;
-    name: string;
-    fileUrl: string;
-    fileType: string;
-}
+// interface Document {
+//     id: string;
+//     name: string;
+//     fileUrl: string;
+//     fileType: string;
+// }
 
 interface UserDocumentsProps {
     userId: string;
 }
 
 const UserDocuments: React.FC<UserDocumentsProps> = ({ userId }) => {
-    const [documents, setDocuments] = useState<Document[]>([]);
+    const [documents, setDocuments] = useState<FullDocumentType[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const [selectedDocument, setSelectedDocument] = useState<string | null>(null);
@@ -67,6 +69,10 @@ const UserDocuments: React.FC<UserDocumentsProps> = ({ userId }) => {
     const defaultLayoutPluginInstance = defaultLayoutPlugin();
 
     useEffect(() => {
+
+        //console.log("Subscribing to channel:", `user-${userId}-documents`);
+
+
         const fetchDocuments = async () => {
             setIsLoading(true);
             try {
@@ -80,16 +86,46 @@ const UserDocuments: React.FC<UserDocumentsProps> = ({ userId }) => {
             }
         };
 
+        // Pusher feliratkozás
+        const channel = pusherClient.subscribe(`user-${userId}-documents`);
+
+        // Új dokumentum kezelése
+        const newDocumentHandler = (document: FullDocumentType) => {
+            //console.log("Received new document:", document); // Debug log
+            setDocuments((current) => {
+                const exists = current.some((doc) => doc.id === document.id);
+                if (exists) {
+                    return current;
+                }
+                const updatedDocuments = [...current, document].sort(
+                    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                );
+                //console.log("Updated documents:", updatedDocuments); // Debug log
+                return updatedDocuments;
+            });
+        };
+
+        // Esemény kötések
+        channel.bind('document:new', newDocumentHandler);
+
+        // Debug log Pusher eseményekhez
+        channel.bind('pusher:subscription_succeeded', () => {
+            //console.log('Successfully subscribed to channel');
+        });
+
+        channel.bind('pusher:subscription_error', (error: any) => {
+            //console.error('Subscription error:', error);
+        });
+
         fetchDocuments();
+
+        return () => {
+            //console.log("Unsubscribing from channel:", `user-${userId}-documents`); // Debug log
+            channel.unbind('document:new', newDocumentHandler);
+            // channel.unbind('document:delete', deleteDocumentHandler);
+            pusherClient.unsubscribe(`user-${userId}-documents`);
+        };
     }, [userId, t.failedToLoad]);
-
-    if (isLoading) {
-        return <p>{t.loading}</p>;
-    }
-
-    if (error) {
-        return <p className="text-red-500">{error}</p>;
-    }
 
     return (
         <div className="border p-4 rounded-md">
@@ -106,6 +142,9 @@ const UserDocuments: React.FC<UserDocumentsProps> = ({ userId }) => {
                             <div>
                                 <p className="font-medium">{doc.name}</p>
                                 <p className="text-sm text-gray-500">{doc.fileType}</p>
+                                <p className="text-xs text-gray-400">
+                                    {new Date(doc.createdAt).toLocaleDateString()}
+                                </p>
                             </div>
                             <button
                                 onClick={() => setSelectedDocument(doc.fileUrl)}

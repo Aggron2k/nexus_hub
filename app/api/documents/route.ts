@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/app/libs/prismadb';
+import { pusherServer } from '@/app/libs/pusher';
 
 export async function POST(req: Request) {
     const body = await req.json();
@@ -22,7 +23,17 @@ export async function POST(req: Request) {
                 fileType,
                 fileUrl,
             },
+            include: {
+                user: true // Include user data for the pusher event
+            }
         });
+
+        // Pusher értesítés küldése
+        await pusherServer.trigger(
+            `user-${userId}-documents`,
+            'document:new',
+            newDocument
+        );
 
         return NextResponse.json(newDocument, { status: 201 });
     } catch (error) {
@@ -30,7 +41,6 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Failed to create document' }, { status: 500 });
     }
 }
-
 
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
@@ -44,6 +54,9 @@ export async function GET(req: Request) {
         const documents = await prisma.document.findMany({
             where: { userId },
             orderBy: { createdAt: "desc" },
+            include: {
+                user: true // Include user data in the response
+            }
         });
 
         return NextResponse.json(documents);
@@ -52,5 +65,3 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: "Failed to fetch documents." }, { status: 500 });
     }
 }
-
-
