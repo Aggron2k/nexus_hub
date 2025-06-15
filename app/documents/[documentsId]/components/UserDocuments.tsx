@@ -7,6 +7,7 @@ import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { pusherClient } from "@/app/libs/pusher";
 import { FullDocumentType } from "@/app/types";
+import { HiDocumentText, HiEye, HiXMark, HiCalendar } from "react-icons/hi2";
 
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
@@ -24,13 +25,6 @@ const Viewer = dynamic(
         }>>,
     { ssr: false }
 );
-
-// interface Document {
-//     id: string;
-//     name: string;
-//     fileUrl: string;
-//     fileType: string;
-// }
 
 interface UserDocumentsProps {
     userId: string;
@@ -53,6 +47,7 @@ const UserDocuments: React.FC<UserDocumentsProps> = ({ userId }) => {
             view: "View",
             previewDocument: "Preview Document",
             close: "Close",
+            uploadedOn: "Uploaded on",
         },
         hu: {
             documents: "Dokumentumok",
@@ -62,6 +57,7 @@ const UserDocuments: React.FC<UserDocumentsProps> = ({ userId }) => {
             view: "Megtekintés",
             previewDocument: "Dokumentum előnézete",
             close: "Bezárás",
+            uploadedOn: "Feltöltve",
         },
     };
 
@@ -69,10 +65,6 @@ const UserDocuments: React.FC<UserDocumentsProps> = ({ userId }) => {
     const defaultLayoutPluginInstance = defaultLayoutPlugin();
 
     useEffect(() => {
-
-        //console.log("Subscribing to channel:", `user-${userId}-documents`);
-
-
         const fetchDocuments = async () => {
             setIsLoading(true);
             try {
@@ -91,7 +83,6 @@ const UserDocuments: React.FC<UserDocumentsProps> = ({ userId }) => {
 
         // Új dokumentum kezelése
         const newDocumentHandler = (document: FullDocumentType) => {
-            //console.log("Received new document:", document); // Debug log
             setDocuments((current) => {
                 const exists = current.some((doc) => doc.id === document.id);
                 if (exists) {
@@ -100,7 +91,6 @@ const UserDocuments: React.FC<UserDocumentsProps> = ({ userId }) => {
                 const updatedDocuments = [...current, document].sort(
                     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
                 );
-                //console.log("Updated documents:", updatedDocuments); // Debug log
                 return updatedDocuments;
             });
         };
@@ -108,68 +98,135 @@ const UserDocuments: React.FC<UserDocumentsProps> = ({ userId }) => {
         // Esemény kötések
         channel.bind('document:new', newDocumentHandler);
 
-        // Debug log Pusher eseményekhez
         channel.bind('pusher:subscription_succeeded', () => {
-            //console.log('Successfully subscribed to channel');
+            // console.log('Successfully subscribed to channel');
         });
 
         channel.bind('pusher:subscription_error', (error: any) => {
-            //console.error('Subscription error:', error);
+            // console.error('Subscription error:', error);
         });
 
         fetchDocuments();
 
         return () => {
-            //console.log("Unsubscribing from channel:", `user-${userId}-documents`); // Debug log
             channel.unbind('document:new', newDocumentHandler);
-            // channel.unbind('document:delete', deleteDocumentHandler);
             pusherClient.unsubscribe(`user-${userId}-documents`);
         };
     }, [userId, t.failedToLoad]);
 
+    const getFileTypeIcon = (fileType: string) => {
+        return <HiDocumentText className="h-8 w-8 text-nexus-tertiary" />;
+    };
+
+    if (isLoading) {
+        return (
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-nexus-primary rounded-lg">
+                        <HiDocumentText className="h-6 w-6 text-nexus-tertiary" />
+                    </div>
+                    <h2 className="text-xl font-semibold text-gray-900">{t.documents}</h2>
+                </div>
+                <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-nexus-tertiary"></div>
+                    <span className="ml-3 text-gray-600">{t.loading}</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-nexus-primary rounded-lg">
+                        <HiDocumentText className="h-6 w-6 text-nexus-tertiary" />
+                    </div>
+                    <h2 className="text-xl font-semibold text-gray-900">{t.documents}</h2>
+                </div>
+                <div className="text-center py-8">
+                    <p className="text-red-600">{error}</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="border p-4 rounded-md">
-            <h2 className="text-xl font-bold mb-4">{t.documents}</h2>
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-nexus-primary rounded-lg">
+                    <HiDocumentText className="h-6 w-6 text-nexus-tertiary" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900">{t.documents}</h2>
+                <span className="bg-nexus-primary text-nexus-tertiary px-2 py-1 rounded-full text-sm font-medium">
+                    {documents.length}
+                </span>
+            </div>
+
+            {/* Documents List */}
             {documents.length === 0 ? (
-                <p>{t.noDocuments}</p>
+                <div className="text-center py-12">
+                    <div className="p-3 bg-gray-100 rounded-full w-fit mx-auto mb-4">
+                        <HiDocumentText className="h-12 w-12 text-gray-400" />
+                    </div>
+                    <p className="text-gray-500 text-lg">{t.noDocuments}</p>
+                </div>
             ) : (
-                <ul className="space-y-2">
+                <div className="space-y-3">
                     {documents.map((doc) => (
-                        <li
+                        <div
                             key={doc.id}
-                            className="flex justify-between items-center border-b py-2"
+                            className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                         >
-                            <div>
-                                <p className="font-medium">{doc.name}</p>
-                                <p className="text-sm text-gray-500">{doc.fileType}</p>
-                                <p className="text-xs text-gray-400">
-                                    {new Date(doc.createdAt).toLocaleDateString()}
-                                </p>
+                            <div className="flex items-center gap-4 flex-1 min-w-0">
+                                <div className="flex-shrink-0">
+                                    {getFileTypeIcon(doc.fileType)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="text-sm font-medium text-gray-900 truncate">
+                                        {doc.name}
+                                    </h3>
+                                    <p className="text-sm text-gray-500 truncate">
+                                        {doc.fileType}
+                                    </p>
+                                    <div className="flex items-center gap-1 mt-1">
+                                        <HiCalendar className="h-3 w-3 text-gray-400" />
+                                        <p className="text-xs text-gray-400">
+                                            {t.uploadedOn} {new Date(doc.createdAt).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                             <button
                                 onClick={() => setSelectedDocument(doc.fileUrl)}
-                                className="text-blue-500 hover:underline"
+                                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-nexus-tertiary bg-nexus-primary hover:bg-nexus-secondary hover:text-white rounded-md transition-colors"
                             >
+                                <HiEye className="h-4 w-4" />
                                 {t.view}
                             </button>
-                        </li>
+                        </div>
                     ))}
-                </ul>
+                </div>
             )}
 
+            {/* PDF Preview Modal */}
             {selectedDocument && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-md shadow-lg w-[80vw] h-[80vh] relative">
-                        <div className="p-4 border-b flex justify-between items-center">
-                            <h3 className="text-lg font-bold">{t.previewDocument}</h3>
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl h-full max-h-[90vh] flex flex-col">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                            <h3 className="text-lg font-semibold text-gray-900">{t.previewDocument}</h3>
                             <button
                                 onClick={() => setSelectedDocument(null)}
-                                className="text-red-500 hover:text-red-700 font-bold"
+                                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                             >
-                                {t.close}
+                                <HiXMark className="h-5 w-5" />
                             </button>
                         </div>
-                        <div className="h-full w-full">
+
+                        {/* PDF Viewer */}
+                        <div className="flex-1 overflow-hidden">
                             <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.16.105/build/pdf.worker.min.js">
                                 <Viewer
                                     fileUrl={selectedDocument}
