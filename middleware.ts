@@ -14,5 +14,6 @@ export const config = {
         "/conversations/:path*",
         "/dashboard/:path*",
         "/documents/:path*",
+        "/tasks/:path*",
     ],
 };
