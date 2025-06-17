@@ -77,8 +77,9 @@ const useRoutes = () => {
         },
         {
             label: translations[language].tasks,
-            href: '#',
+            href: '/todos',
             icon: FaTasks,
+            active: pathname === '/todos',
         },
         {
             label: translations[language].clockInOut,

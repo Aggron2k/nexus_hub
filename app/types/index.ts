@@ -11,6 +11,35 @@ export type FullConversationType = Conversation & {
     messages: FullMessageType[],
 };
 
-export type FullDocumentType = Document & {
-    user: User
-};
+export interface FullDocumentType {
+    id: string;
+    name: string;
+    fileUrl: string;
+    fileType: string;
+    createdAt: string;
+    updatedAt: string;
+    userId: string;
+}
+
+export interface TodoWithRelations {
+    id: string;
+    title: string;
+    description?: string;
+    status: string;
+    priority: string;
+    assignedUser: {
+        id: string;
+        name: string;
+        email: string;
+        position?: string;
+        role: string;
+    };
+    createdBy: {
+        id: string;
+        name: string;
+        email: string;
+    };
+    createdAt: string;
+    updatedAt: string;
+}
+
