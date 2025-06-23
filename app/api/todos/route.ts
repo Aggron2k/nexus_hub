@@ -1,7 +1,8 @@
+// app/api/todos/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
 import prisma from "@/app/libs/prismadb";
-import { Position, TodoPriority, TodoStatus } from "@prisma/client";
+import { TodoPriority } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
     try {
@@ -11,57 +12,67 @@ export async function GET(request: NextRequest) {
         }
 
         const { searchParams } = new URL(request.url);
-        const userId = searchParams.get('userId');
-        const position = searchParams.get('position') as Position;
-        const status = searchParams.get('status') as TodoStatus;
-        const startDate = searchParams.get('startDate');
-        const endDate = searchParams.get('endDate');
+        const userId = searchParams.get("userId");
+        const position = searchParams.get("position");
+        const status = searchParams.get("status");
+        const startDate = searchParams.get("startDate");
+        const endDate = searchParams.get("endDate");
 
-        // Role alapú hozzáférés ellenőrzése
+        // Manager+ láthat minden todo-t, employee csak a sajátjait
         const isManager = ['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role);
 
-        let whereClause: any = {};
+        const where: any = {};
 
         if (!isManager) {
-            // Employee csak a saját TODO-it láthatja
-            whereClause.assignedUserId = currentUser.id;
+            // Csak a saját todo-kat láthatja
+            where.assignedUserId = currentUser.id;
         } else {
-            // Manager+ szűrhet mindenki TODO-jára
+            // Manager esetén szűrők alkalmazása
             if (userId) {
-                whereClause.assignedUserId = userId;
+                where.assignedUserId = userId;
             }
         }
 
-        // További szűrők
         if (position) {
-            whereClause.targetPosition = position;
+            where.targetPosition = {
+                name: position
+            };
         }
 
         if (status) {
-            whereClause.status = status;
+            where.status = status;
         }
 
-        // Dátum szűrők
-        if (startDate || endDate) {
-            whereClause.dueDate = {};
-            if (startDate) {
-                whereClause.dueDate.gte = new Date(startDate);
-            }
-            if (endDate) {
-                whereClause.dueDate.lte = new Date(endDate);
-            }
+        if (startDate) {
+            where.startDate = {
+                gte: new Date(startDate)
+            };
+        }
+
+        if (endDate) {
+            where.dueDate = {
+                lte: new Date(endDate)
+            };
         }
 
         const todos = await prisma.todo.findMany({
-            where: whereClause,
+            where,
             include: {
                 assignedUser: {
                     select: {
                         id: true,
                         name: true,
                         email: true,
-                        position: true,
-                        role: true
+                        role: true,
+                        positionId: true,
+                        position: {
+                            select: {
+                                id: true,
+                                name: true,
+                                displayName: true,
+                                color: true
+                            }
+                        }
                     }
                 },
                 createdBy: {
@@ -70,13 +81,19 @@ export async function GET(request: NextRequest) {
                         name: true,
                         email: true
                     }
+                },
+                targetPosition: {
+                    select: {
+                        id: true,
+                        name: true,
+                        displayName: true,
+                        color: true
+                    }
                 }
             },
-            orderBy: [
-                { priority: 'desc' },
-                { dueDate: 'asc' },
-                { createdAt: 'desc' }
-            ]
+            orderBy: {
+                createdAt: 'desc'
+            }
         });
 
         return NextResponse.json(todos);
@@ -106,7 +123,7 @@ export async function POST(request: NextRequest) {
             priority,
             startDate,
             dueDate,
-            targetPosition,
+            targetPositionId,
             assignToAll, // Ha true, akkor minden pozíciónak
             specificUserIds, // Ha van, akkor csak ezeknek
             notes
@@ -117,12 +134,16 @@ export async function POST(request: NextRequest) {
         }
 
         // Ha assignToAll = true, akkor minden pozíciónak létrehozzuk
-        if (assignToAll && targetPosition) {
+        if (assignToAll && targetPositionId) {
             const usersWithPosition = await prisma.user.findMany({
                 where: {
-                    position: targetPosition as Position
+                    positionId: targetPositionId
                 }
             });
+
+            if (usersWithPosition.length === 0) {
+                return new NextResponse("No users found with the specified position", { status: 400 });
+            }
 
             const todos = await Promise.all(
                 usersWithPosition.map(user =>
@@ -133,7 +154,7 @@ export async function POST(request: NextRequest) {
                             priority: priority as TodoPriority || 'MEDIUM',
                             startDate: startDate ? new Date(startDate) : null,
                             dueDate: dueDate ? new Date(dueDate) : null,
-                            targetPosition: targetPosition as Position,
+                            targetPositionId: targetPositionId,
                             assignedUserId: user.id,
                             createdById: currentUser.id,
                             notes
@@ -144,7 +165,16 @@ export async function POST(request: NextRequest) {
                                     id: true,
                                     name: true,
                                     email: true,
-                                    position: true
+                                    role: true,
+                                    positionId: true,
+                                    position: {
+                                        select: {
+                                            id: true,
+                                            name: true,
+                                            displayName: true,
+                                            color: true
+                                        }
+                                    }
                                 }
                             },
                             createdBy: {
@@ -152,6 +182,14 @@ export async function POST(request: NextRequest) {
                                     id: true,
                                     name: true,
                                     email: true
+                                }
+                            },
+                            targetPosition: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    displayName: true,
+                                    color: true
                                 }
                             }
                         }
@@ -173,7 +211,7 @@ export async function POST(request: NextRequest) {
                             priority: priority as TodoPriority || 'MEDIUM',
                             startDate: startDate ? new Date(startDate) : null,
                             dueDate: dueDate ? new Date(dueDate) : null,
-                            targetPosition: targetPosition as Position || null,
+                            targetPositionId: targetPositionId || null,
                             assignedUserId: userId,
                             createdById: currentUser.id,
                             notes
@@ -184,7 +222,8 @@ export async function POST(request: NextRequest) {
                                     id: true,
                                     name: true,
                                     email: true,
-                                    position: true
+                                    position: true,
+                                    role: true
                                 }
                             },
                             createdBy: {
@@ -208,4 +247,3 @@ export async function POST(request: NextRequest) {
         return new NextResponse("Internal Error", { status: 500 });
     }
 }
-

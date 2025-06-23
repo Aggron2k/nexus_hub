@@ -1,20 +1,39 @@
-import { NextResponse } from "next/server";
+// app/api/positions/route.ts
+import { NextRequest, NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
+import prisma from "@/app/libs/prismadb";
 
 export async function GET() {
     try {
-        // Return hardcoded positions for now
-        const positions = [
-            { id: '1', name: 'Cashier', description: 'Handles cash register', isActive: true },
-            { id: '2', name: 'Kitchen', description: 'Kitchen staff', isActive: true },
-            { id: '3', name: 'Storage', description: 'Storage management', isActive: true },
-            { id: '4', name: 'Packer', description: 'Package handling', isActive: true }
-        ];
+        const currentUser = await getCurrentUser();
+        if (!currentUser) {
+            return new NextResponse("Unauthorized", { status: 401 });
+        }
 
+        console.log('Fetching positions for user:', currentUser.id);
+
+        const positions = await prisma.position.findMany({
+            include: {
+                _count: {
+                    select: {
+                        users: true,
+                        todos: true
+                    }
+                }
+            },
+            orderBy: [
+                { order: 'asc' },
+                { name: 'asc' }
+            ]
+        });
+
+        console.log('Found positions:', positions.length);
         return NextResponse.json(positions);
-    } catch (error) {
-        console.error('GET /api/positions error:', error);
-        return new NextResponse("Internal Error", { status: 500 });
+    } catch (error: any) {
+        console.error('GET /api/positions detailed error:', error);
+        console.error('Error name:', error?.name);
+        console.error('Error message:', error?.message);
+        return new NextResponse(`Internal Error: ${error?.message || 'Unknown error'}`, { status: 500 });
     }
 }
 
@@ -31,28 +50,48 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { name, description } = body;
+        const { name, displayName, description, color, order, isActive } = body;
 
         if (!name || name.trim().length === 0) {
             return new NextResponse("Position name is required", { status: 400 });
         }
 
-        // For now, just return the created position data
-        const position = {
-            id: Date.now().toString(),
-            name: name.trim(),
-            description: description?.trim() || null,
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            _count: {
-                users: 0,
-                todos: 0
+        if (!displayName || displayName.trim().length === 0) {
+            return new NextResponse("Display name is required", { status: 400 });
+        }
+
+        // Ellenőrizzük, hogy nincs-e már ilyen nevű pozíció
+        const existingPosition = await prisma.position.findUnique({
+            where: { name: name.trim() }
+        });
+
+        if (existingPosition) {
+            return new NextResponse("Position with this name already exists", { status: 400 });
+        }
+
+        const position = await prisma.position.create({
+            data: {
+                name: name.trim(),
+                displayName: displayName.trim(),
+                description: description?.trim() || null,
+                color: color || '#3B82F6',
+                order: order || 0,
+                isActive: isActive !== undefined ? isActive : true,
+                createdById: currentUser.id
+            },
+            include: {
+                _count: {
+                    select: {
+                        users: true,
+                        todos: true
+                    }
+                }
             }
-        };
+        });
 
         return NextResponse.json(position);
-    } catch (error) {
+    } catch (error: any) {
         console.error('POST /api/positions error:', error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return new NextResponse(`Internal Error: ${error?.message || 'Unknown error'}`, { status: 500 });
     }
 }

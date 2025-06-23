@@ -1,9 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
+// prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -20,13 +15,6 @@ enum Role {
   CEO
 }
 
-enum Position {
-  Cashier
-  Kitchen
-  Storage
-  Packer
-}
-
 enum TodoStatus {
   PENDING     // Várakozik
   IN_PROGRESS // Folyamatban
@@ -41,6 +29,25 @@ enum TodoPriority {
   URGENT
 }
 
+// Új Position model - dinamikus pozíciók
+model Position {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  name String @unique // pl. "Cashier", "Kitchen", "Storage", "Packer"
+  displayName String // pl. "Pénztáros", "Konyha", "Raktár", "Csomagoló"
+  description String? // Opcionális leírás a pozícióról
+  isActive Boolean @default(true) // Aktív/inaktív pozíció
+  color String @default("#3B82F6") // Szín a UI-ban (hex kód)
+  order Int @default(0) // Sorrend a megjelenítéshez
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdById String? @db.ObjectId // Csak ID-t tárolunk, kapcsolat nélkül
+  
+  // Kapcsolatok
+  users User[] // Felhasználók ezzel a pozícióval
+  todos Todo[] // TODO-k ehhez a pozícióhoz
+}
+
 model User {
   id String @id @default(auto()) @map("_id") @db.ObjectId
   name String?
@@ -52,7 +59,10 @@ model User {
   updatedAt DateTime @updatedAt
 
   role Role @default(Employee)
-  position Position? // Új mező a pozícióhoz
+  
+  // Position kapcsolat - most már referencia a Position model-re
+  positionId String? @db.ObjectId
+  position Position? @relation(fields: [positionId], references: [id])
 
   conversationIds String[] @db.ObjectId
   conversations Conversation[] @relation(fields: [conversationIds], references: [id])
@@ -65,8 +75,10 @@ model User {
   documents Document[]
 
   // TODO kapcsolatok
-  assignedTodos Todo[] @relation("AssignedUser") // Hozzárendelt TODO-k
-  createdTodos Todo[] @relation("CreatedBy") // Általa létrehozott TODO-k
+  assignedTodos Todo[] @relation("AssignedUser")
+  createdTodos Todo[] @relation("CreatedBy")
+  
+  // Position létrehozás kapcsolatot eltávolítottuk a ciklikus referencia elkerülése érdekében
 }
 
 model Account {
@@ -120,9 +132,9 @@ model Message {
 
 model Document {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  name       String   // A dokumentum neve, pl. "CV", "Bérpapír"
-  fileType   String   // A fájl típusa, pl. "pdf" vagy "docx"
-  fileUrl    String   // A fájl elérési útvonala (pl. Amazon S3 URL vagy helyi fájlrendszer)
+  name       String
+  fileType   String
+  fileUrl    String
   userId     String   @db.ObjectId
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt  DateTime @default(now())
@@ -133,17 +145,17 @@ model Todo {
   id String @id @default(auto()) @map("_id") @db.ObjectId
   
   // Alapvető információk
-  title String // Feladat címe
-  description String? // Részletes leírás
+  title String
+  description String?
   
   // Státusz és prioritás
   status TodoStatus @default(PENDING)
   priority TodoPriority @default(MEDIUM)
   
   // Dátumok
-  startDate DateTime? // Mikor kell elkezdeni
-  dueDate DateTime? // Határidő
-  completedAt DateTime? // Mikor lett befejezve
+  startDate DateTime?
+  dueDate DateTime?
+  completedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
@@ -154,14 +166,15 @@ model Todo {
   createdById String @db.ObjectId
   createdBy User @relation("CreatedBy", fields: [createdById], references: [id])
   
-  // Pozíció specifikus hozzárendelés
-  targetPosition Position? // Ha meg van adva, akkor csak az adott pozíciójú emberek kapják
+  // Position kapcsolat - most már referencia
+  targetPositionId String? @db.ObjectId
+  targetPosition Position? @relation(fields: [targetPositionId], references: [id])
   
-  // Megjegyzések/kommentek
-  notes String? // Extra megjegyzések a feladathoz
+  // Megjegyzések
+  notes String?
   
   @@index([assignedUserId])
   @@index([status])
   @@index([dueDate])
-  @@index([targetPosition])
+  @@index([targetPositionId])
 }

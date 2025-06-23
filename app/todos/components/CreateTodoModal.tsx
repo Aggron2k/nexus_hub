@@ -1,11 +1,41 @@
+// app/todos/components/CreateTodoModal.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/app/context/LanguageContext";
-import { Position, TodoPriority, User } from "@prisma/client";
+import { TodoPriority } from "@prisma/client";
 import { HiXMark } from "react-icons/hi2";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+
+interface UserWithPosition {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    positionId: string | null;
+    position: {
+        id: string;
+        name: string;
+        displayName: string;
+        color: string;
+    } | null;
+    createdAt: string;
+}
+
+interface Position {
+    id: string;
+    name: string;
+    displayName: string;
+    description?: string;
+    isActive: boolean;
+    color: string;
+    order: number;
+    _count: {
+        users: number;
+        todos: number;
+    };
+}
 
 interface TodoWithRelations {
     id: string;
@@ -45,10 +75,11 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
     const [priority, setPriority] = useState<TodoPriority>("MEDIUM");
     const [startDate, setStartDate] = useState("");
     const [dueDate, setDueDate] = useState("");
-    const [targetPosition, setTargetPosition] = useState<Position | "">("");
+    const [targetPositionId, setTargetPositionId] = useState<string>("");
     const [assignmentType, setAssignmentType] = useState<"all" | "specific">("specific");
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
-    const [users, setUsers] = useState<User[]>([]);
+    const [users, setUsers] = useState<UserWithPosition[]>([]);
+    const [positions, setPositions] = useState<Position[]>([]);
     const [notes, setNotes] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
@@ -79,12 +110,6 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
                 MEDIUM: "Medium",
                 HIGH: "High",
                 URGENT: "Urgent"
-            },
-            positions: {
-                Cashier: "Cashier",
-                Kitchen: "Kitchen",
-                Storage: "Storage",
-                Packer: "Packer"
             }
         },
         hu: {
@@ -111,12 +136,6 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
                 MEDIUM: "Közepes",
                 HIGH: "Magas",
                 URGENT: "Sürgős"
-            },
-            positions: {
-                Cashier: "Pénztáros",
-                Kitchen: "Konyha",
-                Storage: "Raktár",
-                Packer: "Csomagoló"
             }
         },
     };
@@ -126,15 +145,16 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
     useEffect(() => {
         if (isOpen) {
             fetchUsers();
+            fetchPositions();
         }
     }, [isOpen]);
 
     useEffect(() => {
-        if (targetPosition) {
-            const filteredUsers = users.filter(user => user.position === targetPosition);
-            setSelectedUserIds(filteredUsers.map(user => user.id));
+        if (targetPositionId) {
+            const usersWithPosition = users.filter(user => user.positionId === targetPositionId);
+            setSelectedUserIds(usersWithPosition.map(user => user.id));
         }
-    }, [targetPosition, users]);
+    }, [targetPositionId, users]);
 
     const fetchUsers = async () => {
         try {
@@ -146,6 +166,17 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
         }
     };
 
+    const fetchPositions = async () => {
+        try {
+            const response = await axios.get('/api/positions');
+            // Csak aktív pozíciókat jelenítjük meg
+            setPositions(response.data.filter((pos: Position) => pos.isActive));
+        } catch (error) {
+            console.error('Error fetching positions:', error);
+            toast.error('Failed to load positions');
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -154,7 +185,7 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
             return;
         }
 
-        if (assignmentType === "all" && !targetPosition) {
+        if (assignmentType === "all" && !targetPositionId) {
             toast.error(t.selectPosition);
             return;
         }
@@ -173,7 +204,7 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
                 priority,
                 startDate: startDate || null,
                 dueDate: dueDate || null,
-                targetPosition: targetPosition || null,
+                targetPositionId: targetPositionId || null,
                 assignToAll: assignmentType === "all",
                 specificUserIds: assignmentType === "specific" ? selectedUserIds : [],
                 notes: notes.trim() || null
@@ -199,7 +230,7 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
         setPriority("MEDIUM");
         setStartDate("");
         setDueDate("");
-        setTargetPosition("");
+        setTargetPositionId("");
         setAssignmentType("specific");
         setSelectedUserIds([]);
         setNotes("");
@@ -213,9 +244,11 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
         );
     };
 
-    const filteredUsers = targetPosition
-        ? users.filter(user => user.position === targetPosition)
+    const filteredUsers = targetPositionId
+        ? users.filter(user => user.positionId === targetPositionId)
         : users;
+
+    const selectedPosition = positions.find(pos => pos.id === targetPositionId);
 
     if (!isOpen) return null;
 
@@ -266,6 +299,7 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
 
                     {/* Priority and Dates Row */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Priority */}
                         <div>
                             <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-2">
                                 {t.priority}
@@ -276,32 +310,35 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
                                 onChange={(e) => setPriority(e.target.value as TodoPriority)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-nexus-secondary focus:border-nexus-secondary"
                             >
-                                {Object.entries(t.priorities).map(([key, value]) => (
-                                    <option key={key} value={key}>{value}</option>
-                                ))}
+                                <option value="LOW">{t.priorities.LOW}</option>
+                                <option value="MEDIUM">{t.priorities.MEDIUM}</option>
+                                <option value="HIGH">{t.priorities.HIGH}</option>
+                                <option value="URGENT">{t.priorities.URGENT}</option>
                             </select>
                         </div>
 
+                        {/* Start Date */}
                         <div>
                             <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
                                 {t.startDate}
                             </label>
                             <input
                                 id="startDate"
-                                type="date"
+                                type="datetime-local"
                                 value={startDate}
                                 onChange={(e) => setStartDate(e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-nexus-secondary focus:border-nexus-secondary"
                             />
                         </div>
 
+                        {/* Due Date */}
                         <div>
                             <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-2">
                                 {t.dueDate}
                             </label>
                             <input
                                 id="dueDate"
-                                type="date"
+                                type="datetime-local"
                                 value={dueDate}
                                 onChange={(e) => setDueDate(e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-nexus-secondary focus:border-nexus-secondary"
@@ -316,86 +353,97 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
                         </label>
                         <select
                             id="targetPosition"
-                            value={targetPosition}
-                            onChange={(e) => setTargetPosition(e.target.value as Position | "")}
+                            value={targetPositionId}
+                            onChange={(e) => setTargetPositionId(e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-nexus-secondary focus:border-nexus-secondary"
                         >
                             <option value="">{t.selectPosition}</option>
-                            {Object.entries(t.positions).map(([key, value]) => (
-                                <option key={key} value={key}>{value}</option>
+                            {positions.map(position => (
+                                <option key={position.id} value={position.id}>
+                                    {position.displayName} ({position._count ? position._count.users : 0} felhasználó)
+                                </option>
                             ))}
                         </select>
+                        {selectedPosition && (
+                            <p className="mt-1 text-sm text-gray-500">
+                                {selectedPosition.description}
+                            </p>
+                        )}
                     </div>
 
                     {/* Assignment Type */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                             {t.assignTo}
                         </label>
-                        <div className="space-y-3">
-                            <div className="flex items-center">
+                        <div className="space-y-2">
+                            <label className="flex items-center">
                                 <input
-                                    id="assignToAll"
                                     type="radio"
                                     value="all"
                                     checked={assignmentType === "all"}
                                     onChange={(e) => setAssignmentType(e.target.value as "all" | "specific")}
                                     className="h-4 w-4 text-nexus-tertiary focus:ring-nexus-secondary border-gray-300"
                                 />
-                                <label htmlFor="assignToAll" className="ml-2 text-sm text-gray-700">
-                                    {t.assignToAll}
-                                </label>
-                            </div>
-                            <div className="flex items-center">
+                                <span className="ml-2 text-sm text-gray-700">{t.assignToAll}</span>
+                            </label>
+                            <label className="flex items-center">
                                 <input
-                                    id="assignToSpecific"
                                     type="radio"
                                     value="specific"
                                     checked={assignmentType === "specific"}
                                     onChange={(e) => setAssignmentType(e.target.value as "all" | "specific")}
                                     className="h-4 w-4 text-nexus-tertiary focus:ring-nexus-secondary border-gray-300"
                                 />
-                                <label htmlFor="assignToSpecific" className="ml-2 text-sm text-gray-700">
-                                    {t.assignToSpecific}
-                                </label>
-                            </div>
+                                <span className="ml-2 text-sm text-gray-700">{t.assignToSpecific}</span>
+                            </label>
                         </div>
                     </div>
 
                     {/* User Selection */}
                     {assignmentType === "specific" && (
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-3">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
                                 {t.selectUsers}
                             </label>
-                            <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-md p-3 space-y-2">
+                            <div className="max-h-48 overflow-y-auto border border-gray-300 rounded-md p-3 space-y-2">
                                 {filteredUsers.length === 0 ? (
                                     <p className="text-sm text-gray-500 italic">
-                                        {targetPosition ? `No users with ${t.positions[targetPosition]} position` : 'No users available'}
+                                        {targetPositionId ? `Nincs felhasználó a kiválasztott pozícióban` : 'Nincs elérhető felhasználó'}
                                     </p>
                                 ) : (
-                                    filteredUsers.map(user => (
-                                        <div key={user.id} className="flex items-center">
-                                            <input
-                                                id={`user-${user.id}`}
-                                                type="checkbox"
-                                                checked={selectedUserIds.includes(user.id)}
-                                                onChange={() => handleUserToggle(user.id)}
-                                                className="h-4 w-4 text-nexus-tertiary focus:ring-nexus-secondary border-gray-300 rounded"
-                                            />
-                                            <label htmlFor={`user-${user.id}`} className="ml-2 text-sm text-gray-700 flex-1">
-                                                {user.name}
-                                                <span className="text-gray-500 ml-1">
-                                                    ({user.position ? t.positions[user.position] : 'No position'})
-                                                </span>
-                                            </label>
-                                        </div>
-                                    ))
+                                    filteredUsers.map(user => {
+                                        return (
+                                            <div key={user.id} className="flex items-center">
+                                                <input
+                                                    id={`user-${user.id}`}
+                                                    type="checkbox"
+                                                    checked={selectedUserIds.includes(user.id)}
+                                                    onChange={() => handleUserToggle(user.id)}
+                                                    className="h-4 w-4 text-nexus-tertiary focus:ring-nexus-secondary border-gray-300 rounded"
+                                                />
+                                                <label htmlFor={`user-${user.id}`} className="ml-2 text-sm text-gray-700 flex-1 flex items-center justify-between">
+                                                    <span>{user.name}</span>
+                                                    <span className="text-xs text-gray-500 flex items-center">
+                                                        {user.position && (
+                                                            <>
+                                                                <span
+                                                                    className="inline-block w-2 h-2 rounded-full mr-1"
+                                                                    style={{ backgroundColor: user.position.color }}
+                                                                ></span>
+                                                                {user.position.displayName}
+                                                            </>
+                                                        )}
+                                                    </span>
+                                                </label>
+                                            </div>
+                                        );
+                                    })
                                 )}
                             </div>
                             {selectedUserIds.length > 0 && (
                                 <p className="text-sm text-gray-600 mt-2">
-                                    {selectedUserIds.length} user(s) selected
+                                    {selectedUserIds.length} felhasználó kiválasztva
                                 </p>
                             )}
                         </div>
@@ -412,7 +460,7 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
                             onChange={(e) => setNotes(e.target.value)}
                             rows={3}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-nexus-secondary focus:border-nexus-secondary"
-                            placeholder="Additional notes or instructions..."
+                            placeholder="További megjegyzések vagy instrukciók..."
                         />
                     </div>
 

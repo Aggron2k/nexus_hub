@@ -5,6 +5,30 @@ import { useState } from "react";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { User } from "@prisma/client";
 import { HiPlus, HiClipboardDocumentList } from "react-icons/hi2";
+import CreateTodoModal from "./CreateTodoModal";
+
+// Todo típus definíció (ha nincs még importálva)
+interface TodoWithRelations {
+    id: string;
+    title: string;
+    description: string | null;
+    priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+    startDate: Date | null;
+    dueDate: Date | null;
+    targetPosition: "Cashier" | "Kitchen" | "Storage" | "Packer" | null;
+    assignedUser: {
+        id: string;
+        name: string;
+        email: string;
+        position: "Cashier" | "Kitchen" | "Storage" | "Packer";
+        role: string;
+    };
+    createdBy: {
+        id: string;
+        name: string;
+        email: string;
+    };
+}
 
 interface TodosClientProps {
     currentUser: User;
@@ -12,6 +36,8 @@ interface TodosClientProps {
 
 const TodosClient: React.FC<TodosClientProps> = ({ currentUser }) => {
     const [loading, setLoading] = useState(false);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [todos, setTodos] = useState<TodoWithRelations[]>([]);
     const { language } = useLanguage();
 
     const translations = {
@@ -61,6 +87,12 @@ const TodosClient: React.FC<TodosClientProps> = ({ currentUser }) => {
 
     const isManager = currentUser && ['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role);
 
+    // Todo létrehozás kezelése
+    const handleTodoCreate = (newTodos: TodoWithRelations[]) => {
+        setTodos(prev => [...newTodos, ...prev]);
+        setShowCreateModal(false);
+    };
+
     return (
         <div className="lg:pl-80 h-full">
             <div className="h-full flex flex-col bg-nexus-bg">
@@ -75,10 +107,7 @@ const TodosClient: React.FC<TodosClientProps> = ({ currentUser }) => {
                         </div>
                         {isManager && (
                             <button
-                                onClick={() => {
-                                    // TODO: Implement create todo functionality
-                                    alert('Create Todo functionality coming soon!');
-                                }}
+                                onClick={() => setShowCreateModal(true)}
                                 className="flex items-center gap-2 px-4 py-2 bg-nexus-primary text-nexus-tertiary rounded-lg hover:bg-nexus-secondary transition-colors"
                             >
                                 <HiPlus className="h-5 w-5" />
@@ -97,121 +126,78 @@ const TodosClient: React.FC<TodosClientProps> = ({ currentUser }) => {
                         </div>
                     ) : (
                         <div className="max-w-4xl mx-auto">
-                            {/* Debug Panel - csak development módban */}
-                            {process.env.NODE_ENV === 'development' && (
-                                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                                    <h3 className="font-semibold text-green-800 mb-2">✅ User Data Loaded:</h3>
-                                    <div className="text-sm text-green-700 space-y-1">
-                                        <p><strong>Name:</strong> {currentUser.name || 'N/A'}</p>
-                                        <p><strong>Email:</strong> {currentUser.email}</p>
-                                        <p><strong>Role:</strong> {currentUser.role}</p>
-                                        <p><strong>Position:</strong> {currentUser.position || 'N/A'}</p>
-                                        <p><strong>Is Manager:</strong> {isManager ? 'Yes' : 'No'}</p>
+                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                                <div className="text-center mb-8">
+                                    <div className="mx-auto w-24 h-24 bg-nexus-primary rounded-full flex items-center justify-center mb-4">
+                                        <HiClipboardDocumentList className="h-12 w-12 text-nexus-tertiary" />
                                     </div>
+                                    <h2 className="text-2xl font-semibold text-gray-900 mb-2">{t.comingSoon}</h2>
+                                    <p className="text-gray-600 max-w-2xl mx-auto">{t.description}</p>
                                 </div>
-                            )}
 
-                            {/* Coming Soon Card */}
-                            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8 text-center mb-8">
-                                <div className="p-4 bg-nexus-primary rounded-full w-fit mx-auto mb-6">
-                                    <HiClipboardDocumentList className="h-12 w-12 text-nexus-tertiary" />
-                                </div>
-                                <h2 className="text-2xl font-bold text-gray-900 mb-4">{t.comingSoon}</h2>
-                                <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-                                    {t.description}
-                                </p>
-
-                                {/* Features List */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                                    {t.features.map((feature, index) => (
-                                        <div key={index} className="flex items-center gap-3 text-left">
-                                            <div className="w-2 h-2 bg-nexus-tertiary rounded-full flex-shrink-0"></div>
-                                            <span className="text-gray-700">{feature}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* User Info Cards */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Role Card */}
-                                <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">{t.currentRole}</h3>
-                                    <div className="flex flex-wrap items-center gap-3">
-                                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${isManager
-                                            ? 'bg-nexus-primary text-nexus-tertiary'
-                                            : 'bg-blue-100 text-blue-800'
-                                            }`}>
-                                            {currentUser.role}
-                                        </span>
-                                        {currentUser.position && (
-                                            <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-                                                {currentUser.position}
-                                            </span>
-                                        )}
+                                <div className="grid md:grid-cols-2 gap-8 mb-8">
+                                    <div>
+                                        <h3 className="text-lg font-medium text-gray-900 mb-4">Funkciók:</h3>
+                                        <ul className="space-y-2">
+                                            {t.features.map((feature, index) => (
+                                                <li key={index} className="flex items-start gap-2">
+                                                    <div className="w-2 h-2 bg-nexus-tertiary rounded-full mt-2 flex-shrink-0"></div>
+                                                    <span className="text-gray-700">{feature}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
                                     </div>
 
-                                    {/* User details */}
-                                    <div className="mt-4 space-y-2">
-                                        <div className="text-sm">
-                                            <span className="font-medium text-gray-700">Name: </span>
-                                            <span className="text-gray-600">{currentUser.name || 'Not set'}</span>
+                                    <div>
+                                        <h3 className="text-lg font-medium text-gray-900 mb-4">{t.currentRole}:</h3>
+                                        <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className="text-sm font-medium text-gray-700">{currentUser.role}</span>
+                                                <span className="px-2 py-1 text-xs bg-nexus-primary text-nexus-tertiary rounded-full">
+                                                    {isManager ? t.manager : t.employee}
+                                                </span>
+                                            </div>
+                                            <div className="text-sm text-gray-600">
+                                                Position: {currentUser.position || 'Not specified'}
+                                            </div>
                                         </div>
-                                        <div className="text-sm">
-                                            <span className="font-medium text-gray-700">Email: </span>
-                                            <span className="text-gray-600">{currentUser.email}</span>
-                                        </div>
+
+                                        <h4 className="text-md font-medium text-gray-900 mb-2">{t.permissions}:</h4>
+                                        <ul className="space-y-1 text-sm text-gray-600">
+                                            <li>✓ {t.canView}</li>
+                                            {isManager && <li>✓ {t.canCreate}</li>}
+                                            <li>✓ {t.canFilter}</li>
+                                        </ul>
                                     </div>
                                 </div>
 
-                                {/* Permissions Card */}
-                                <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">{t.permissions}</h3>
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                            <span className="text-sm text-gray-700">{t.canView}</span>
-                                        </div>
-                                        {isManager && (
-                                            <>
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                                    <span className="text-sm text-gray-700">{t.canCreate}</span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                                    <span className="text-sm text-gray-700">{t.canFilter}</span>
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-
-                                    {/* Role info */}
-                                    <div className="mt-4 pt-4 border-t border-gray-100">
-                                        <span className="text-xs text-gray-500 uppercase tracking-wide">
-                                            Access Level
-                                        </span>
-                                        <p className="text-sm font-medium text-gray-700 mt-1">
-                                            {isManager ? 'Manager' : 'Employee'} Access
+                                {isManager && (
+                                    <div className="text-center pt-6 border-t border-gray-200">
+                                        <p className="text-gray-600 mb-4">
+                                            Manager jogosultságokkal rendelkezel. Kipróbálhatod a todo létrehozás funkciót:
                                         </p>
+                                        <button
+                                            onClick={() => setShowCreateModal(true)}
+                                            className="inline-flex items-center gap-2 px-6 py-3 bg-nexus-tertiary text-white rounded-lg hover:bg-nexus-secondary transition-colors font-medium"
+                                        >
+                                            <HiPlus className="h-5 w-5" />
+                                            {t.createTodo}
+                                        </button>
                                     </div>
-                                </div>
-                            </div>
-
-                            {/* Development Status */}
-                            <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                                    <span className="text-blue-800 font-medium">Development Status</span>
-                                </div>
-                                <p className="text-blue-700 text-sm mt-2">
-                                    The TODO management system is being developed with dynamic position management,
-                                    role-based permissions, and real-time updates. Check back soon for updates!
-                                </p>
+                                )}
                             </div>
                         </div>
                     )}
                 </div>
+
+                {/* Create Todo Modal */}
+                {isManager && showCreateModal && (
+                    <CreateTodoModal
+                        isOpen={showCreateModal}
+                        onClose={() => setShowCreateModal(false)}
+                        onTodoCreate={handleTodoCreate}
+                    />
+                )}
             </div>
         </div>
     );
