@@ -1,66 +1,192 @@
+// app/todos/components/TodoList.tsx
 "use client";
 
+import clsx from "clsx";
+import { useState, useEffect } from "react";
 import { User } from "@prisma/client";
+import TodoBox from "./TodoBox";
 import { useLanguage } from "@/app/context/LanguageContext";
+import { useRouter, usePathname } from "next/navigation";
+import { HiPlus } from "react-icons/hi2";
+import axios from "axios";
+import CreateTodoModal from "./CreateTodoModal";
 
-// Temporary interface until we implement full Todo model
 interface TodoWithRelations {
     id: string;
     title: string;
-    // Add other properties as needed
+    description: string | null;
+    priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+    status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "OVERDUE";
+    startDate: Date | null;
+    dueDate: Date | null;
+    completedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    assignedUser: {
+        id: string;
+        name: string;
+        email: string;
+        role: string;
+        positionId: string | null;
+        position: {
+            id: string;
+            name: string;
+            displayName: string;
+            color: string;
+        } | null;
+    };
+    createdBy: {
+        id: string;
+        name: string;
+        email: string;
+    };
+    targetPosition: {
+        id: string;
+        name: string;
+        displayName: string;
+        color: string;
+    } | null;
 }
 
 interface TodoListProps {
-    todos: TodoWithRelations[];
-    onTodoUpdate: (todo: TodoWithRelations) => void;
-    currentUser: User;
+    currentUser: User | null;
 }
 
-const TodoList: React.FC<TodoListProps> = ({
-    todos,
-    onTodoUpdate,
-    currentUser
-}) => {
+const TodoList: React.FC<TodoListProps> = ({ currentUser }) => {
+    const router = useRouter();
+    const pathname = usePathname();
     const { language } = useLanguage();
+    const [selectedTodoId, setSelectedTodoId] = useState<string | null>(null);
+    const [todos, setTodos] = useState<TodoWithRelations[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showCreateModal, setShowCreateModal] = useState(false);
 
     const translations = {
         en: {
+            todos: "Todos",
+            createTodo: "Create Todo",
             noTodos: "No todos found",
-            noTodosDescription: "No tasks match your current filters.",
+            loading: "Loading todos..."
         },
         hu: {
+            todos: "Feladatok",
+            createTodo: "Feladat létrehozása",
             noTodos: "Nincsenek feladatok",
-            noTodosDescription: "Nincs olyan feladat, amely megfelel a szűrőknek.",
+            loading: "Feladatok betöltése..."
         },
     };
 
     const t = translations[language];
+    const isManager = currentUser && ['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role);
 
-    if (todos.length === 0) {
-        return (
-            <div className="text-center py-12">
-                <div className="p-3 bg-gray-100 rounded-full w-fit mx-auto mb-4">
-                    <svg className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                    </svg>
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">{t.noTodos}</h3>
-                <p className="text-gray-500">{t.noTodosDescription}</p>
-            </div>
-        );
-    }
+    useEffect(() => {
+        fetchTodos();
+    }, []);
+
+    useEffect(() => {
+        // Reset selectedTodoId when on /todos page
+        if (pathname === "/todos") {
+            setSelectedTodoId(null);
+        } else {
+            // Extract todo ID from URL
+            const todoIdMatch = pathname.match(/\/todos\/(.+)/);
+            if (todoIdMatch) {
+                setSelectedTodoId(todoIdMatch[1]);
+            }
+        }
+    }, [pathname]);
+
+    const fetchTodos = async () => {
+        try {
+            setLoading(true);
+            const response = await axios.get('/api/todos');
+            setTodos(response.data);
+        } catch (error) {
+            console.error('Error fetching todos:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSelectTodo = (todoId: string) => {
+        setSelectedTodoId(todoId);
+        router.push(`/todos/${todoId}`);
+    };
+
+    const handleTodoCreate = (newTodos: TodoWithRelations[]) => {
+        setTodos(prev => [...newTodos, ...prev]);
+        setShowCreateModal(false);
+    };
+
+    const handleTodoUpdate = (updatedTodo: TodoWithRelations) => {
+        setTodos(prev => prev.map(todo =>
+            todo.id === updatedTodo.id ? updatedTodo : todo
+        ));
+    };
 
     return (
-        <div className="space-y-4">
-            {todos.map((todo) => (
-                <TodoCard
-                    key={todo.id}
-                    todo={todo}
-                    onUpdate={onTodoUpdate}
-                    currentUser={currentUser}
+        <>
+            <aside
+                className={clsx(
+                    `fixed inset-y-0 pb-20 lg:pb-0 lg:left-20 lg:w-80 lg:block overflow-y-auto border-r border-gray-200`,
+                    pathname === "/todos" ? "block w-full left-0" : "hidden lg:block"
+                )}
+            >
+                <div className="px-5">
+                    <div className="flex justify-between items-center mb-4 pt-4">
+                        <div className="text-2xl font-bold text-neutral-800">
+                            {t.todos}
+                        </div>
+                        {isManager && (
+                            <button
+                                onClick={() => setShowCreateModal(true)}
+                                className="p-2 bg-nexus-tertiary text-white rounded-lg hover:bg-nexus-secondary transition-colors"
+                                title={t.createTodo}
+                            >
+                                <HiPlus className="h-5 w-5" />
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="space-y-2">
+                        {loading ? (
+                            <div className="flex items-center justify-center py-8">
+                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-nexus-tertiary"></div>
+                                <span className="ml-2 text-sm text-gray-600">{t.loading}</span>
+                            </div>
+                        ) : todos.length === 0 ? (
+                            <div className="text-center py-8">
+                                <p className="text-gray-500 text-sm">{t.noTodos}</p>
+                            </div>
+                        ) : (
+                            todos.map((todo) => (
+                                <div
+                                    key={todo.id}
+                                    onClick={() => handleSelectTodo(todo.id)}
+                                    className="cursor-pointer"
+                                >
+                                    <TodoBox
+                                        todo={todo}
+                                        isSelected={selectedTodoId === todo.id}
+                                        onUpdate={handleTodoUpdate}
+                                        currentUser={currentUser}
+                                    />
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            </aside>
+
+            {/* Create Todo Modal */}
+            {isManager && showCreateModal && (
+                <CreateTodoModal
+                    isOpen={showCreateModal}
+                    onClose={() => setShowCreateModal(false)}
+                    onTodoCreate={handleTodoCreate}
                 />
-            ))}
-        </div>
+            )}
+        </>
     );
 };
 

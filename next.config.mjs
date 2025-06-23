@@ -3,18 +3,19 @@ const nextConfig = {
     eslint: {
         ignoreDuringBuilds: true,
     },
-    experimental:{
+    experimental: {
         appDir: true,
-        swcPlugins:[
+        swcPlugins: [
             ["next-superjson-plugin", {}]
         ]
     },
     images: {
-        domains:[
+        domains: [
             "res.cloudinary.com",
             "api.cloudinary.com",
             "avatars.githubusercontent.com",
-            "lh3.googleusercontent.com"
+            "lh3.googleusercontent.com",
+            "images.unsplash.com"
         ]
     }
 };
