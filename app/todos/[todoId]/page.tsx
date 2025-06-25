@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useLanguage } from "@/app/context/LanguageContext";
+import { useCurrentUser } from "@/app/hooks/useCurrentUser"; // Import useCurrentUser hook
 import { format } from "date-fns";
 import { hu, enUS } from "date-fns/locale";
 import {
@@ -15,9 +16,11 @@ import {
     HiTag,
     HiExclamationTriangle,
     HiCheckCircle,
-    HiPlayCircle
+    HiPlayCircle,
+    HiTrash
 } from "react-icons/hi2";
 import LoadingModal from "@/app/components/LoadingModal";
+import { useRouter } from "next/navigation";
 
 interface TodoDetail {
     id: string;
@@ -56,12 +59,18 @@ interface TodoDetail {
     } | null;
 }
 
-const TodoDetailPage = () => {
-    const { todoId } = useParams() as { todoId: string };
+export default function TodoDetailPage() {
+    const params = useParams();
+    const router = useRouter();
+    const todoId = params?.todoId as string;
     const [todo, setTodo] = useState<TodoDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const { language } = useLanguage();
+
+    // Use the useCurrentUser hook instead of manual session fetching
+    const currentUser = useCurrentUser();
+    const isManager = currentUser && ['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role);
 
     const translations = {
         en: {
@@ -77,11 +86,20 @@ const TodoDetailPage = () => {
             createdBy: "Created by",
             createdAt: "Created At",
             notes: "Notes",
+            assignment: "Assignment",
+            timeline: "Timeline",
             noDescription: "No description provided",
             noNotes: "No notes added",
             markInProgress: "Mark In Progress",
             markCompleted: "Mark Completed",
+            deleteTodo: "Delete Todo",
+            confirmDelete: "Are you sure you want to delete this todo? This action cannot be undone.",
+            delete: "Delete",
+            cancel: "Cancel",
+            deleted: "Todo deleted successfully!",
+            failedToDelete: "Failed to delete todo",
             failedToLoad: "Failed to load todo details",
+            notFound: "Todo not found",
             priorities: {
                 LOW: "Low",
                 MEDIUM: "Medium",
@@ -108,11 +126,20 @@ const TodoDetailPage = () => {
             createdBy: "Létrehozta",
             createdAt: "Létrehozva",
             notes: "Megjegyzések",
+            assignment: "Hozzárendelés",
+            timeline: "Időtervez",
             noDescription: "Nincs leírás megadva",
             noNotes: "Nincsenek megjegyzések",
             markInProgress: "Folyamatban jelölés",
             markCompleted: "Befejezett jelölés",
+            deleteTodo: "Feladat törlése",
+            confirmDelete: "Biztos törölni szeretnéd ezt a feladatot? Ez a művelet nem vonható vissza.",
+            delete: "Törlés",
+            cancel: "Mégse",
+            deleted: "Feladat sikeresen törölve!",
+            failedToDelete: "A feladat törlése sikertelen",
             failedToLoad: "A feladat részleteinek betöltése sikertelen",
+            notFound: "A feladat nem található",
             priorities: {
                 LOW: "Alacsony",
                 MEDIUM: "Közepes",
@@ -132,6 +159,10 @@ const TodoDetailPage = () => {
     const locale = language === 'hu' ? hu : enUS;
 
     useEffect(() => {
+        console.log('TodoDetailPage - todoId:', todoId);
+        console.log('Current user:', currentUser); // Debug log
+        console.log('Is manager:', isManager); // Debug log
+
         if (!todoId) {
             setError("Todo ID is required");
             setLoading(false);
@@ -139,17 +170,21 @@ const TodoDetailPage = () => {
         }
 
         fetchTodoDetails();
-    }, [todoId]);
+    }, [todoId, currentUser]); // Add currentUser to dependencies
 
     const fetchTodoDetails = async () => {
         try {
+            console.log('Fetching todo details for ID:', todoId);
             setLoading(true);
             const response = await axios.get(`/api/todos/${todoId}`);
+            console.log('Todo details response:', response.data);
             setTodo(response.data);
-        } catch (error) {
+            setError("");
+        } catch (error: any) {
             console.error("Error fetching todo details:", error);
-            setError(t.failedToLoad);
-            toast.error(t.failedToLoad);
+            const errorMessage = error?.response?.status === 404 ? t.notFound : t.failedToLoad;
+            setError(errorMessage);
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -170,12 +205,42 @@ const TodoDetailPage = () => {
         }
     };
 
+    const deleteTodo = async () => {
+        if (!window.confirm(t.confirmDelete)) {
+            return;
+        }
+
+        try {
+            await axios.delete(`/api/todos/${todoId}`);
+            toast.success(t.deleted);
+            router.push('/todos'); // Navigate back to todos list
+        } catch (error: any) {
+            console.error("Error deleting todo:", error);
+            const errorMessage = error?.response?.data || t.failedToDelete;
+            toast.error(errorMessage);
+        }
+    };
+
     if (loading) return <LoadingModal />;
+
     if (error || !todo) {
         return (
             <div className="lg:pl-80 h-full">
-                <div className="h-full flex items-center justify-center">
-                    <p className="text-red-500">{error || "Todo not found"}</p>
+                <div className="h-full flex flex-col bg-nexus-bg">
+                    <div className="bg-white border-b border-gray-200 px-6 py-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-nexus-primary rounded-lg">
+                                <HiClipboardDocumentList className="h-6 w-6 text-nexus-tertiary" />
+                            </div>
+                            <h1 className="text-2xl font-bold text-gray-900">Todo Details</h1>
+                        </div>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center">
+                        <div className="text-center">
+                            <p className="text-red-500 text-lg">{error}</p>
+                            <p className="text-gray-500 mt-2">Todo ID: {todoId}</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         );
@@ -231,6 +296,18 @@ const TodoDetailPage = () => {
                                     {t.markCompleted}
                                 </button>
                             )}
+
+                            {/* Delete Button - Only for Managers */}
+                            {isManager && (
+                                <button
+                                    onClick={deleteTodo}
+                                    className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                    title={t.deleteTodo}
+                                >
+                                    <HiTrash className="h-4 w-4" />
+                                    {t.deleteTodo}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -269,7 +346,7 @@ const TodoDetailPage = () => {
 
                         {/* Assignment & Position Card */}
                         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">Assignment</h3>
+                            <h3 className="text-lg font-medium text-gray-900 mb-4">{t.assignment}</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Assigned User */}
                                 <div>
@@ -312,7 +389,7 @@ const TodoDetailPage = () => {
 
                         {/* Dates Card */}
                         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">Timeline</h3>
+                            <h3 className="text-lg font-medium text-gray-900 mb-4">{t.timeline}</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 {/* Start Date */}
                                 {todo.startDate && (
@@ -390,6 +467,4 @@ const TodoDetailPage = () => {
             </div>
         </div>
     );
-};
-
-export default TodoDetailPage;
+}

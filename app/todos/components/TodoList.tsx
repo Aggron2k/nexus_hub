@@ -140,7 +140,7 @@ const TodoList: React.FC<TodoListProps> = ({ currentUser }) => {
                         {isManager && (
                             <button
                                 onClick={() => setShowCreateModal(true)}
-                                className="p-2 bg-nexus-tertiary text-white rounded-lg hover:bg-nexus-secondary transition-colors"
+                                className="rounded-full p-2 bg-nexus-tertiary text-white hover:bg-nexus-primary focus-visible:bg-nexus-primary cursor-pointer transition hover:text-black"
                                 title={t.createTodo}
                             >
                                 <HiPlus className="h-5 w-5" />
