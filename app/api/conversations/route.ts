@@ -16,14 +16,23 @@ export async function POST(
             name
         } = body;
 
+        console.log('API received data:', { userId, isGroup, members, name }); // Debug log
+
         if (!currentUser?.id || !currentUser?.email) {
             return new NextResponse('Unauthorized', { status: 401 });
         }
 
-        if (isGroup && (!members || members.lenght < 2 || !name)) {
+        // Validáció egyéni beszélgetéshez
+        if (!isGroup && !userId) {
+            return new NextResponse('User ID is required for individual conversation', { status: 400 });
+        }
+
+        // Group chat validáció - JAVÍTOTT SOR
+        if (isGroup && (!members || members.length < 2 || !name)) {
             return new NextResponse('Invalid Group', { status: 400 });
         }
 
+        // Group chat létrehozása
         if (isGroup) {
             const newConversation = await prisma.conversation.create({
                 data: {
@@ -45,16 +54,18 @@ export async function POST(
                 }
             });
 
+            // Pusher notification minden felhasználónak
             newConversation.users.forEach((user) => {
                 if (user.email) {
                     pusherServer.trigger(user.email, 'conversation:new', newConversation);
                 }
-            })
+            });
 
             return NextResponse.json(newConversation);
         }
 
-        const exisitingConversations = await prisma.conversation.findMany({
+        // Egyéni chat - ellenőrizzük hogy létezik-e már
+        const existingConversations = await prisma.conversation.findMany({
             where: {
                 OR: [
                     {
@@ -71,12 +82,14 @@ export async function POST(
             }
         });
 
-        const singleConversation = exisitingConversations[0];
+        const singleConversation = existingConversations[0];
 
+        // Ha már létezik, visszaadjuk
         if (singleConversation) {
             return NextResponse.json(singleConversation);
         }
 
+        // Új egyéni beszélgetés létrehozása
         const newConversation = await prisma.conversation.create({
             data: {
                 users: {
@@ -95,15 +108,17 @@ export async function POST(
             }
         });
 
+        // Pusher notification mindkét felhasználónak
         newConversation.users.map((user) => {
             if (user.email) {
                 pusherServer.trigger(user.email, 'conversation:new', newConversation);
             }
-        })
+        });
 
         return NextResponse.json(newConversation);
 
     } catch (error: unknown) {
-        return new NextResponse('Internal Error: ' + error, { status: 500 });
+        console.error('Error in conversations API:', error);
+        return new NextResponse('Internal Error: ' + String(error), { status: 500 });
     }
 }

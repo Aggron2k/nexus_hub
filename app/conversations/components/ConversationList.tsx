@@ -4,11 +4,13 @@ import clsx from "clsx";
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { MdOutlineGroupAdd } from "react-icons/md";
+import { HiOutlineChatBubbleLeftRight } from "react-icons/hi2";
 import useConversation from "@/app/hooks/useConversation";
 import { FullConversationType } from "@/app/types";
 import ConversationBox from "./ConversationBox";
 import { User } from "@prisma/client";
 import GroupChatModal from "./GroupChatModal";
+import NewConversationModal from "./NewConversationModal";
 import { useSession } from "next-auth/react";
 import { pusherClient } from "@/app/libs/pusher";
 import { find } from "lodash";
@@ -24,14 +26,15 @@ const ConversationList: React.FC<ConversationListProps> = ({
     users,
 }) => {
     const [items, setItems] = useState(initialItems);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+    const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
 
     const router = useRouter();
     const { conversationId, isOpen } = useConversation();
     const session = useSession();
 
     // Language context
-    const { language, toggleLanguage } = useLanguage();
+    const { language } = useLanguage();
 
     const pusherKey = useMemo(() => {
         return session.data?.user?.email;
@@ -93,20 +96,35 @@ const ConversationList: React.FC<ConversationListProps> = ({
         en: {
             title: "Chat",
             noConversations: "No conversations started.",
+            newChat: "New Chat",
+            groupChat: "Group Chat",
         },
         hu: {
             title: "Csevegés",
             noConversations: "Nincs beszélgetés elkezdve.",
+            newChat: "Új beszélgetés",
+            groupChat: "Csoportos beszélgetés",
         },
     };
 
+    const t = translations[language];
+
     return (
         <>
+            {/* Group Chat Modal */}
             <GroupChatModal
                 users={users}
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+                isOpen={isGroupModalOpen}
+                onClose={() => setIsGroupModalOpen(false)}
             />
+
+            {/* New Conversation Modal */}
+            <NewConversationModal
+                users={users}
+                isOpen={isNewChatModalOpen}
+                onClose={() => setIsNewChatModalOpen(false)}
+            />
+
             <aside
                 className={clsx(
                     `fixed inset-y-0 pb-20 lg:pb-0 lg:left-20 lg:w-80 lg:block overflow-hidden border-r border-gray-200`,
@@ -114,20 +132,37 @@ const ConversationList: React.FC<ConversationListProps> = ({
                 )}
             >
                 <div className="px-5">
-                    <div className="flex justify-between mb-4 pt-4">
+                    <div className="flex justify-between items-center mb-4 pt-4">
                         <div className="text-2xl font-bold text-neutral-800">
-                            {translations[language].title}
+                            {t.title}
                         </div>
-                        <div
-                            onClick={() => setIsModalOpen(true)}
-                            className="rounded-full p-2 bg-nexus-tertiary text-white hover:bg-nexus-primary focus-visible:bg-nexus-primary cursor-pointer transition hover:text-black"
-                        >
-                            <MdOutlineGroupAdd size={20} />
+
+                        {/* Action buttons */}
+                        <div className="flex space-x-2">
+                            {/* New Chat Button */}
+                            <div
+                                onClick={() => setIsNewChatModalOpen(true)}
+                                className="rounded-full p-2 bg-nexus-tertiary text-white hover:bg-nexus-primary focus-visible:bg-nexus-primary cursor-pointer transition hover:text-black"
+                                title={t.newChat}
+                            >
+                                <HiOutlineChatBubbleLeftRight size={20} />
+                            </div>
+
+                            {/* Group Chat Button */}
+                            <div
+                                onClick={() => setIsGroupModalOpen(true)}
+                                className="rounded-full p-2 bg-nexus-tertiary text-white hover:bg-nexus-primary focus-visible:bg-nexus-primary cursor-pointer transition hover:text-black"
+                                title={t.groupChat}
+                            >
+                                <MdOutlineGroupAdd size={20} />
+                            </div>
                         </div>
                     </div>
+
+                    {/* Conversations list */}
                     <div>
                         {items && items.length > 0 ? (
-                            items.map((item) => (
+                            items.map((item, i) => (
                                 <ConversationBox
                                     key={item.id}
                                     data={item}
@@ -135,7 +170,9 @@ const ConversationList: React.FC<ConversationListProps> = ({
                                 />
                             ))
                         ) : (
-                            <div>{translations[language].noConversations}</div>
+                            <div className="text-center text-gray-500 py-8">
+                                <p className="text-sm">{t.noConversations}</p>
+                            </div>
                         )}
                     </div>
                 </div>
