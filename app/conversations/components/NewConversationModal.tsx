@@ -10,7 +10,8 @@ import { useLanguage } from "@/app/context/LanguageContext";
 
 import Button from "@/app/components/Button";
 import Modal from "@/app/components/Modal";
-import SingleSelect from "./SingleSelect"; // Új import
+import SingleSelect from "./SingleSelect";
+import Avatar from "@/app/components/Avatar";
 
 interface NewConversationModalProps {
     isOpen?: boolean;
@@ -27,6 +28,7 @@ const NewConversationModal: React.FC<NewConversationModalProps> = ({
     const { language } = useLanguage();
     const [isLoading, setIsLoading] = useState(false);
     const [selectedUserOption, setSelectedUserOption] = useState<{ value: string, label: string } | null>(null);
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
     const translations = {
         en: {
@@ -40,6 +42,8 @@ const NewConversationModal: React.FC<NewConversationModalProps> = ({
             error: "Something went wrong.",
             selectPersonFirst: "Please select a person first.",
             noUsersAvailable: "No users available to chat with.",
+            optionalNote: "Optional - you can start the conversation without a message",
+            conversationStarted: "Conversation started successfully!",
         },
         hu: {
             title: "Új beszélgetés kezdése",
@@ -52,6 +56,8 @@ const NewConversationModal: React.FC<NewConversationModalProps> = ({
             error: "Valami hiba történt.",
             selectPersonFirst: "Kérlek előbb válassz egy személyt.",
             noUsersAvailable: "Nincs elérhető felhasználó a beszélgetéshez.",
+            optionalNote: "Nem kötelező - a beszélgetést üzenet nélkül is elkezdheted",
+            conversationStarted: "Beszélgetés sikeresen elkezdve!",
         },
     };
 
@@ -79,24 +85,30 @@ const NewConversationModal: React.FC<NewConversationModalProps> = ({
     }));
 
     const handleUserChange = (selectedOption: { value: string, label: string } | null) => {
-        console.log('handleUserChange called with:', selectedOption); // Debug log
         setSelectedUserOption(selectedOption);
+
+        // Keressük meg a teljes User objektumot
+        if (selectedOption) {
+            const fullUser = users.find(user => user.id === selectedOption.value);
+            setSelectedUser(fullUser || null);
+        } else {
+            setSelectedUser(null);
+        }
     };
 
     const onSubmit: SubmitHandler<FieldValues> = async (data) => {
-        if (!selectedUserOption) {
+        if (!selectedUser) {
             toast.error(t.selectPersonFirst);
             return;
         }
 
         setIsLoading(true);
 
-        try {
-            console.log('Creating conversation with userId:', selectedUserOption.value); // Debug log
+        try { // Debug log
 
             // Első lépés: Beszélgetés létrehozása
             const conversationResponse = await axios.post("/api/conversations", {
-                userId: selectedUserOption.value,
+                userId: selectedUser.id,
             });
 
             const conversationId = conversationResponse.data.id;
@@ -116,8 +128,9 @@ const NewConversationModal: React.FC<NewConversationModalProps> = ({
             onClose();
             reset();
             setSelectedUserOption(null);
+            setSelectedUser(null);
 
-            toast.success("Beszélgetés sikeresen elkezdve!");
+            toast.success(t.conversationStarted);
 
         } catch (error) {
             console.error("Error creating conversation:", error);
@@ -131,6 +144,7 @@ const NewConversationModal: React.FC<NewConversationModalProps> = ({
         onClose();
         reset();
         setSelectedUserOption(null);
+        setSelectedUser(null);
     };
 
     if (users.length === 0) {
@@ -177,18 +191,23 @@ const NewConversationModal: React.FC<NewConversationModalProps> = ({
                         />
 
                         {/* Kiválasztott felhasználó preview */}
-                        {selectedUserOption && selectedUserOption.label && (
+                        {selectedUser && (
                             <div className="mt-3 p-3 bg-gray-50 rounded-lg border">
                                 <div className="flex items-center space-x-3">
-                                    <div className="w-10 h-10 bg-nexus-primary rounded-full flex items-center justify-center">
-                                        <span className="text-sm font-medium text-nexus-tertiary">
-                                            {selectedUserOption.label.charAt(0).toUpperCase()}
-                                        </span>
-                                    </div>
+                                    {/* Avatar komponens használata */}
+                                    <Avatar user={selectedUser} />
                                     <div>
                                         <p className="text-sm font-medium text-gray-900">
-                                            {selectedUserOption.label}
+                                            {selectedUser.name || selectedUser.email}
                                         </p>
+                                        <p className="text-xs text-gray-500">
+                                            {selectedUser.email}
+                                        </p>
+                                        {selectedUser.role && (
+                                            <p className="text-xs text-gray-400">
+                                                {selectedUser.role}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -208,17 +227,9 @@ const NewConversationModal: React.FC<NewConversationModalProps> = ({
                             placeholder={t.firstMessagePlaceholder}
                         />
                         <p className="mt-1 text-xs text-gray-500">
-                            Nem kötelező - a beszélgetést üzenet nélkül is elkezdheted
+                            {t.optionalNote}
                         </p>
                     </div>
-
-                    {/* Message preview */}
-                    {watchedMessage && watchedMessage.trim() && (
-                        <div className="border-l-4 border-nexus-tertiary bg-nexus-primary/10 p-3 rounded-r-lg">
-                            <p className="text-xs text-gray-600 mb-1">Üzenet előnézet:</p>
-                            <p className="text-sm text-gray-800">{watchedMessage}</p>
-                        </div>
-                    )}
                 </div>
 
                 {/* Actions */}
