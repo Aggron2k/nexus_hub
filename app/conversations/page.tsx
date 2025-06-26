@@ -2,16 +2,16 @@
 
 import clsx from "clsx";
 import useConversation from "../hooks/useConversation";
-import EmptyState from "../components/EmptyState";
+import ConversationsEmptyState from "./components/ConversationsEmptyState";
 
-const Home = () => {
-    const {isOpen} = useConversation();
+const ConversationsPage = () => {
+    const { isOpen } = useConversation();
 
     return (
-        <div className={clsx("lg:pl-80 h-full lg:block", isOpen? 'block' : 'hidden')}>
-            <EmptyState/>
+        <div className={clsx("lg:pl-80 h-full lg:block", isOpen ? 'block' : 'hidden')}>
+            <ConversationsEmptyState />
         </div>
-    )
+    );
 };
 
-export default Home;
+export default ConversationsPage;
