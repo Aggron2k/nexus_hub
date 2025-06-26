@@ -52,6 +52,7 @@ export const authOptions: AuthOptions = {
     debug: process.env.NODE_ENV === 'development',
     session: {
         strategy: "jwt" as const,
+        maxAge: 24 * 60 * 60, // 24 óra
     },
     secret: process.env.NEXTAUTH_SECRET,
     pages: {
@@ -59,5 +60,36 @@ export const authOptions: AuthOptions = {
         signOut: "/", // Kijelentkezés után ide irányít
         error: "/", // Hiba esetén átirányítás
     },
+    callbacks: {
+        async jwt({ token, user }) {
+            if (user) {
+                token.id = user.id;
+            }
+            return token;
+        },
+        async session({ session, token }) {
+            if (token) {
+                session.user.id = token.id as string;
+            }
+            return session;
+        },
+        async redirect({ url, baseUrl }) {
+            // Biztonságos redirect - csak saját domain-re
+            if (url.startsWith("/")) return `${baseUrl}${url}`;
+            else if (new URL(url).origin === baseUrl) return url;
+            return `${baseUrl}/dashboard`;
+        },
+    },
+    // Biztonság növelése
+    cookies: {
+        sessionToken: {
+            name: `next-auth.session-token`,
+            options: {
+                httpOnly: true,
+                sameSite: 'lax',
+                path: '/',
+                secure: process.env.NODE_ENV === 'production'
+            }
+        }
+    }
 };
-

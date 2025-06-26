@@ -8,6 +8,7 @@ import { BsGithub, BsGoogle } from 'react-icons/bs';
 import Input from "../../components/inputs/Input";
 import Button from "@/app/components/Button";
 import AuthSocialButton from "./AuthSocialButton";
+import AuthLoadingModal from "./AuthLoadingModal"; // Új import
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
@@ -20,6 +21,7 @@ const AuthForm = () => {
   const router = useRouter();
   const [variant, setVariant] = useState<Variant>('LOGIN');
   const [isLoading, setIsLoading] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false); // Új state a loading modal-hoz
 
   const translations = {
     en: {
@@ -65,12 +67,16 @@ const AuthForm = () => {
 
   useEffect(() => {
     if (session?.status === 'authenticated' && !hasNotified) {
-      setHasNotified(true); // Csak egyszer hajtjuk végre
-      toast.success(t.loginSuccess); // Lokalizált üzenet
-      router.push('/dashboard');
+      setHasNotified(true);
+      setIsAuthenticating(true); // Loading screen megjelenítése
+
+      // Kis késleltetés a smooth transition érdekében
+      setTimeout(() => {
+        toast.success(t.loginSuccess);
+        router.push('/dashboard');
+      }, 1500); // 1.5 másodperc várakozás
     }
   }, [session?.status, router, t, hasNotified]);
-
 
   const toggleVariant = useCallback(() => {
     if (variant === 'LOGIN') {
@@ -98,24 +104,40 @@ const AuthForm = () => {
     if (variant === 'REGISTER') {
       axios
         .post('/api/register', data)
-        .then(() => signIn('credentials', data))
-        .catch(() => toast.error(t.registerError)) // Lokalizált hibaüzenet
+        .then(() => {
+          setIsAuthenticating(true); // Loading screen megjelenítése
+          return signIn('credentials', {
+            email: data.email,
+            password: data.password,
+            redirect: false,
+            callbackUrl: '/dashboard'
+          });
+        })
+        .catch(() => {
+          toast.error(t.registerError);
+          setIsAuthenticating(false);
+        })
         .finally(() => setIsLoading(false));
     }
 
     if (variant === 'LOGIN') {
+      setIsAuthenticating(true); // Loading screen megjelenítése
+
       signIn('credentials', {
-        ...data,
+        email: data.email,
+        password: data.password,
         redirect: false,
+        callbackUrl: '/dashboard'
       })
         .then((callback) => {
           if (callback?.error) {
-            toast.error(t.loginError); // Lokalizált hibaüzenet
+            toast.error(t.loginError);
+            setIsAuthenticating(false); // Loading screen elrejtése hiba esetén
           }
 
           if (callback?.ok && !callback?.error) {
-            //toast.success(t.loginSuccess); // Lokalizált sikerüzenet
-            router.push('/dashboard');
+            // A loading screen a useEffect-ben lesz elrejtve
+            // amikor a session státusza 'authenticated' lesz
           }
         })
         .finally(() => setIsLoading(false));
@@ -124,93 +146,116 @@ const AuthForm = () => {
 
   const socialAction = (action: string) => {
     setIsLoading(true);
+    setIsAuthenticating(true); // Loading screen megjelenítése
 
     signIn(action, {
       redirect: false,
+      callbackUrl: '/dashboard'
     })
       .then((callback) => {
         if (callback?.error) {
-          toast.error(t.socialLoginError); // Lokalizált hibaüzenet
+          toast.error(t.socialLoginError);
+          setIsAuthenticating(false); // Loading screen elrejtése hiba esetén
         }
         if (callback?.ok && !callback?.error) {
-          toast.success(t.socialLoginSuccess); // Lokalizált sikerüzenet
+          // A loading screen a useEffect-ben lesz elrejtve
+          // amikor a session státusza 'authenticated' lesz
         }
       })
       .finally(() => setIsLoading(false));
   };
 
   return (
-    <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-      <div className="bg-white px-4 py-8 shadow sm:rounded-lg sm:px-10">
-        <button
-          onClick={toggleLanguage}
-          className="absolute top-2 right-2 px-4 py-2 bg-nexus-tertiary text-white font-semibold rounded-md shadow-md hover:bg-nexus-secondary transition"
-        >
-          {language === "en" ? "HU" : "EN"}
-        </button>
-        <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          {variant === "REGISTER" && (
+    <>
+      {/* Auth Loading Modal */}
+      <AuthLoadingModal isVisible={isAuthenticating} />
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white px-4 py-8 shadow sm:rounded-lg sm:px-10">
+          <button
+            onClick={toggleLanguage}
+            className="absolute top-2 right-2 px-4 py-2 bg-nexus-tertiary text-white font-semibold rounded-md shadow-md hover:bg-nexus-secondary transition"
+          >
+            {language === "en" ? "HU" : "EN"}
+          </button>
+
+          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+            <div>
+              <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
+                {variant === 'LOGIN' ? t.signInTitle : t.registerTitle}
+              </h2>
+            </div>
+
+            {variant === 'REGISTER' && (
+              <Input
+                id="name"
+                label={t.nameLabel}
+                register={register}
+                errors={errors}
+                disabled={isLoading}
+              />
+            )}
+
             <Input
-              id="name"
-              label={t.nameLabel}
+              id="email"
+              label={t.emailLabel}
+              type="email"
               register={register}
               errors={errors}
               disabled={isLoading}
             />
-          )}
-          <Input
-            id="email"
-            label={t.emailLabel}
-            type="email"
-            register={register}
-            errors={errors}
-            disabled={isLoading}
-          />
-          <Input
-            id="password"
-            label={t.passwordLabel}
-            type="password"
-            register={register}
-            errors={errors}
-            disabled={isLoading}
-          />
-          <div>
-            <Button disabled={isLoading} fullWidth type="submit">
-              {variant === "LOGIN" ? t.signInButton : t.registerButton}
-            </Button>
-          </div>
-        </form>
 
-        <div className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-2 text-gray-500">{t.orContinueWith}</span>
-            </div>
-          </div>
-
-          <div className="mt-6 flex gap-2">
-            <AuthSocialButton
-              icon={BsGithub}
-              onClick={() => socialAction('github')}
+            <Input
+              id="password"
+              label={t.passwordLabel}
+              type="password"
+              register={register}
+              errors={errors}
+              disabled={isLoading}
             />
-            <AuthSocialButton
-              icon={BsGoogle}
-              onClick={() => socialAction('google')}
-            />
-          </div>
-        </div>
 
-        <div className="flex gap-2 justify-center text-sm mt-6 px-2 text-gray-500">
-          <div>{variant === "LOGIN" ? t.toggleRegisterText : t.toggleLoginText}</div>
-          <div onClick={toggleVariant} className="underline cursor-pointer">
-            {variant === "LOGIN" ? t.registerTitle : t.signInTitle}
+            <div>
+              <Button disabled={isLoading} fullWidth type="submit">
+                {variant === 'LOGIN' ? t.signInButton : t.registerButton}
+              </Button>
+            </div>
+          </form>
+
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-2 text-gray-500">
+                  {t.orContinueWith}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-2">
+              <AuthSocialButton
+                icon={BsGithub}
+                onClick={() => socialAction('github')}
+              />
+              <AuthSocialButton
+                icon={BsGoogle}
+                onClick={() => socialAction('google')}
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-2 justify-center text-sm mt-6 px-2 text-gray-500">
+            <div>
+              {variant === 'LOGIN' ? t.toggleRegisterText : t.toggleLoginText}
+            </div>
+            <div onClick={toggleVariant} className="underline cursor-pointer">
+              {variant === 'LOGIN' ? t.registerButton : t.signInButton}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
