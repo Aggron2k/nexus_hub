@@ -35,7 +35,7 @@
     "next-auth": "^4.24.8",
     "next-cloudinary": "^6.15.0",
     "next-superjson-plugin": "^0.6.3",
-    "pdfjs-dist": "^5.3.31",
+    "pdfjs-dist": "^3.11.174",
     "pusher": "^5.2.0",
     "pusher-js": "^8.4.0-rc2",
     "react": "^18",
