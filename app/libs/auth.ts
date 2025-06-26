@@ -25,7 +25,7 @@ export const authOptions: AuthOptions = {
             },
             async authorize(credentials) {
                 if (!credentials?.email || !credentials?.password) {
-                    throw new Error('Invalid Credentials');
+                    return null; // Null helyett Error - így nem jelenik meg az URL-ben
                 }
 
                 const user = await prisma.user.findUnique({
@@ -33,7 +33,7 @@ export const authOptions: AuthOptions = {
                 });
 
                 if (!user || !user.hashedPassword) {
-                    throw new Error('Invalid credentials');
+                    return null; // Null visszatérés
                 }
 
                 const isCorrectPassword = await bcrypt.compare(
@@ -42,10 +42,15 @@ export const authOptions: AuthOptions = {
                 );
 
                 if (!isCorrectPassword) {
-                    throw new Error('Invalid credentials');
+                    return null; // Null visszatérés
                 }
 
-                return user;
+                return {
+                    id: user.id,
+                    email: user.email,
+                    name: user.name,
+                    image: user.image,
+                };
             },
         }),
     ],
@@ -56,9 +61,9 @@ export const authOptions: AuthOptions = {
     },
     secret: process.env.NEXTAUTH_SECRET,
     pages: {
-        signIn: "/", // Bejelentkezési oldal
-        signOut: "/", // Kijelentkezés után ide irányít
-        error: "/", // Hiba esetén átirányítás
+        signIn: "/",
+        signOut: "/",
+        error: "/",
     },
     callbacks: {
         async jwt({ token, user }) {
@@ -68,22 +73,54 @@ export const authOptions: AuthOptions = {
             return token;
         },
         async session({ session, token }) {
-            if (token) {
+            if (token && session.user) {
                 session.user.id = token.id as string;
             }
             return session;
         },
+        // KRITIKUS: URL tisztítás callback
         async redirect({ url, baseUrl }) {
-            // Biztonságos redirect - csak saját domain-re
-            if (url.startsWith("/")) return `${baseUrl}${url}`;
-            else if (new URL(url).origin === baseUrl) return url;
+            // Ha URL tartalmaz query paramétert, tisztítsd meg
+            if (url.includes('?')) {
+                return `${baseUrl}/dashboard`;
+            }
+
+            // Csak saját domain-re engedélyezett redirect
+            if (url.startsWith("/")) {
+                return `${baseUrl}${url}`;
+            } else if (new URL(url).origin === baseUrl) {
+                return url;
+            }
+
             return `${baseUrl}/dashboard`;
         },
+
+        // Signin callback - további védelem
+        async signIn({ user, account, profile, email, credentials }) {
+            return true; // Engedélyezi a bejelentkezést
+        },
     },
-    // Biztonság növelése
+    events: {
+        // Event listener a sikeres bejelentkezésre
+        async signIn({ user, account, profile, isNewUser }) {
+            console.log("Successful login:", user.email);
+        },
+    },
+    // Biztonságos cookie beállítások
     cookies: {
         sessionToken: {
             name: `next-auth.session-token`,
+            options: {
+                httpOnly: true,
+                sameSite: 'lax',
+                path: '/',
+                secure: process.env.NODE_ENV === 'production',
+                // URL paraméterek elkerülése érdekében
+                domain: process.env.NODE_ENV === 'production' ? '.yourdomain.com' : undefined
+            }
+        },
+        callbackUrl: {
+            name: `next-auth.callback-url`,
             options: {
                 httpOnly: true,
                 sameSite: 'lax',

@@ -98,71 +98,94 @@ const AuthForm = () => {
     },
   });
 
-  const onSubmit: SubmitHandler<FieldValues> = (data) => {
+  const onSubmit: SubmitHandler<FieldValues> = async (data) => {
     setIsLoading(true);
 
     if (variant === 'REGISTER') {
-      axios
-        .post('/api/register', data)
-        .then(() => {
-          setIsAuthenticating(true); // Loading screen megjelenítése
-          return signIn('credentials', {
-            email: data.email,
-            password: data.password,
-            redirect: false,
-            callbackUrl: '/dashboard'
-          });
-        })
-        .catch(() => {
+      try {
+        await axios.post('/api/register', data);
+        setIsAuthenticating(true);
+
+        const result = await signIn('credentials', {
+          email: data.email,
+          password: data.password,
+          redirect: false,
+        });
+
+        if (result?.error) {
           toast.error(t.registerError);
           setIsAuthenticating(false);
-        })
-        .finally(() => setIsLoading(false));
+        }
+      } catch (error) {
+        toast.error(t.registerError);
+        setIsAuthenticating(false);
+      } finally {
+        setIsLoading(false);
+      }
     }
 
     if (variant === 'LOGIN') {
-      setIsAuthenticating(true); // Loading screen megjelenítése
+      setIsAuthenticating(true);
 
-      signIn('credentials', {
-        email: data.email,
-        password: data.password,
-        redirect: false,
-        callbackUrl: '/dashboard'
-      })
-        .then((callback) => {
-          if (callback?.error) {
-            toast.error(t.loginError);
-            setIsAuthenticating(false); // Loading screen elrejtése hiba esetén
-          }
+      try {
+        const result = await signIn('credentials', {
+          email: data.email,
+          password: data.password,
+          redirect: false, // Ez a kulcs!
+        });
 
-          if (callback?.ok && !callback?.error) {
-            // A loading screen a useEffect-ben lesz elrejtve
-            // amikor a session státusza 'authenticated' lesz
-          }
-        })
-        .finally(() => setIsLoading(false));
+        if (result?.error) {
+          toast.error(t.loginError);
+          setIsAuthenticating(false);
+        }
+
+        if (result?.ok && !result?.error) {
+          // URL tisztítása AZONNAL
+          window.history.replaceState({}, '', '/');
+
+          // Majd átirányítás
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 100);
+        }
+      } catch (error) {
+        toast.error(t.loginError);
+        setIsAuthenticating(false);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
-  const socialAction = (action: string) => {
+  const socialAction = async (action: string) => {
     setIsLoading(true);
-    setIsAuthenticating(true); // Loading screen megjelenítése
+    setIsAuthenticating(true);
 
-    signIn(action, {
-      redirect: false,
-      callbackUrl: '/dashboard'
-    })
-      .then((callback) => {
-        if (callback?.error) {
-          toast.error(t.socialLoginError);
-          setIsAuthenticating(false); // Loading screen elrejtése hiba esetén
-        }
-        if (callback?.ok && !callback?.error) {
-          // A loading screen a useEffect-ben lesz elrejtve
-          // amikor a session státusza 'authenticated' lesz
-        }
-      })
-      .finally(() => setIsLoading(false));
+    try {
+      const result = await signIn(action, {
+        redirect: false,
+      });
+
+      if (result?.error) {
+        toast.error(t.socialLoginError);
+        setIsAuthenticating(false);
+      }
+
+      if (result?.ok && !result?.error) {
+        // URL tisztítása
+        window.history.replaceState({}, '', '/');
+
+        // Átirányítás
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 100);
+      }
+    } catch (error) {
+      toast.error(t.socialLoginError);
+      setIsAuthenticating(false);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
