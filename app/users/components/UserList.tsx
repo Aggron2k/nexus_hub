@@ -29,7 +29,11 @@ const UserList: React.FC<UserListProps> = ({ items, currentUser }) => {
       allRoles: "All roles",
       noResults: "No people found",
       limitedAccess: "Limited Access",
-      limitedMessage: "You can only view your own profile with your current role."
+      limitedMessage: "You can only view your own profile with your current role.",
+      employee: "Employee",
+      manager: "Manager",
+      generalManager: "General Manager",
+      ceo: "CEO"
     },
     hu: {
       title: "Munkatársak",
@@ -37,9 +41,15 @@ const UserList: React.FC<UserListProps> = ({ items, currentUser }) => {
       allRoles: "Minden szerepkör",
       noResults: "Nincs találat",
       limitedAccess: "Korlátozott hozzáférés",
-      limitedMessage: "Jelenlegi szerepköröddel csak a saját profil adataid tekintheted meg."
+      limitedMessage: "Jelenlegi szerepköröddel csak a saját profil adataid tekintheted meg.",
+      employee: "Alkalmazott",
+      manager: "Menedzser",
+      generalManager: "Általános Vezető",
+      ceo: "Vezérigazgató"
     },
   };
+
+  const t = translations[language];
 
   // Jogosultság ellenőrzése
   const canViewOthers = ['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role);
@@ -116,13 +126,13 @@ const UserList: React.FC<UserListProps> = ({ items, currentUser }) => {
               onChange={(e) => setSelectedRole(e.target.value)}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="all">{translations[language].allRoles}</option>
+              <option value="all">{t.allRoles}</option>
               {uniqueRoles.map((role) => (
                 <option key={role} value={role}>
-                  {role === 'Employee' ? 'Alkalmazott' :
-                    role === 'Manager' ? 'Menedzser' :
-                      role === 'GeneralManager' ? 'Általános Vezető' :
-                        role === 'CEO' ? 'Vezérigazgató' : role}
+                  {role === 'Employee' ? t.employee :
+                    role === 'Manager' ? t.manager :
+                      role === 'GeneralManager' ? t.generalManager :
+                        role === 'CEO' ? t.ceo : role}
                 </option>
               ))}
             </select>

@@ -1,6 +1,7 @@
+// app/users/[userId]/page.tsx
 import getCurrentUser from "@/app/actions/getCurrentUser";
 import { redirect } from "next/navigation";
-import UserProfile from "../components/UserProfile";
+import UserProfileClient from "../components/UserProfileClient";
 
 interface IParams {
     userId: string;
@@ -21,13 +22,9 @@ export default async function UserProfilePage({ params }: { params: IParams }) {
     }
 
     return (
-        <div className="lg:pl-80 h-full">
-            <div className="h-full">
-                <UserProfile
-                    currentUser={currentUser}
-                    selectedUserId={params.userId}
-                />
-            </div>
-        </div>
+        <UserProfileClient
+            currentUser={currentUser}
+            selectedUserId={params.userId}
+        />
     );
 }

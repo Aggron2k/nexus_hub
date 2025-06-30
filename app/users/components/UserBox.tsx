@@ -7,6 +7,7 @@ import Avatar from "@/app/components/Avatar";
 import { HiChatBubbleLeft } from "react-icons/hi2";
 import axios from "axios";
 import LoadingModal from "@/app/components/LoadingModal";
+import { useLanguage } from "@/app/context/LanguageContext";
 
 interface UserBoxProps {
   data: User;
@@ -16,10 +17,33 @@ interface UserBoxProps {
 const UserBox: React.FC<UserBoxProps> = ({ data, currentUser }) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const { language } = useLanguage();
 
   // Jogosultság ellenőrzése
   const canEdit = ['GeneralManager', 'CEO'].includes(currentUser.role);
   const isOwnProfile = data.id === currentUser.id;
+
+  // Fordítások
+  const translations = {
+    en: {
+      nameNotProvided: "Name not provided",
+      employee: "Employee",
+      manager: "Manager",
+      generalManager: "General Manager",
+      ceo: "CEO",
+      you: "(You)"
+    },
+    hu: {
+      nameNotProvided: "Név nem megadva",
+      employee: "Alkalmazott",
+      manager: "Menedzser",
+      generalManager: "Általános Vezető",
+      ceo: "Vezérigazgató",
+      you: "(Te)"
+    }
+  };
+
+  const t = translations[language];
 
   const handleClick = useCallback(() => {
     // Navigálás a profil oldalra chat helyett
@@ -44,10 +68,10 @@ const UserBox: React.FC<UserBoxProps> = ({ data, currentUser }) => {
 
   const getRoleDisplayName = (role: string) => {
     const roleNames: { [key: string]: string } = {
-      'Employee': 'Alkalmazott',
-      'Manager': 'Menedzser',
-      'GeneralManager': 'Általános Vezető',
-      'CEO': 'Vezérigazgató'
+      'Employee': t.employee,
+      'Manager': t.manager,
+      'GeneralManager': t.generalManager,
+      'CEO': t.ceo
     };
     return roleNames[role] || role;
   };
@@ -75,7 +99,7 @@ const UserBox: React.FC<UserBoxProps> = ({ data, currentUser }) => {
           <div className="focus:outline-none">
             <div className="flex justify-between items-center mb-1">
               <p className="text-sm font-medium text-gray-900 truncate">
-                {data.name || 'Név nem megadva'}
+                {data.name || t.nameNotProvided}
               </p>
 
               {/* Chat gomb */}
@@ -103,6 +127,15 @@ const UserBox: React.FC<UserBoxProps> = ({ data, currentUser }) => {
                 {getRoleDisplayName(data.role)}
               </span>
             </div>
+
+            {/* Saját profil jelzés */}
+            {isOwnProfile && (
+              <div className="mt-1">
+                <span className="text-xs text-blue-600 font-medium">
+                  {t.you}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
