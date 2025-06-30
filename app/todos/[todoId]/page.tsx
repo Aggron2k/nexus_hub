@@ -159,9 +159,6 @@ export default function TodoDetailPage() {
     const locale = language === 'hu' ? hu : enUS;
 
     useEffect(() => {
-        console.log('TodoDetailPage - todoId:', todoId);
-        console.log('Current user:', currentUser); // Debug log
-        console.log('Is manager:', isManager); // Debug log
 
         if (!todoId) {
             setError("Todo ID is required");
@@ -174,10 +171,8 @@ export default function TodoDetailPage() {
 
     const fetchTodoDetails = async () => {
         try {
-            console.log('Fetching todo details for ID:', todoId);
             setLoading(true);
             const response = await axios.get(`/api/todos/${todoId}`);
-            console.log('Todo details response:', response.data);
             setTodo(response.data);
             setError("");
         } catch (error: any) {

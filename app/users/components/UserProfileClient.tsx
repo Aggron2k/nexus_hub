@@ -385,11 +385,11 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                                 <div className="lg:flex lg:items-start lg:gap-8">
                                     {/* Profile Image */}
                                     <div className="flex-shrink-0 mb-6 lg:mb-0">
-                                        <div className="relative">
+                                        <div className="relative w-32 h-32 mx-auto lg:mx-0">
                                             <img
                                                 src={isEditing ? (editData.image || '/default-avatar.png') : (selectedUser.image || '/default-avatar.png')}
                                                 alt="Profile"
-                                                className="h-32 w-32 rounded-full object-cover border-4 border-white shadow-lg"
+                                                className="w-full h-full rounded-full object-cover border-4 border-white shadow-lg"
                                             />
                                             {isEditing && (
                                                 <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
@@ -399,13 +399,13 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                                         </div>
 
                                         {isEditing && (
-                                            <div className="mt-3">
+                                            <div className="mt-3 w-32 mx-auto lg:mx-0">
                                                 <input
                                                     type="url"
                                                     value={editData.image}
                                                     onChange={(e) => setEditData({ ...editData, image: e.target.value })}
                                                     placeholder={t.profileImage}
-                                                    className="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-nexus-tertiary focus:border-transparent"
+                                                    className="w-full text-xs px-2 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-nexus-tertiary focus:border-transparent"
                                                 />
                                             </div>
                                         )}
