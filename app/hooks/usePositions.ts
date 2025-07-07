@@ -3,12 +3,20 @@ import { useState, useEffect } from 'react';
 interface Position {
     id: string;
     name: string;
-    displayName: string;
-    description?: string;
+    displayNames: {
+        en: string;
+        hu: string;
+    };
+    descriptions?: {
+        en: string;
+        hu: string;
+    };
     color: string;
     order: number;
+    isActive: boolean;
     _count?: {
         users: number;
+        todos: number;
     };
 }
 

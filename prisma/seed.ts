@@ -19,9 +19,15 @@ async function main() {
     const positions = await Promise.all([
         prisma.position.create({
             data: {
-                name: 'Cashier',
-                displayName: 'Pénztáros',
-                description: 'Pénztárgép kezelése, ügyfélszolgálat',
+                name: 'cashier',
+                displayNames: {
+                    en: 'Cashier',
+                    hu: 'Pénztáros'
+                },
+                descriptions: {
+                    en: 'Customer service and payment processing',
+                    hu: 'Pénztárgép kezelése, ügyfélszolgálat'
+                },
                 isActive: true,
                 color: '#10B981', // zöld
                 order: 1
@@ -30,9 +36,15 @@ async function main() {
 
         prisma.position.create({
             data: {
-                name: 'Kitchen',
-                displayName: 'Konyha',
-                description: 'Ételkészítés, konyhai munkák',
+                name: 'kitchen',
+                displayNames: {
+                    en: 'Kitchen',
+                    hu: 'Konyha'
+                },
+                descriptions: {
+                    en: 'Kitchen and food preparation',
+                    hu: 'Ételkészítés, konyhai munkák'
+                },
                 isActive: true,
                 color: '#F59E0B', // sárga
                 order: 2
@@ -41,9 +53,15 @@ async function main() {
 
         prisma.position.create({
             data: {
-                name: 'Storage',
-                displayName: 'Raktár',
-                description: 'Raktárkezelés, készletnyilvántartás',
+                name: 'storage',
+                displayNames: {
+                    en: 'Storage',
+                    hu: 'Raktár'
+                },
+                descriptions: {
+                    en: 'Inventory and warehouse management',
+                    hu: 'Raktárkezelés, készletnyilvántartás'
+                },
                 isActive: true,
                 color: '#3B82F6', // kék
                 order: 3
@@ -52,21 +70,32 @@ async function main() {
 
         prisma.position.create({
             data: {
-                name: 'Packer',
-                displayName: 'Csomagoló',
-                description: 'Termékek csomagolása, kiszállítás előkészítése',
+                name: 'packer',
+                displayNames: {
+                    en: 'Packer',
+                    hu: 'Csomagoló'
+                },
+                descriptions: {
+                    en: 'Product packaging and preparation',
+                    hu: 'Termékek csomagolása, kiszállítás előkészítése'
+                },
                 isActive: true,
                 color: '#8B5CF6', // lila
                 order: 4
             }
         }),
 
-        // Extra pozíciók demonstrációként
         prisma.position.create({
             data: {
-                name: 'Delivery',
-                displayName: 'Kiszállító',
-                description: 'Házhozszállítás, logisztika',
+                name: 'delivery',
+                displayNames: {
+                    en: 'Delivery',
+                    hu: 'Kiszállító'
+                },
+                descriptions: {
+                    en: 'Home delivery and logistics',
+                    hu: 'Házhozszállítás, logisztika'
+                },
                 isActive: true,
                 color: '#EF4444', // piros
                 order: 5
@@ -75,9 +104,15 @@ async function main() {
 
         prisma.position.create({
             data: {
-                name: 'Cleaning',
-                displayName: 'Takarító',
-                description: 'Tisztántartás, higiénia',
+                name: 'cleaning',
+                displayNames: {
+                    en: 'Cleaning',
+                    hu: 'Takarító'
+                },
+                descriptions: {
+                    en: 'Cleaning and maintenance',
+                    hu: 'Tisztántartás, higiénia'
+                },
                 isActive: false, // Példa inaktív pozícióra
                 color: '#6B7280', // szürke
                 order: 6
@@ -253,7 +288,8 @@ async function main() {
             where: { targetPositionId: position.id }
         });
         const status = position.isActive ? '✅' : '❌';
-        console.log(`${status} ${position.displayName} (${position.name}) - ${userCount} felhasználó, ${todoCount} TODO`);
+        const displayName = (position.displayNames as any).hu || position.name;
+        console.log(`${status} ${displayName} (${position.name}) - ${userCount} felhasználó, ${todoCount} TODO`);
     }
 
     console.log('\n👥 Felhasználók:');
@@ -264,7 +300,8 @@ async function main() {
         const todoCount = await prisma.todo.count({
             where: { assignedUserId: user.id }
         });
-        console.log(`👤 ${user.name} (${user.role}) - ${position?.displayName} - ${todoCount} TODO`);
+        const positionName = position ? (position.displayNames as any)?.hu || position.name : 'Nincs pozíció';
+        console.log(`👤 ${user.name} (${user.role}) - ${positionName} - ${todoCount} TODO`);
     }
 
     console.log('\n🎉 Seed sikeresen befejezve!');

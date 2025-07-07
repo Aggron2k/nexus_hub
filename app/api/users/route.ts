@@ -27,7 +27,8 @@ export async function GET() {
                     select: {
                         id: true,
                         name: true,
-                        displayName: true,
+                        displayNames: true,        // ← VÁLTOZÁS: displayName → displayNames
+                        descriptions: true,        // ← HOZZÁADÁS
                         color: true
                     }
                 },

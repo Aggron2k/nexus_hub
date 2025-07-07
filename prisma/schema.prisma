@@ -32,20 +32,23 @@ enum TodoPriority {
 // Új Position model - dinamikus pozíciók
 model Position {
   id String @id @default(auto()) @map("_id") @db.ObjectId
-  name String @unique // pl. "Cashier", "Kitchen", "Storage", "Packer"
-  displayName String // pl. "Pénztáros", "Konyha", "Raktár", "Csomagoló"
-  description String? // Opcionális leírás a pozícióról
-  isActive Boolean @default(true) // Aktív/inaktív pozíció
-  color String @default("#3B82F6") // Szín a UI-ban (hex kód)
-  order Int @default(0) // Sorrend a megjelenítéshez
+  name String @unique // pl. "kitchen", "cashier" - kulcs azonosító
+  
+  // Többnyelvű megjelenítési nevek
+  displayNames Json // { "en": "Kitchen", "hu": "Konyha" }
+  descriptions Json? // { "en": "Kitchen staff", "hu": "Konyhai dolgozók" }
+  
+  isActive Boolean @default(true)
+  color String @default("#3B82F6")
+  order Int @default(0)
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  createdById String? @db.ObjectId // Csak ID-t tárolunk, kapcsolat nélkül
+  createdById String? @db.ObjectId
   
   // Kapcsolatok
-  users User[] // Felhasználók ezzel a pozícióval
-  todos Todo[] // TODO-k ehhez a pozícióhoz
+  users User[]
+  todos Todo[]
 }
 
 model User {

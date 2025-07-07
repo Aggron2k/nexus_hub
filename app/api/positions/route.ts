@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
 import prisma from "@/app/libs/prismadb";
 
-// GET - Összes pozíció lekérése
 export async function GET() {
     try {
         const currentUser = await getCurrentUser();
@@ -20,10 +19,11 @@ export async function GET() {
             select: {
                 id: true,
                 name: true,
-                displayName: true,
-                description: true,
+                displayNames: true,        // ← VÁLTOZÁS: displayName → displayNames
+                descriptions: true,        // ← VÁLTOZÁS: description → descriptions
                 color: true,
                 order: true,
+                isActive: true,           // ← HOZZÁADÁS
                 _count: {
                     select: {
                         users: true

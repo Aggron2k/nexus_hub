@@ -69,7 +69,8 @@ export async function GET(request: NextRequest) {
                             select: {
                                 id: true,
                                 name: true,
-                                displayName: true,
+                                displayNames: true,    // ← VÁLTOZÁS: displayName → displayNames
+                                descriptions: true,    // ← HOZZÁADÁS
                                 color: true
                             }
                         }
@@ -86,7 +87,8 @@ export async function GET(request: NextRequest) {
                     select: {
                         id: true,
                         name: true,
-                        displayName: true,
+                        displayNames: true,        // ← VÁLTOZÁS: displayName → displayNames
+                        descriptions: true,        // ← HOZZÁADÁS
                         color: true
                     }
                 }
@@ -95,6 +97,7 @@ export async function GET(request: NextRequest) {
                 createdAt: 'desc'
             }
         });
+        
 
         return NextResponse.json(todos);
     } catch (error) {

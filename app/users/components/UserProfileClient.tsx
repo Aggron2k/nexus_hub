@@ -12,9 +12,19 @@ import LoadingModal from '@/app/components/LoadingModal';
 interface Position {
     id: string;
     name: string;
-    displayName: string;
+    displayNames: {
+        en: string;
+        hu: string;
+    };
+    descriptions?: {
+        en: string;
+        hu: string;
+    };
     color: string;
+    isActive: boolean;
+    order: number;
 }
+
 
 interface UserWithPosition extends User {
     position?: Position;
@@ -78,7 +88,9 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
             quickStats: "Quick Statistics",
             daysInTeam: "Days in team",
             currentRole: "Current role",
-            teamMembers: "Team Members"
+            teamMembers: "Team Members",
+            editOwnProfile: "You can edit your own profile data.",
+            roleChangeHelp: "To change your role, please ask a manager for assistance."
         },
         hu: {
             profile: "Felhasználói Profil",
@@ -109,7 +121,9 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
             quickStats: "Gyors statisztikák",
             daysInTeam: "Napja a csapatban",
             currentRole: "Jelenlegi szerep",
-            teamMembers: "Munkatársak"
+            teamMembers: "Munkatársak",
+            editOwnProfile: "Szerkesztheted a saját profil adataidat.",
+            roleChangeHelp: "A szerepköröd módosításához kérj segítséget egy vezetőtől."
         }
     };
 
@@ -128,11 +142,46 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                 console.error('Error fetching positions:', error);
                 // Fallback mock pozíciók
                 const mockPositions = [
-                    { id: '1', name: 'Cashier', displayName: 'Pénztáros', color: '#3B82F6' },
-                    { id: '2', name: 'Kitchen', displayName: 'Konyha', color: '#EF4444' },
-                    { id: '3', name: 'Storage', displayName: 'Raktár', color: '#10B981' },
-                    { id: '4', name: 'Packer', displayName: 'Csomagoló', color: '#F59E0B' },
-                    { id: '5', name: 'Delivery', displayName: 'Kiszállító', color: '#8B5CF6' }
+                    {
+                        id: '1',
+                        name: 'cashier',
+                        displayNames: { en: 'Cashier', hu: 'Pénztáros' },
+                        color: '#3B82F6',
+                        isActive: true,
+                        order: 1
+                    },
+                    {
+                        id: '2',
+                        name: 'kitchen',
+                        displayNames: { en: 'Kitchen', hu: 'Konyha' },
+                        color: '#EF4444',
+                        isActive: true,
+                        order: 2
+                    },
+                    {
+                        id: '3',
+                        name: 'storage',
+                        displayNames: { en: 'Storage', hu: 'Raktár' },
+                        color: '#10B981',
+                        isActive: true,
+                        order: 3
+                    },
+                    {
+                        id: '4',
+                        name: 'packer',
+                        displayNames: { en: 'Packer', hu: 'Csomagoló' },
+                        color: '#F59E0B',
+                        isActive: true,
+                        order: 4
+                    },
+                    {
+                        id: '5',
+                        name: 'delivery',
+                        displayNames: { en: 'Delivery', hu: 'Kiszállító' },
+                        color: '#8B5CF6',
+                        isActive: true,
+                        order: 5
+                    }
                 ];
                 setPositions(mockPositions);
             }
@@ -303,6 +352,13 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
     }
 
     const userPosition = positions.find(p => p.id === selectedUser.positionId);
+
+    const getPositionDisplayName = (position: Position) => {
+        if (!position || !position.displayNames) {
+            return 'N/A';
+        }
+        return position.displayNames[language] || position.displayNames['hu'] || position.name;
+    };
 
     return (
         <>
@@ -493,7 +549,7 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                                                     <option value="">{t.selectPosition}</option>
                                                     {positions.map((position) => (
                                                         <option key={position.id} value={position.id}>
-                                                            {position.displayName}
+                                                            {getPositionDisplayName(position)}
                                                         </option>
                                                     ))}
                                                 </select>
@@ -505,7 +561,9 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                                                                 className="h-4 w-4 rounded-full flex-shrink-0"
                                                                 style={{ backgroundColor: userPosition.color }}
                                                             />
-                                                            <span className="text-gray-900">{userPosition.displayName}</span>
+                                                            <span className="text-gray-900">
+                                                                {getPositionDisplayName(userPosition)}
+                                                            </span>
                                                         </>
                                                     ) : (
                                                         <span className="text-gray-500">{t.positionNotProvided}</span>
@@ -557,8 +615,8 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                                         {isOwnProfile && (
                                             <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                                                 <p className="text-sm text-green-800">
-                                                    <strong>✓ {t.myProfile}:</strong> Szerkesztheted a saját profil adataidat.
-                                                    {!canEdit && " A szerepköröd módosításához kérj segítséget egy vezetőtől."}
+                                                    <strong>✓ {t.myProfile}:</strong> {t.editOwnProfile}
+                                                    {!canEdit && ` ${t.roleChangeHelp}`}
                                                 </p>
                                             </div>
                                         )}
@@ -582,11 +640,25 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                                         </div>
                                         <div className="text-sm text-green-600">{t.currentRole}</div>
                                     </div>
-                                    <div className="text-center p-4 bg-purple-50 rounded-lg">
-                                        <div className="text-2xl font-bold text-purple-600">
-                                            {userPosition?.displayName || 'N/A'}
+                                    <div
+                                        className="text-center p-4 rounded-lg"
+                                        style={{
+                                            backgroundColor: userPosition?.color ? `${userPosition.color}20` : '#f3f4f6',
+                                            borderColor: userPosition?.color || '#e5e7eb'
+                                        }}
+                                    >
+                                        <div
+                                            className="text-2xl font-bold"
+                                            style={{ color: userPosition?.color || '#6b7280' }}
+                                        >
+                                            {userPosition ? getPositionDisplayName(userPosition) : 'N/A'}
                                         </div>
-                                        <div className="text-sm text-purple-600">{t.position}</div>
+                                        <div
+                                            className="text-sm"
+                                            style={{ color: userPosition?.color || '#6b7280' }}
+                                        >
+                                            {t.position}
+                                        </div>
                                     </div>
                                 </div>
                             </div>

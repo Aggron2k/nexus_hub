@@ -52,14 +52,14 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { name, displayName, description, color, order, isActive } = body;
+        const { name, displayNames, descriptions, color, order, isActive } = body;
 
         if (!name || name.trim().length === 0) {
             return new NextResponse("Position name is required", { status: 400 });
         }
 
-        if (!displayName || displayName.trim().length === 0) {
-            return new NextResponse("Display name is required", { status: 400 });
+        if (!displayNames || !displayNames.hu) {
+            return new NextResponse("Display names are required", { status: 400 });
         }
 
         // Ellenőrizzük, hogy nincs-e már ilyen nevű pozíció
@@ -74,8 +74,8 @@ export async function POST(request: NextRequest) {
         const position = await prisma.position.create({
             data: {
                 name: name.trim(),
-                displayName: displayName.trim(),
-                description: description?.trim() || null,
+                displayNames: displayNames,     // ← VÁLTOZÁS: displayName → displayNames
+                descriptions: descriptions,     // ← VÁLTOZÁS: description → descriptions
                 color: color || '#3B82F6',
                 order: order || 0,
                 isActive: isActive !== undefined ? isActive : true,
@@ -86,13 +86,6 @@ export async function POST(request: NextRequest) {
                     select: {
                         users: true,
                         todos: true
-                    }
-                },
-                createdBy: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true
                     }
                 }
             }

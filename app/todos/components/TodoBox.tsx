@@ -28,7 +28,10 @@ interface TodoWithRelations {
         position: {
             id: string;
             name: string;
-            displayName: string;
+            displayNames: {       // ← ÚJ
+                en: string;
+                hu: string;
+            };
             color: string;
         } | null;
     };
@@ -40,7 +43,10 @@ interface TodoWithRelations {
     targetPosition: {
         id: string;
         name: string;
-        displayName: string;
+        displayNames: {       // ← ÚJ
+            en: string;
+            hu: string;
+        };
         color: string;
     } | null;
 }
@@ -107,6 +113,13 @@ const TodoBox: React.FC<TodoBoxProps> = ({
     const isOverdue = todo.dueDate && isPast(new Date(todo.dueDate)) && todo.status !== 'COMPLETED';
     const locale = language === 'hu' ? hu : enUS;
 
+    const getPositionDisplayName = (position: { displayNames: { en: string; hu: string; }; name: string; }) => {
+        if (!position || !position.displayNames) {
+            return 'N/A';
+        }
+        return position.displayNames[language] || position.displayNames['hu'] || position.name;
+    };
+
     return (
         <div className={clsx(
             "relative flex items-start space-x-3 bg-white p-3 rounded-lg transition cursor-pointer border",
@@ -161,7 +174,7 @@ const TodoBox: React.FC<TodoBoxProps> = ({
                             className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium text-white"
                             style={{ backgroundColor: todo.targetPosition.color }}
                         >
-                            {todo.targetPosition.displayName}
+                            {getPositionDisplayName(todo.targetPosition)}
                         </span>
                     )}
                 </div>
@@ -188,7 +201,7 @@ const TodoBox: React.FC<TodoBoxProps> = ({
                         <span
                             className="w-2 h-2 rounded-full"
                             style={{ backgroundColor: todo.assignedUser.position.color }}
-                            title={todo.assignedUser.position.displayName}
+                            title={getPositionDisplayName(todo.assignedUser.position)}
                         />
                     )}
                 </div>

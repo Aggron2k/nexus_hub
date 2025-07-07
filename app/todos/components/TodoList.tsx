@@ -31,7 +31,10 @@ interface TodoWithRelations {
         position: {
             id: string;
             name: string;
-            displayName: string;
+            displayNames: {
+                en: string;
+                hu: string;
+            };
             color: string;
         } | null;
     };
@@ -43,7 +46,10 @@ interface TodoWithRelations {
     targetPosition: {
         id: string;
         name: string;
-        displayName: string;
+        displayNames: {
+            en: string;
+            hu: string;
+        };
         color: string;
     } | null;
 }
@@ -95,6 +101,13 @@ const TodoList: React.FC<TodoListProps> = ({ currentUser }) => {
             }
         }
     }, [pathname]);
+
+    const getPositionDisplayName = (position: { displayNames: { en: string; hu: string; }; name: string; }) => {
+        if (!position || !position.displayNames) {
+            return 'N/A';
+        }
+        return position.displayNames[language] || position.displayNames['hu'] || position.name;
+    };
 
     const fetchTodos = async () => {
         try {

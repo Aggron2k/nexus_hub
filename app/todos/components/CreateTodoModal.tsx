@@ -17,7 +17,10 @@ interface UserWithPosition {
     position: {
         id: string;
         name: string;
-        displayName: string;
+        displayNames: {
+            en: string;
+            hu: string;
+        };
         color: string;
     } | null;
     createdAt: string;
@@ -26,8 +29,14 @@ interface UserWithPosition {
 interface Position {
     id: string;
     name: string;
-    displayName: string;
-    description?: string;
+    displayNames: {
+        en: string;
+        hu: string;
+    };
+    descriptions?: {
+        en: string;
+        hu: string;
+    };
     isActive: boolean;
     color: string;
     order: number;
@@ -155,6 +164,13 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
             setSelectedUserIds(usersWithPosition.map(user => user.id));
         }
     }, [targetPositionId, users]);
+
+    const getPositionDisplayName = (position: Position) => {
+        if (!position || !position.displayNames) {
+            return 'N/A';
+        }
+        return position.displayNames[language] || position.displayNames['hu'] || position.name;
+    };
 
     const fetchUsers = async () => {
         try {
@@ -360,7 +376,7 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
                             <option value="">{t.selectPosition}</option>
                             {positions.map(position => (
                                 <option key={position.id} value={position.id}>
-                                    {position.displayName} ({position._count ? position._count.users : 0} felhasználó)
+                                    {getPositionDisplayName(position)} ({position._count?.users || 0} {t.users})
                                 </option>
                             ))}
                         </select>
@@ -426,13 +442,15 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
                                                     <span>{user.name}</span>
                                                     <span className="text-xs text-gray-500 flex items-center">
                                                         {user.position && (
-                                                            <>
-                                                                <span
-                                                                    className="inline-block w-2 h-2 rounded-full mr-1"
+                                                            <div className="flex items-center">  {/* mt-1 eltávolítva */}
+                                                                <div
+                                                                    className="w-3 h-3 rounded-full mr-2"
                                                                     style={{ backgroundColor: user.position.color }}
-                                                                ></span>
-                                                                {user.position.displayName}
-                                                            </>
+                                                                />
+                                                                <span className="text-xs text-gray-600">
+                                                                    {getPositionDisplayName(user.position)}
+                                                                </span>
+                                                            </div>
                                                         )}
                                                     </span>
                                                 </label>

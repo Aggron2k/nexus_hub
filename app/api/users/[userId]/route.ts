@@ -35,7 +35,17 @@ export async function GET(
                 id: userId
             },
             include: {
-                position: true
+                position: {
+                    select: {
+                        id: true,
+                        name: true,
+                        displayNames: true,    // ← displayName helyett
+                        descriptions: true,    // ← új mező
+                        color: true,
+                        isActive: true,
+                        order: true
+                    }
+                }
             }
         });
 
@@ -142,7 +152,17 @@ export async function PUT(
             },
             data: updateData,
             include: {
-                position: true
+                position: {
+                    select: {
+                        id: true,
+                        name: true,
+                        displayNames: true,    // ← displayName helyett
+                        descriptions: true,    // ← új mező
+                        color: true,
+                        isActive: true,
+                        order: true
+                    }
+                }
             }
         });
 
