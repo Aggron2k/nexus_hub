@@ -1,6 +1,8 @@
 // app/api/positions/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
+import bcrypt from "bcrypt";
+
 import prisma from "@/app/libs/prismadb";
 
 export async function GET() {
@@ -41,59 +43,56 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
     try {
-        const currentUser = await getCurrentUser();
-        if (!currentUser) {
-            return new NextResponse("Unauthorized", { status: 401 });
-        }
-
-        const isManager = ['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role);
-        if (!isManager) {
-            return new NextResponse("Forbidden", { status: 403 });
-        }
-
         const body = await request.json();
-        const { name, displayNames, descriptions, color, order, isActive } = body;
+        const { email, name, password } = body;
 
-        if (!name || name.trim().length === 0) {
-            return new NextResponse("Position name is required", { status: 400 });
+        // Adatok validálása
+        if (!email || !name || !password) {
+            return new NextResponse("Missing required fields", { status: 400 });
         }
 
-        if (!displayNames || !displayNames.hu) {
-            return new NextResponse("Display names are required", { status: 400 });
+        // Email validálás
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return new NextResponse("Invalid email format", { status: 400 });
         }
 
-        // Ellenőrizzük, hogy nincs-e már ilyen nevű pozíció
-        const existingPosition = await prisma.position.findUnique({
-            where: { name: name.trim() }
-        });
-
-        if (existingPosition) {
-            return new NextResponse("Position with this name already exists", { status: 400 });
+        // Jelszó validálás
+        if (password.length < 6) {
+            return new NextResponse("Password must be at least 6 characters", { status: 400 });
         }
 
-        const position = await prisma.position.create({
-            data: {
-                name: name.trim(),
-                displayNames: displayNames,     // ← VÁLTOZÁS: displayName → displayNames
-                descriptions: descriptions,     // ← VÁLTOZÁS: description → descriptions
-                color: color || '#3B82F6',
-                order: order || 0,
-                isActive: isActive !== undefined ? isActive : true,
-                createdById: currentUser.id
-            },
-            include: {
-                _count: {
-                    select: {
-                        users: true,
-                        todos: true
-                    }
-                }
+        // Ellenőrizzük, hogy már létezik-e a felhasználó
+        const existingUser = await prisma.user.findUnique({
+            where: {
+                email: email.toLowerCase()
             }
         });
 
-        return NextResponse.json(position);
+        if (existingUser) {
+            return new NextResponse("User already exists", { status: 409 });
+        }
+
+        // Jelszó hash-elése
+        const hashedPassword = await bcrypt.hash(password, 12);
+
+        // Új felhasználó létrehozása alapértelmezett Employee szerepkörrel
+        const user = await prisma.user.create({
+            data: {
+                email: email.toLowerCase(),
+                name: name.trim(),
+                hashedPassword,
+                role: 'Employee' // Alapértelmezett szerepkör
+            }
+        });
+
+        // Érzékeny adatok eltávolítása a válaszból
+        const { hashedPassword: _, ...safeUser } = user;
+
+        return NextResponse.json(safeUser, { status: 201 });
+
     } catch (error) {
-        console.error('POST /api/positions error:', error);
+        console.error('POST /api/register error:', error);
         return new NextResponse("Internal Error", { status: 500 });
     }
 }

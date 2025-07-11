@@ -540,7 +540,7 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                                                 <HiBriefcase className="inline h-4 w-4 mr-1" />
                                                 {t.position}
                                             </label>
-                                            {isEditing ? (
+                                            {isEditing && canEdit ? ( // VÁLTOZTATÁS: canEdit feltétel hozzáadva
                                                 <select
                                                     value={editData.positionId}
                                                     onChange={(e) => setEditData({ ...editData, positionId: e.target.value })}
@@ -567,6 +567,12 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                                                         </>
                                                     ) : (
                                                         <span className="text-gray-500">{t.positionNotProvided}</span>
+                                                    )}
+                                                    {/* Egyéb felhasználók számára információs üzenet */}
+                                                    {isOwnProfile && !canEdit && (
+                                                        <span className="text-sm text-gray-500 ml-2">
+                                                            ({t.roleChangeHelp})
+                                                        </span>
                                                     )}
                                                 </div>
                                             )}
