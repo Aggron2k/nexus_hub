@@ -29,6 +29,13 @@ enum TodoPriority {
   URGENT
 }
 
+enum EmploymentStatus {
+  ACTIVE      // Aktív
+  INACTIVE    // Inaktív
+  SUSPENDED   // Felfüggesztve
+  TERMINATED  // Megszüntetett
+}
+
 // Új Position model - dinamikus pozíciók
 model Position {
   id String @id @default(auto()) @map("_id") @db.ObjectId
@@ -67,6 +74,52 @@ model User {
   positionId String? @db.ObjectId
   position Position? @relation(fields: [positionId], references: [id])
 
+  // ÚJ MUNKAVÁLLALÓI MEZŐK
+  // Munkavállaló azonosító
+  employeeId String? // pl. "EMP001", "EMP002" - egyedi, de nem kötelező
+  
+  // Telefonszám
+  phoneNumber String?
+  
+  // Munkavállalói állapot
+  employmentStatus EmploymentStatus @default(ACTIVE)
+  
+  // Heti munkaidő (órában)
+  weeklyWorkHours Int? // pl. 40, 20, 8
+  
+  // Születési hely
+  birthCountry String? // pl. "Magyarország", "Hungary"
+  birthCity String? // pl. "Budapest", "Szeged"
+  
+  // Banki adatok
+  bankName String? // pl. "OTP Bank", "Erste Bank"
+  accountNumber String? // pl. "12345678-12345678-12345678"
+  
+  // Születési dátum
+  birthDate DateTime?
+  
+  // Címadatok
+  address String?
+  city String?
+  postalCode String?
+  country String?
+  
+  // Személyes adatok
+  personalIdNumber String? // személyi igazolvány száma
+  taxNumber String? // adószám
+  socialSecurityNumber String? // TAJ szám
+  
+  // Munkavállalási dátum
+  hireDate DateTime?
+  
+  // Fizetési információk
+  salary Float? // alapfizetés
+  hourlyRate Float? // órabér
+  currency String? @default("HUF")
+  
+  // Megjegyzések
+  notes String?
+
   conversationIds String[] @db.ObjectId
   conversations Conversation[] @relation(fields: [conversationIds], references: [id])
 
@@ -82,6 +135,8 @@ model User {
   createdTodos Todo[] @relation("CreatedBy")
   
   // Position létrehozás kapcsolatot eltávolítottuk a ciklikus referencia elkerülése érdekében
+  
+  @@index([employeeId]) // Egyedi index csak nem-null értékekre
 }
 
 model Account {
