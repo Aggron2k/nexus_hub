@@ -53,9 +53,33 @@ model Position {
   updatedAt DateTime @updatedAt
   createdById String? @db.ObjectId
   
-  // Kapcsolatok
-  users User[]
+  // Kapcsolatok - many-to-many a User-rel
+  userPositions UserPosition[]
   todos Todo[]
+}
+
+// Many-to-many kapcsolótábla User és Position között
+model UserPosition {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  
+  userId String @db.ObjectId
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  positionId String @db.ObjectId
+  position Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  
+  // Meta információk
+  isPrimary Boolean @default(false) // Elsődleges pozíció jelölése
+  assignedAt DateTime @default(now())
+  assignedBy String? @db.ObjectId // Ki rendelte hozzá
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Egyedi kapcsolat - egy user-position pár csak egyszer lehet
+  @@unique([userId, positionId])
+  @@index([userId])
+  @@index([positionId])
 }
 
 model User {
@@ -70,9 +94,8 @@ model User {
 
   role Role @default(Employee)
   
-  // Position kapcsolat - most már referencia a Position model-re
-  positionId String? @db.ObjectId
-  position Position? @relation(fields: [positionId], references: [id])
+  // Positions kapcsolat - many-to-many a UserPosition táblán keresztül
+  userPositions UserPosition[]
 
   // ÚJ MUNKAVÁLLALÓI MEZŐK
   // Munkavállaló azonosító

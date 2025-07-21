@@ -16,15 +16,8 @@ export async function GET() {
             include: {
                 _count: {
                     select: {
-                        users: true,
+                        userPositions: true,
                         todos: true
-                    }
-                },
-                createdBy: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true
                     }
                 }
             },

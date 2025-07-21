@@ -376,13 +376,13 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
                             <option value="">{t.selectPosition}</option>
                             {positions.map(position => (
                                 <option key={position.id} value={position.id}>
-                                    {getPositionDisplayName(position)} ({position._count?.users || 0} {t.users})
+                                    {getPositionDisplayName(position)}
                                 </option>
                             ))}
                         </select>
                         {selectedPosition && (
                             <p className="mt-1 text-sm text-gray-500">
-                                {selectedPosition.description}
+                                {selectedPosition.descriptions?.[language] || selectedPosition.descriptions?.['en'] || ''}
                             </p>
                         )}
                     </div>

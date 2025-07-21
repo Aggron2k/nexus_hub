@@ -26,13 +26,22 @@ export async function GET() {
                 isActive: true,           // ← HOZZÁADÁS
                 _count: {
                     select: {
-                        users: true
+                        userPositions: true
                     }
                 }
             }
         });
 
-        return NextResponse.json(positions);
+        // Backward compatibility - users count hozzáadása
+        const processedPositions = positions.map(position => ({
+            ...position,
+            _count: {
+                ...position._count,
+                users: position._count.userPositions
+            }
+        }));
+
+        return NextResponse.json(processedPositions);
     } catch (error) {
         console.error('GET /api/positions error:', error);
         return new NextResponse("Internal Error", { status: 500 });

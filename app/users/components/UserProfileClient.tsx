@@ -18,20 +18,36 @@ interface Position {
     isActive: boolean;
 }
 
-interface UserWithPosition extends User {
-    position?: Position;
-    employeeId?: string;
-    phoneNumber?: string;
-    employmentStatus?: string;
-    weeklyWorkHours?: number;
-    birthCountry?: string;
-    birthCity?: string;
-    bankName?: string;
-    accountNumber?: string;
-    salary?: number;
-    hourlyRate?: number;
-    currency?: string;
-    notes?: string;
+interface UserPosition extends Position {
+    isPrimary: boolean;
+    assignedAt: string;
+}
+
+interface UserWithPosition {
+    id: string;
+    name: string | null;
+    email: string;
+    emailVerified: Date | null;
+    image: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    role: Role;
+    
+    // Extended fields
+    position?: Position; // Backward compatibility - primary position
+    positions?: UserPosition[]; // New multiple positions
+    employeeId?: string | null;
+    phoneNumber?: string | null;
+    employmentStatus?: string | null;
+    weeklyWorkHours?: number | null;
+    birthCountry?: string | null;
+    birthCity?: string | null;
+    bankName?: string | null;
+    accountNumber?: string | null;
+    salary?: number | null;
+    hourlyRate?: number | null;
+    currency?: string | null;
+    notes?: string | null;
     hasPassword?: boolean;
 }
 
@@ -49,6 +65,8 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'profile' | 'employment' | 'bank'>('profile');
     const [showPasswordSection, setShowPasswordSection] = useState(false);
+    const [showAddPositionModal, setShowAddPositionModal] = useState(false);
+    const [availablePositions, setAvailablePositions] = useState<Position[]>([]);
 
     const [editData, setEditData] = useState({
         name: '',
@@ -96,7 +114,11 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
             currentPassword: "Current Password", newPassword: "New Password", confirmPassword: "Confirm Password",
             active: "Active", inactive: "Inactive", suspended: "Suspended", terminated: "Terminated",
             quickStats: "Quick Stats", daysInTeam: "Days in team", currentRole: "Current role",
-            oauthPasswordMessage: "Password change is not available for users authenticated with OAuth providers (Google, GitHub)."
+            oauthPasswordMessage: "Password change is not available for users authenticated with OAuth providers (Google, GitHub).",
+            positions: "Positions", primaryPosition: "Primary Position", addPosition: "Add Position", removePosition: "Remove Position",
+            selectPosition: "Select Position", setPrimary: "Set as Primary", managingPositions: "Managing Positions", 
+            positionAdded: "Position added successfully", positionRemoved: "Position removed successfully", 
+            positionSetPrimary: "Primary position updated", selectPositionToAdd: "Select a position to add"
         },
         hu: {
             profile: "Felhasználói Profil", edit: "Szerkesztés", save: "Mentés", cancel: "Mégse", saving: "Mentés...",
@@ -111,7 +133,11 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
             currentPassword: "Jelenlegi jelszó", newPassword: "Új jelszó", confirmPassword: "Új jelszó megerősítése",
             active: "Aktív", inactive: "Inaktív", suspended: "Felfüggesztve", terminated: "Megszüntetett",
             quickStats: "Gyors statisztikák", daysInTeam: "Napja a csapatban", currentRole: "Jelenlegi szerep",
-            oauthPasswordMessage: "A jelszó módosítása nem elérhető OAuth szolgáltatókkal (Google, GitHub) bejelentkezett felhasználók számára."
+            oauthPasswordMessage: "A jelszó módosítása nem elérhető OAuth szolgáltatókkal (Google, GitHub) bejelentkezett felhasználók számára.",
+            positions: "Pozíciók", primaryPosition: "Elsődleges pozíció", addPosition: "Pozíció hozzáadása", removePosition: "Pozíció eltávolítása",
+            selectPosition: "Pozíció kiválasztása", setPrimary: "Beállítás elsődlegesként", managingPositions: "Pozíciók kezelése",
+            positionAdded: "Pozíció sikeresen hozzáadva", positionRemoved: "Pozíció sikeresen eltávolítva", 
+            positionSetPrimary: "Elsődleges pozíció frissítve", selectPositionToAdd: "Válassz egy pozíciót a hozzáadáshoz"
         }
     };
 
@@ -224,6 +250,51 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
             .finally(() => setChatLoading(false));
     }, [selectedUser, isOwnProfile, router]);
 
+    // Pozíció kezelő függvények
+    const handleAddPosition = async (positionId: string, isPrimary = false) => {
+        if (!selectedUser) return;
+        setLoading(true);
+        try {
+            await axios.post(`/api/users/${selectedUser.id}/positions`, {
+                positionId,
+                isPrimary
+            });
+            // Frissítsük a felhasználó adatait
+            const response = await axios.get(`/api/users/${selectedUser.id}`);
+            setSelectedUser(response.data);
+            setShowAddPositionModal(false);
+            toast.success(t.positionAdded);
+        } catch (error) {
+            toast.error('Hiba a pozíció hozzáadásakor');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleRemovePosition = async (positionId: string) => {
+        if (!selectedUser) return;
+        setLoading(true);
+        try {
+            await axios.delete(`/api/users/${selectedUser.id}/positions?positionId=${positionId}`);
+            // Frissítsük a felhasználó adatait
+            const response = await axios.get(`/api/users/${selectedUser.id}`);
+            setSelectedUser(response.data);
+            toast.success(t.positionRemoved);
+        } catch (error) {
+            toast.error('Hiba a pozíció eltávolításakor');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSetPrimaryPosition = async (positionId: string) => {
+        if (!selectedUser) return;
+        // Először eltávolítjuk, majd újra hozzáadjuk elsődlegesként
+        await handleRemovePosition(positionId);
+        await handleAddPosition(positionId, true);
+        toast.success(t.positionSetPrimary);
+    };
+
     const getRoleDisplayName = (role: Role) => {
         const roles = { [Role.Employee]: t.employee, [Role.Manager]: t.manager, [Role.GeneralManager]: t.generalManager, [Role.CEO]: t.ceo };
         return roles[role];
@@ -237,7 +308,13 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
     if (loading && !selectedUser) return <LoadingModal />;
     if (!selectedUser) return <div className="lg:pl-80 h-full flex items-center justify-center"><p>Felhasználó nem található</p></div>;
 
-    const userPosition = selectedUser.position;
+    // Position meghatározása - elsődleges vagy első pozíció (backward compatibility)
+    const userPosition = selectedUser.position || (selectedUser.positions && selectedUser.positions.length > 0 
+        ? selectedUser.positions.find(p => p.isPrimary) || selectedUser.positions[0] 
+        : null);
+    
+    // Összes pozíció
+    const allUserPositions = selectedUser.positions || [];
 
     return (
         <>
@@ -409,6 +486,80 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                                 </div>
                             )}
 
+                            {/* Positions */}
+                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-lg font-medium text-gray-900">{t.positions}</h3>
+                                    <div className="flex items-center gap-2">
+                                        <span className="bg-nexus-primary text-nexus-tertiary px-2 py-1 rounded-full text-sm font-medium">
+                                            {allUserPositions.length}
+                                        </span>
+                                        {canEdit && (
+                                            <button
+                                                onClick={() => setShowAddPositionModal(true)}
+                                                className="px-3 py-1 bg-nexus-primary text-nexus-tertiary text-sm rounded-md hover:bg-nexus-secondary hover:text-white transition-colors"
+                                            >
+                                                {t.addPosition}
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                                
+                                {allUserPositions.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {allUserPositions.map((position) => (
+                                            <div key={position.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                                                <div className="flex items-center space-x-3">
+                                                    <div 
+                                                        className="w-4 h-4 rounded-full flex-shrink-0" 
+                                                        style={{ backgroundColor: position.color }}
+                                                    />
+                                                    <div>
+                                                        <h4 className="text-sm font-medium text-gray-900">
+                                                            {position.displayNames[language] || position.name}
+                                                        </h4>
+                                                        {position.isPrimary && (
+                                                            <span className="text-xs text-nexus-tertiary bg-nexus-primary px-2 py-1 rounded-full">
+                                                                {t.primaryPosition}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="text-xs text-gray-500">
+                                                        {new Date(position.assignedAt).toLocaleDateString()}
+                                                    </div>
+                                                    {canEdit && (
+                                                        <div className="flex gap-1">
+                                                            {!position.isPrimary && (
+                                                                <button
+                                                                    onClick={() => handleSetPrimaryPosition(position.id)}
+                                                                    className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded hover:bg-green-200 transition-colors"
+                                                                    disabled={loading}
+                                                                >
+                                                                    {t.setPrimary}
+                                                                </button>
+                                                            )}
+                                                            <button
+                                                                onClick={() => handleRemovePosition(position.id)}
+                                                                className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded hover:bg-red-200 transition-colors"
+                                                                disabled={loading || position.isPrimary}
+                                                            >
+                                                                {t.removePosition}
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8 text-gray-500">
+                                        <p>{"Nincsenek hozzárendelt pozíciók"}</p>
+                                    </div>
+                                )}
+                            </div>
+
                             {/* Quick Stats */}
                             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                                 <h3 className="text-lg font-medium text-gray-900 mb-4">{t.quickStats}</h3>
@@ -431,6 +582,47 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                     </div>
                 </div>
             </div>
+
+            {/* Position Add Modal */}
+            {showAddPositionModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+                        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                            <h3 className="text-lg font-semibold text-gray-900">{t.addPosition}</h3>
+                            <button
+                                onClick={() => setShowAddPositionModal(false)}
+                                className="text-gray-400 hover:text-gray-600"
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <div className="p-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                {t.selectPositionToAdd}
+                            </label>
+                            <select
+                                onChange={(e) => {
+                                    const positionId = e.target.value;
+                                    if (positionId) {
+                                        handleAddPosition(positionId, allUserPositions.length === 0);
+                                    }
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-nexus-primary focus:border-nexus-primary"
+                                defaultValue=""
+                            >
+                                <option value="">{t.selectPosition}</option>
+                                {positions
+                                    .filter(p => !allUserPositions.some(up => up.id === p.id))
+                                    .map(position => (
+                                        <option key={position.id} value={position.id}>
+                                            {position.displayNames[language] || position.name}
+                                        </option>
+                                    ))}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 };

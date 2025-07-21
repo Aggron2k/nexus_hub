@@ -55,7 +55,7 @@ const UserList: React.FC<UserListProps> = ({ items }) => {
         if (pathname === "/documents") {
             setSelectedUserId(null);
         } else {
-            const userIdMatch = pathname.match(/\/documents\/(.+)/);
+            const userIdMatch = pathname?.match(/\/documents\/(.+)/);
             if (userIdMatch) {
                 setSelectedUserId(userIdMatch[1]);
             }
@@ -74,7 +74,7 @@ const UserList: React.FC<UserListProps> = ({ items }) => {
     });
 
     // Egyedi szerepkörök listája
-    const uniqueRoles = [...new Set(items.map(user => user.role))];
+    const uniqueRoles = Array.from(new Set(items.map(user => user.role)));
 
     return (
         <aside

@@ -64,15 +64,21 @@ export async function GET(request: NextRequest) {
                         name: true,
                         email: true,
                         role: true,
-                        positionId: true,
-                        position: {
+                        userPositions: {
                             select: {
-                                id: true,
-                                name: true,
-                                displayNames: true,    // ← VÁLTOZÁS: displayName → displayNames
-                                descriptions: true,    // ← HOZZÁADÁS
-                                color: true
-                            }
+                                isPrimary: true,
+                                position: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        displayNames: true,
+                                        descriptions: true,
+                                        color: true
+                                    }
+                                }
+                            },
+                            where: { isPrimary: true },
+                            take: 1
                         }
                     }
                 },
@@ -140,7 +146,11 @@ export async function POST(request: NextRequest) {
         if (assignToAll && targetPositionId) {
             const usersWithPosition = await prisma.user.findMany({
                 where: {
-                    positionId: targetPositionId
+                    userPositions: {
+                        some: {
+                            positionId: targetPositionId
+                        }
+                    }
                 }
             });
 
@@ -169,14 +179,20 @@ export async function POST(request: NextRequest) {
                                     name: true,
                                     email: true,
                                     role: true,
-                                    positionId: true,
-                                    position: {
+                                    userPositions: {
                                         select: {
-                                            id: true,
-                                            name: true,
-                                            displayName: true,
-                                            color: true
-                                        }
+                                            isPrimary: true,
+                                            position: {
+                                                select: {
+                                                    id: true,
+                                                    name: true,
+                                                    displayNames: true,
+                                                    color: true
+                                                }
+                                            }
+                                        },
+                                        where: { isPrimary: true },
+                                        take: 1
                                     }
                                 }
                             },
@@ -191,7 +207,7 @@ export async function POST(request: NextRequest) {
                                 select: {
                                     id: true,
                                     name: true,
-                                    displayName: true,
+                                    displayNames: true,
                                     color: true
                                 }
                             }
@@ -225,8 +241,22 @@ export async function POST(request: NextRequest) {
                                     id: true,
                                     name: true,
                                     email: true,
-                                    position: true,
-                                    role: true
+                                    role: true,
+                                    userPositions: {
+                                        select: {
+                                            isPrimary: true,
+                                            position: {
+                                                select: {
+                                                    id: true,
+                                                    name: true,
+                                                    displayNames: true,
+                                                    color: true
+                                                }
+                                            }
+                                        },
+                                        where: { isPrimary: true },
+                                        take: 1
+                                    }
                                 }
                             },
                             createdBy: {

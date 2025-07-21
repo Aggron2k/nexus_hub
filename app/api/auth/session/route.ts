@@ -14,8 +14,7 @@ export async function GET() {
                 id: currentUser.id,
                 name: currentUser.name,
                 email: currentUser.email,
-                role: currentUser.role,
-                position: currentUser.position
+                role: currentUser.role
             }
         });
     } catch (error) {

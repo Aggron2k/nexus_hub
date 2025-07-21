@@ -35,16 +35,24 @@ export async function GET(
                 id: userId
             },
             include: {
-                position: {
-                    select: {
-                        id: true,
-                        name: true,
-                        displayNames: true,
-                        descriptions: true,
-                        color: true,
-                        isActive: true,
-                        order: true
-                    }
+                userPositions: {
+                    include: {
+                        position: {
+                            select: {
+                                id: true,
+                                name: true,
+                                displayNames: true,
+                                descriptions: true,
+                                color: true,
+                                isActive: true,
+                                order: true
+                            }
+                        }
+                    },
+                    orderBy: [
+                        { isPrimary: 'desc' },
+                        { assignedAt: 'desc' }
+                    ]
                 }
             }
         });
@@ -54,10 +62,26 @@ export async function GET(
         }
 
         // Érzékeny adatok eltávolítása, de jelezzük, hogy van-e jelszó
-        const { hashedPassword, ...safeUser } = user;
+        const { hashedPassword, userPositions, ...safeUser } = user;
         const userWithPasswordInfo = {
             ...safeUser,
-            hasPassword: !!hashedPassword
+            hasPassword: !!hashedPassword,
+            // Pozíciók feldolgozása - egyszerűsített formátumban
+            positions: userPositions.map(up => ({
+                id: up.position.id,
+                name: up.position.name,
+                displayNames: up.position.displayNames,
+                descriptions: up.position.descriptions,
+                color: up.position.color,
+                isActive: up.position.isActive,
+                order: up.position.order,
+                isPrimary: up.isPrimary,
+                assignedAt: up.assignedAt
+            })),
+            // Visszameneti kompatibilitás - elsődleges vagy első pozíció
+            position: userPositions.length > 0 
+                ? (userPositions.find(up => up.isPrimary) || userPositions[0]).position
+                : null
         };
 
         return NextResponse.json(userWithPasswordInfo);
@@ -98,7 +122,7 @@ export async function PUT(
             name,
             email,
             role,
-            positionId,
+            positionId, // Backward compatibility - egy pozíció beállításához
             image,
             employeeId,
             phoneNumber,
@@ -165,7 +189,6 @@ export async function PUT(
         // Alapadatok
         if (name !== undefined) updateData.name = name.trim();
         if (email !== undefined) updateData.email = email.toLowerCase();
-        if (positionId !== undefined) updateData.positionId = positionId || null;
         if (image !== undefined) updateData.image = image || null;
 
         // Szerepkör csak jogosultsággal
@@ -215,30 +238,74 @@ export async function PUT(
         if (currency !== undefined) updateData.currency = currency || 'HUF';
         if (notes !== undefined) updateData.notes = notes || null;
 
+        // Pozíció kezelés (backward compatibility)
+        if (positionId !== undefined) {
+            // Törli az összes meglévő pozíciót
+            await prisma.userPosition.deleteMany({
+                where: { userId: userId }
+            });
+
+            // Ha van új pozíció, hozzáadja elsődlegesként
+            if (positionId) {
+                await prisma.userPosition.create({
+                    data: {
+                        userId: userId,
+                        positionId: positionId,
+                        isPrimary: true,
+                        assignedBy: currentUser.id
+                    }
+                });
+            }
+        }
+
         // Felhasználó frissítése
         const updatedUser = await prisma.user.update({
             where: { id: userId },
             data: updateData,
             include: {
-                position: {
-                    select: {
-                        id: true,
-                        name: true,
-                        displayNames: true,
-                        descriptions: true,
-                        color: true,
-                        isActive: true,
-                        order: true
-                    }
+                userPositions: {
+                    include: {
+                        position: {
+                            select: {
+                                id: true,
+                                name: true,
+                                displayNames: true,
+                                descriptions: true,
+                                color: true,
+                                isActive: true,
+                                order: true
+                            }
+                        }
+                    },
+                    orderBy: [
+                        { isPrimary: 'desc' },
+                        { assignedAt: 'desc' }
+                    ]
                 }
             }
         });
 
         // Érzékeny adatok eltávolítása, de jelezzük, hogy van-e jelszó
-        const { hashedPassword, ...safeUser } = updatedUser;
+        const { hashedPassword, userPositions, ...safeUser } = updatedUser;
         const userWithPasswordInfo = {
             ...safeUser,
-            hasPassword: !!hashedPassword
+            hasPassword: !!hashedPassword,
+            // Pozíciók feldolgozása - egyszerűsített formátumban
+            positions: userPositions.map(up => ({
+                id: up.position.id,
+                name: up.position.name,
+                displayNames: up.position.displayNames,
+                descriptions: up.position.descriptions,
+                color: up.position.color,
+                isActive: up.position.isActive,
+                order: up.position.order,
+                isPrimary: up.isPrimary,
+                assignedAt: up.assignedAt
+            })),
+            // Visszameneti kompatibilitás - elsődleges vagy első pozíció
+            position: userPositions.length > 0 
+                ? (userPositions.find(up => up.isPrimary) || userPositions[0]).position
+                : null
         };
 
         return NextResponse.json(userWithPasswordInfo);

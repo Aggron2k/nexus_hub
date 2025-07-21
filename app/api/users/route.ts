@@ -22,15 +22,26 @@ export async function GET() {
                 name: true,
                 email: true,
                 role: true,
-                positionId: true,
-                position: {
+                userPositions: {
                     select: {
-                        id: true,
-                        name: true,
-                        displayNames: true,        // ← VÁLTOZÁS: displayName → displayNames
-                        descriptions: true,        // ← HOZZÁADÁS
-                        color: true
-                    }
+                        isPrimary: true,
+                        assignedAt: true,
+                        position: {
+                            select: {
+                                id: true,
+                                name: true,
+                                displayNames: true,
+                                descriptions: true,
+                                color: true,
+                                isActive: true,
+                                order: true
+                            }
+                        }
+                    },
+                    orderBy: [
+                        { isPrimary: 'desc' },
+                        { assignedAt: 'desc' }
+                    ]
                 },
                 createdAt: true
             },
@@ -39,7 +50,33 @@ export async function GET() {
             }
         });
 
-        return NextResponse.json(users);
+        // Feldolgozzuk a választ backward compatibility érdekében
+        const processedUsers = users.map(user => {
+            const { userPositions, ...userData } = user;
+            const primaryPosition = userPositions.find(up => up.isPrimary);
+            const firstPosition = userPositions.length > 0 ? userPositions[0] : null;
+            
+            return {
+                ...userData,
+                // Új formátum - több pozíció
+                positions: userPositions.map(up => ({
+                    id: up.position.id,
+                    name: up.position.name,
+                    displayNames: up.position.displayNames,
+                    descriptions: up.position.descriptions,
+                    color: up.position.color,
+                    isActive: up.position.isActive,
+                    order: up.position.order,
+                    isPrimary: up.isPrimary,
+                    assignedAt: up.assignedAt
+                })),
+                // Backward compatibility - elsődleges vagy első pozíció
+                position: primaryPosition?.position || firstPosition?.position || null,
+                positionId: primaryPosition?.position.id || firstPosition?.position.id || null
+            };
+        });
+
+        return NextResponse.json(processedUsers);
     } catch (error) {
         console.error('GET /api/users error:', error);
         return new NextResponse("Internal Error", { status: 500 });

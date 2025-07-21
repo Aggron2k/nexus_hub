@@ -28,8 +28,22 @@ export async function GET(
                         id: true,
                         name: true,
                         email: true,
-                        position: true,
-                        role: true
+                        role: true,
+                        userPositions: {
+                            select: {
+                                isPrimary: true,
+                                position: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        displayNames: true,
+                                        color: true
+                                    }
+                                }
+                            },
+                            where: { isPrimary: true },
+                            take: 1
+                        }
                     }
                 },
                 createdBy: {
@@ -120,7 +134,22 @@ export async function PATCH(
                         id: true,
                         name: true,
                         email: true,
-                        position: true
+                        role: true,
+                        userPositions: {
+                            select: {
+                                isPrimary: true,
+                                position: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        displayNames: true,
+                                        color: true
+                                    }
+                                }
+                            },
+                            where: { isPrimary: true },
+                            take: 1
+                        }
                     }
                 },
                 createdBy: {
