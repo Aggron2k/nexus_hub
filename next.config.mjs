@@ -4,7 +4,6 @@ const nextConfig = {
         ignoreDuringBuilds: true,
     },
     experimental: {
-        appDir: true,
         swcPlugins: [
             ["next-superjson-plugin", {}]
         ]
@@ -17,6 +16,11 @@ const nextConfig = {
             "lh3.googleusercontent.com",
             "images.unsplash.com"
         ]
+    },
+    webpack: (config) => {
+        config.resolve.alias.canvas = false;
+        config.externals = [...(config.externals || []), 'canvas'];
+        return config;
     }
 };
 

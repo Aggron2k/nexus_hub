@@ -32,6 +32,7 @@ interface UserWithPosition extends User {
     hourlyRate?: number;
     currency?: string;
     notes?: string;
+    hasPassword?: boolean;
 }
 
 interface UserProfileClientProps {
@@ -94,7 +95,8 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
             currency: "Currency", notes: "Notes", changePassword: "Change Password",
             currentPassword: "Current Password", newPassword: "New Password", confirmPassword: "Confirm Password",
             active: "Active", inactive: "Inactive", suspended: "Suspended", terminated: "Terminated",
-            quickStats: "Quick Stats", daysInTeam: "Days in team", currentRole: "Current role"
+            quickStats: "Quick Stats", daysInTeam: "Days in team", currentRole: "Current role",
+            oauthPasswordMessage: "Password change is not available for users authenticated with OAuth providers (Google, GitHub)."
         },
         hu: {
             profile: "Felhasználói Profil", edit: "Szerkesztés", save: "Mentés", cancel: "Mégse", saving: "Mentés...",
@@ -108,7 +110,8 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
             currency: "Pénznem", notes: "Megjegyzések", changePassword: "Jelszó módosítása",
             currentPassword: "Jelenlegi jelszó", newPassword: "Új jelszó", confirmPassword: "Új jelszó megerősítése",
             active: "Aktív", inactive: "Inaktív", suspended: "Felfüggesztve", terminated: "Megszüntetett",
-            quickStats: "Gyors statisztikák", daysInTeam: "Napja a csapatban", currentRole: "Jelenlegi szerep"
+            quickStats: "Gyors statisztikák", daysInTeam: "Napja a csapatban", currentRole: "Jelenlegi szerep",
+            oauthPasswordMessage: "A jelszó módosítása nem elérhető OAuth szolgáltatókkal (Google, GitHub) bejelentkezett felhasználók számára."
         }
     };
 
@@ -376,21 +379,31 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                                     <div className="flex items-center justify-between mb-4">
                                         <h3 className="text-lg font-medium text-gray-900">{t.changePassword}</h3>
-                                        <button onClick={() => setShowPasswordSection(!showPasswordSection)} className="text-nexus-primary hover:text-opacity-80 text-sm">{showPasswordSection ? t.cancel : t.changePassword}</button>
+                                        {selectedUser?.hasPassword ? (
+                                            <button onClick={() => setShowPasswordSection(!showPasswordSection)} className="text-nexus-primary hover:text-opacity-80 text-sm">{showPasswordSection ? t.cancel : t.changePassword}</button>
+                                        ) : (
+                                            <span className="text-gray-400 text-sm">OAuth</span>
+                                        )}
                                     </div>
-                                    {showPasswordSection && (
-                                        <div className="space-y-4">
-                                            {[
-                                                { key: 'currentPassword', label: t.currentPassword },
-                                                { key: 'newPassword', label: t.newPassword },
-                                                { key: 'confirmPassword', label: t.confirmPassword }
-                                            ].map(({ key, label }) => (
-                                                <div key={key}>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-                                                    <input type="password" value={passwordData[key as keyof typeof passwordData]} onChange={(e) => setPasswordData({ ...passwordData, [key]: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-nexus-primary focus:border-nexus-primary" />
-                                                </div>
-                                            ))}
-                                            <button onClick={handlePasswordChange} disabled={loading || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword} className="w-full px-4 py-2 bg-nexus-primary text-nexus-tertiary rounded-lg hover:bg-opacity-90 disabled:opacity-50">{loading ? t.saving : t.changePassword}</button>
+                                    {selectedUser?.hasPassword ? (
+                                        showPasswordSection && (
+                                            <div className="space-y-4">
+                                                {[
+                                                    { key: 'currentPassword', label: t.currentPassword },
+                                                    { key: 'newPassword', label: t.newPassword },
+                                                    { key: 'confirmPassword', label: t.confirmPassword }
+                                                ].map(({ key, label }) => (
+                                                    <div key={key}>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+                                                        <input type="password" value={passwordData[key as keyof typeof passwordData]} onChange={(e) => setPasswordData({ ...passwordData, [key]: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-nexus-primary focus:border-nexus-primary" />
+                                                    </div>
+                                                ))}
+                                                <button onClick={handlePasswordChange} disabled={loading || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword} className="w-full px-4 py-2 bg-nexus-primary text-nexus-tertiary rounded-lg hover:bg-opacity-90 disabled:opacity-50">{loading ? t.saving : t.changePassword}</button>
+                                            </div>
+                                        )
+                                    ) : (
+                                        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                            <p className="text-sm text-yellow-800">{t.oauthPasswordMessage}</p>
                                         </div>
                                     )}
                                 </div>

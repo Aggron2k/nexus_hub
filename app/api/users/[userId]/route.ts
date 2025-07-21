@@ -53,10 +53,14 @@ export async function GET(
             return new NextResponse("User not found", { status: 404 });
         }
 
-        // Érzékeny adatok eltávolítása
+        // Érzékeny adatok eltávolítása, de jelezzük, hogy van-e jelszó
         const { hashedPassword, ...safeUser } = user;
+        const userWithPasswordInfo = {
+            ...safeUser,
+            hasPassword: !!hashedPassword
+        };
 
-        return NextResponse.json(safeUser);
+        return NextResponse.json(userWithPasswordInfo);
 
     } catch (error) {
         console.error('GET /api/users/[userId] error:', error);
@@ -230,10 +234,14 @@ export async function PUT(
             }
         });
 
-        // Érzékeny adatok eltávolítása
+        // Érzékeny adatok eltávolítása, de jelezzük, hogy van-e jelszó
         const { hashedPassword, ...safeUser } = updatedUser;
+        const userWithPasswordInfo = {
+            ...safeUser,
+            hasPassword: !!hashedPassword
+        };
 
-        return NextResponse.json(safeUser);
+        return NextResponse.json(userWithPasswordInfo);
 
     } catch (error) {
         console.error('PUT /api/users/[userId] error:', error);
