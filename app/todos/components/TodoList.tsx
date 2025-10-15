@@ -11,6 +11,31 @@ import { HiPlus } from "react-icons/hi2";
 import axios from "axios";
 import CreateTodoModal from "./CreateTodoModal";
 
+interface TodoAssignment {
+    id: string;
+    userId: string;
+    status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "OVERDUE";
+    completedAt: Date | null;
+    user: {
+        id: string;
+        name: string;
+        email: string;
+        role: string;
+        userPositions?: Array<{
+            isPrimary: boolean;
+            position: {
+                id: string;
+                name: string;
+                displayNames: {
+                    en: string;
+                    hu: string;
+                };
+                color: string;
+            };
+        }>;
+    };
+}
+
 interface TodoWithRelations {
     id: string;
     title: string;
@@ -22,22 +47,7 @@ interface TodoWithRelations {
     completedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
-    assignedUser: {
-        id: string;
-        name: string;
-        email: string;
-        role: string;
-        positionId: string | null;
-        position: {
-            id: string;
-            name: string;
-            displayNames: {
-                en: string;
-                hu: string;
-            };
-            color: string;
-        } | null;
-    };
+    assignments: TodoAssignment[];
     createdBy: {
         id: string;
         name: string;

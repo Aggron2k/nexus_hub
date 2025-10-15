@@ -21,25 +21,56 @@ export interface FullDocumentType {
     userId: string;
 }
 
+export interface TodoAssignment {
+    id: string;
+    userId: string;
+    todoId: string;
+    status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'OVERDUE';
+    completedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    user: {
+        id: string;
+        name: string;
+        email: string;
+        role: string;
+        userPositions?: Array<{
+            isPrimary: boolean;
+            position: {
+                id: string;
+                name: string;
+                displayNames: { en: string; hu: string };
+                descriptions?: { en: string; hu: string };
+                color: string;
+            };
+        }>;
+    };
+}
+
 export interface TodoWithRelations {
     id: string;
     title: string;
     description?: string;
-    status: string;
-    priority: string;
-    assignedUser: {
+    status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'OVERDUE';
+    priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+    startDate: Date | null;
+    dueDate: Date | null;
+    completedAt: Date | null;
+    assignments: TodoAssignment[];
+    targetPosition?: {
         id: string;
         name: string;
-        email: string;
-        position?: string;
-        role: string;
-    };
+        displayNames: { en: string; hu: string };
+        descriptions?: { en: string; hu: string };
+        color: string;
+    } | null;
     createdBy: {
         id: string;
         name: string;
         email: string;
     };
-    createdAt: string;
-    updatedAt: string;
+    notes?: string | null;
+    createdAt: Date | string;
+    updatedAt: Date | string;
 }
 

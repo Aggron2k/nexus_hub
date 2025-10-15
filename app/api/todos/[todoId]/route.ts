@@ -23,27 +23,31 @@ export async function GET(
         const todo = await prisma.todo.findUnique({
             where: { id: todoId },
             include: {
-                assignedUser: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        role: true,
-                        userPositions: {
+                assignments: {
+                    include: {
+                        user: {
                             select: {
-                                isPrimary: true,
-                                position: {
+                                id: true,
+                                name: true,
+                                email: true,
+                                role: true,
+                                userPositions: {
                                     select: {
-                                        id: true,
-                                        name: true,
-                                        displayNames: true,
-                                        descriptions: true,
-                                        color: true
-                                    }
+                                        isPrimary: true,
+                                        position: {
+                                            select: {
+                                                id: true,
+                                                name: true,
+                                                displayNames: true,
+                                                descriptions: true,
+                                                color: true
+                                            }
+                                        }
+                                    },
+                                    where: { isPrimary: true },
+                                    take: 1
                                 }
-                            },
-                            where: { isPrimary: true },
-                            take: 1
+                            }
                         }
                     }
                 },
@@ -72,9 +76,9 @@ export async function GET(
 
         // Hozzáférés ellenőrzése
         const isManager = ['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role);
-        const isOwner = todo.assignedUserId === currentUser.id;
+        const isAssigned = todo.assignments.some(assignment => assignment.userId === currentUser.id);
 
-        if (!isManager && !isOwner) {
+        if (!isManager && !isAssigned) {
             return new NextResponse("Forbidden", { status: 403 });
         }
 
@@ -101,7 +105,10 @@ export async function PATCH(
         const { status, notes, completedAt } = body;
 
         const todo = await prisma.todo.findUnique({
-            where: { id: todoId }
+            where: { id: todoId },
+            include: {
+                assignments: true
+            }
         });
 
         if (!todo) {
@@ -110,9 +117,9 @@ export async function PATCH(
 
         // Hozzáférés ellenőrzése
         const isManager = ['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role);
-        const isOwner = todo.assignedUserId === currentUser.id;
+        const userAssignment = todo.assignments.find(a => a.userId === currentUser.id);
 
-        if (!isManager && !isOwner) {
+        if (!isManager && !userAssignment) {
             return new NextResponse("Forbidden", { status: 403 });
         }
 
@@ -139,27 +146,31 @@ export async function PATCH(
             where: { id: todoId },
             data: updateData,
             include: {
-                assignedUser: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        role: true,
-                        userPositions: {
+                assignments: {
+                    include: {
+                        user: {
                             select: {
-                                isPrimary: true,
-                                position: {
+                                id: true,
+                                name: true,
+                                email: true,
+                                role: true,
+                                userPositions: {
                                     select: {
-                                        id: true,
-                                        name: true,
-                                        displayNames: true,
-                                        descriptions: true,
-                                        color: true
-                                    }
+                                        isPrimary: true,
+                                        position: {
+                                            select: {
+                                                id: true,
+                                                name: true,
+                                                displayNames: true,
+                                                descriptions: true,
+                                                color: true
+                                            }
+                                        }
+                                    },
+                                    where: { isPrimary: true },
+                                    take: 1
                                 }
-                            },
-                            where: { isPrimary: true },
-                            take: 1
+                            }
                         }
                     }
                 },

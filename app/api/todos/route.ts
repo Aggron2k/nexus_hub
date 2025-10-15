@@ -23,13 +23,21 @@ export async function GET(request: NextRequest) {
 
         const where: any = {};
 
+        // Employee csak azokat a TODO-kat látja, ahol ő van hozzárendelve
         if (!isManager) {
-            // Csak a saját todo-kat láthatja
-            where.assignedUserId = currentUser.id;
+            where.assignments = {
+                some: {
+                    userId: currentUser.id
+                }
+            };
         } else {
             // Manager esetén szűrők alkalmazása
             if (userId) {
-                where.assignedUserId = userId;
+                where.assignments = {
+                    some: {
+                        userId: userId
+                    }
+                };
             }
         }
 
@@ -58,27 +66,31 @@ export async function GET(request: NextRequest) {
         const todos = await prisma.todo.findMany({
             where,
             include: {
-                assignedUser: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        role: true,
-                        userPositions: {
+                assignments: {
+                    include: {
+                        user: {
                             select: {
-                                isPrimary: true,
-                                position: {
+                                id: true,
+                                name: true,
+                                email: true,
+                                role: true,
+                                userPositions: {
                                     select: {
-                                        id: true,
-                                        name: true,
-                                        displayNames: true,
-                                        descriptions: true,
-                                        color: true
-                                    }
+                                        isPrimary: true,
+                                        position: {
+                                            select: {
+                                                id: true,
+                                                name: true,
+                                                displayNames: true,
+                                                descriptions: true,
+                                                color: true
+                                            }
+                                        }
+                                    },
+                                    where: { isPrimary: true },
+                                    take: 1
                                 }
-                            },
-                            where: { isPrimary: true },
-                            take: 1
+                            }
                         }
                     }
                 },
@@ -93,8 +105,8 @@ export async function GET(request: NextRequest) {
                     select: {
                         id: true,
                         name: true,
-                        displayNames: true,        // ← VÁLTOZÁS: displayName → displayNames
-                        descriptions: true,        // ← HOZZÁADÁS
+                        displayNames: true,
+                        descriptions: true,
                         color: true
                     }
                 }
@@ -142,8 +154,11 @@ export async function POST(request: NextRequest) {
             return new NextResponse("Title is required", { status: 400 });
         }
 
-        // Ha assignToAll = true, akkor minden pozíciónak létrehozzuk
+        // Felhasználók listájának meghatározása
+        let userIds: string[] = [];
+
         if (assignToAll && targetPositionId) {
+            // Minden felhasználó aki az adott pozícióban van
             const usersWithPosition = await prisma.user.findMany({
                 where: {
                     userPositions: {
@@ -151,142 +166,90 @@ export async function POST(request: NextRequest) {
                             positionId: targetPositionId
                         }
                     }
-                }
+                },
+                select: { id: true }
             });
 
             if (usersWithPosition.length === 0) {
                 return new NextResponse("No users found with the specified position", { status: 400 });
             }
 
-            const todos = await Promise.all(
-                usersWithPosition.map(user =>
-                    prisma.todo.create({
-                        data: {
-                            title,
-                            description,
-                            priority: priority as TodoPriority || 'MEDIUM',
-                            startDate: startDate ? new Date(startDate) : null,
-                            dueDate: dueDate ? new Date(dueDate) : null,
-                            targetPositionId: targetPositionId,
-                            assignedUserId: user.id,
-                            createdById: currentUser.id,
-                            notes
-                        },
-                        include: {
-                            assignedUser: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                    email: true,
-                                    role: true,
-                                    userPositions: {
-                                        select: {
-                                            isPrimary: true,
-                                            position: {
-                                                select: {
-                                                    id: true,
-                                                    name: true,
-                                                    displayNames: true,
-                                                    descriptions: true,
-                                                    color: true
-                                                }
+            userIds = usersWithPosition.map(user => user.id);
+        } else if (specificUserIds && specificUserIds.length > 0) {
+            // Specifikus felhasználók
+            userIds = specificUserIds;
+        } else {
+            return new NextResponse("No users specified", { status: 400 });
+        }
+
+        // 1 TODO létrehozása + több assignment
+        const todo = await prisma.todo.create({
+            data: {
+                title,
+                description,
+                priority: priority as TodoPriority || 'MEDIUM',
+                startDate: startDate ? new Date(startDate) : null,
+                dueDate: dueDate ? new Date(dueDate) : null,
+                targetPositionId: targetPositionId || null,
+                createdById: currentUser.id,
+                notes,
+                // Assignments létrehozása
+                assignments: {
+                    create: userIds.map(userId => ({
+                        userId: userId,
+                        status: 'PENDING'
+                    }))
+                }
+            },
+            include: {
+                assignments: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true,
+                                role: true,
+                                userPositions: {
+                                    select: {
+                                        isPrimary: true,
+                                        position: {
+                                            select: {
+                                                id: true,
+                                                name: true,
+                                                displayNames: true,
+                                                descriptions: true,
+                                                color: true
                                             }
-                                        },
-                                        where: { isPrimary: true },
-                                        take: 1
-                                    }
-                                }
-                            },
-                            createdBy: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                    email: true
-                                }
-                            },
-                            targetPosition: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                    displayNames: true,
-                                    descriptions: true,
-                                    color: true
+                                        }
+                                    },
+                                    where: { isPrimary: true },
+                                    take: 1
                                 }
                             }
                         }
-                    })
-                )
-            );
+                    }
+                },
+                createdBy: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true
+                    }
+                },
+                targetPosition: {
+                    select: {
+                        id: true,
+                        name: true,
+                        displayNames: true,
+                        descriptions: true,
+                        color: true
+                    }
+                }
+            }
+        });
 
-            return NextResponse.json(todos);
-        }
-
-        // Ha specifikus felhasználóknak
-        if (specificUserIds && specificUserIds.length > 0) {
-            const todos = await Promise.all(
-                specificUserIds.map((userId: string) =>
-                    prisma.todo.create({
-                        data: {
-                            title,
-                            description,
-                            priority: priority as TodoPriority || 'MEDIUM',
-                            startDate: startDate ? new Date(startDate) : null,
-                            dueDate: dueDate ? new Date(dueDate) : null,
-                            targetPositionId: targetPositionId || null,
-                            assignedUserId: userId,
-                            createdById: currentUser.id,
-                            notes
-                        },
-                        include: {
-                            assignedUser: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                    email: true,
-                                    role: true,
-                                    userPositions: {
-                                        select: {
-                                            isPrimary: true,
-                                            position: {
-                                                select: {
-                                                    id: true,
-                                                    name: true,
-                                                    displayNames: true,
-                                                    descriptions: true,
-                                                    color: true
-                                                }
-                                            }
-                                        },
-                                        where: { isPrimary: true },
-                                        take: 1
-                                    }
-                                }
-                            },
-                            createdBy: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                    email: true
-                                }
-                            },
-                            targetPosition: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                    displayNames: true,
-                                    descriptions: true,
-                                    color: true
-                                }
-                            }
-                        }
-                    })
-                )
-            );
-
-            return NextResponse.json(todos);
-        }
-
-        return new NextResponse("No users specified", { status: 400 });
+        return NextResponse.json(todo);
     } catch (error) {
         console.error('POST /api/todos error:', error);
         return new NextResponse("Internal Error", { status: 500 });

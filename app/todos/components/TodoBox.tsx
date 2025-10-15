@@ -8,6 +8,31 @@ import { hu, enUS } from "date-fns/locale";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { HiClock, HiExclamationTriangle } from "react-icons/hi2";
 
+interface TodoAssignment {
+    id: string;
+    userId: string;
+    status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "OVERDUE";
+    completedAt: Date | null;
+    user: {
+        id: string;
+        name: string;
+        email: string;
+        role: string;
+        userPositions?: Array<{
+            isPrimary: boolean;
+            position: {
+                id: string;
+                name: string;
+                displayNames: {
+                    en: string;
+                    hu: string;
+                };
+                color: string;
+            };
+        }>;
+    };
+}
+
 interface TodoWithRelations {
     id: string;
     title: string;
@@ -19,22 +44,7 @@ interface TodoWithRelations {
     completedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
-    assignedUser: {
-        id: string;
-        name: string;
-        email: string;
-        role: string;
-        positionId: string | null;
-        position: {
-            id: string;
-            name: string;
-            displayNames: {       // ← ÚJ
-                en: string;
-                hu: string;
-            };
-            color: string;
-        } | null;
-    };
+    assignments: TodoAssignment[];
     createdBy: {
         id: string;
         name: string;
@@ -43,7 +53,7 @@ interface TodoWithRelations {
     targetPosition: {
         id: string;
         name: string;
-        displayNames: {       // ← ÚJ
+        displayNames: {
             en: string;
             hu: string;
         };
@@ -192,16 +202,18 @@ const TodoBox: React.FC<TodoBoxProps> = ({
                     </div>
                 )}
 
-                {/* Assigned User */}
+                {/* Assigned Users */}
                 <div className="flex items-center justify-between mt-1">
                     <span className="text-xs text-gray-500">
-                        {todo.assignedUser.name}
+                        {todo.assignments.length === 1
+                            ? todo.assignments[0].user.name
+                            : `${todo.assignments.length} users assigned`}
                     </span>
-                    {todo.assignedUser.position && (
+                    {todo.assignments.length > 0 && todo.assignments[0].user.userPositions && todo.assignments[0].user.userPositions.length > 0 && (
                         <span
                             className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: todo.assignedUser.position.color }}
-                            title={getPositionDisplayName(todo.assignedUser.position)}
+                            style={{ backgroundColor: todo.assignments[0].user.userPositions[0].position.color }}
+                            title={getPositionDisplayName(todo.assignments[0].user.userPositions[0].position)}
                         />
                     )}
                 </div>

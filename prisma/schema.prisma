@@ -154,7 +154,7 @@ model User {
   documents Document[]
 
   // TODO kapcsolatok
-  assignedTodos Todo[] @relation("AssignedUser")
+  todoAssignments TodoAssignment[] @relation("TodoAssignments")
   createdTodos Todo[] @relation("CreatedBy")
   
   // Position létrehozás kapcsolatot eltávolítottuk a ciklikus referencia elkerülése érdekében
@@ -222,39 +222,60 @@ model Document {
   updatedAt  DateTime @updatedAt
 }
 
+// Many-to-many kapcsolótábla Todo és User között
+model TodoAssignment {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  todoId String @db.ObjectId
+  todo Todo @relation(fields: [todoId], references: [id], onDelete: Cascade)
+
+  userId String @db.ObjectId
+  user User @relation("TodoAssignments", fields: [userId], references: [id], onDelete: Cascade)
+
+  // Egyéni státusz userenként
+  status TodoStatus @default(PENDING)
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([todoId, userId])
+  @@index([userId])
+  @@index([todoId])
+  @@index([status])
+}
+
 model Todo {
   id String @id @default(auto()) @map("_id") @db.ObjectId
-  
+
   // Alapvető információk
   title String
   description String?
-  
-  // Státusz és prioritás
+
+  // Státusz és prioritás (globális státusz a teljes TODO-ra)
   status TodoStatus @default(PENDING)
   priority TodoPriority @default(MEDIUM)
-  
+
   // Dátumok
   startDate DateTime?
   dueDate DateTime?
   completedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
-  // Hozzárendelések
-  assignedUserId String @db.ObjectId
-  assignedUser User @relation("AssignedUser", fields: [assignedUserId], references: [id], onDelete: Cascade)
-  
+
+  // Many-to-many kapcsolat a felhasználókkal
+  assignments TodoAssignment[]
+
   createdById String @db.ObjectId
   createdBy User @relation("CreatedBy", fields: [createdById], references: [id])
-  
+
   // Position kapcsolat - most már referencia
   targetPositionId String? @db.ObjectId
   targetPosition Position? @relation(fields: [targetPositionId], references: [id])
-  
+
   // Megjegyzések
   notes String?
-  
-  @@index([assignedUserId])
+
   @@index([status])
   @@index([dueDate])
   @@index([targetPositionId])

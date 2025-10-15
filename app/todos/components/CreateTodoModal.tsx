@@ -85,7 +85,7 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
     const [startDate, setStartDate] = useState("");
     const [dueDate, setDueDate] = useState("");
     const [targetPositionId, setTargetPositionId] = useState<string>("");
-    const [assignmentType, setAssignmentType] = useState<"all" | "specific">("specific");
+    const [assignmentType, setAssignmentType] = useState<"all" | "specific" | "everyone">("specific");
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
     const [users, setUsers] = useState<UserWithPosition[]>([]);
     const [positions, setPositions] = useState<Position[]>([]);
@@ -106,6 +106,7 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
             assignTo: "Assign To",
             assignToAll: "All users with this position",
             assignToSpecific: "Specific users",
+            assignToEveryone: "Everyone",
             selectUsers: "Select Users",
             notes: "Notes",
             create: "Create Todo",
@@ -133,6 +134,7 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
             assignTo: "Hozzárendelés",
             assignToAll: "Minden felhasználó ezzel a pozícióval",
             assignToSpecific: "Specifikus felhasználók",
+            assignToEveryone: "Mindenki",
             selectUsers: "Felhasználók kiválasztása",
             notes: "Megjegyzések",
             create: "Feladat létrehozása",
@@ -234,13 +236,18 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
                 dueDate: dueDate || null,
                 targetPositionId: targetPositionId || null,
                 assignToAll: assignmentType === "all",
-                specificUserIds: assignmentType === "specific" ? selectedUserIds : [],
+                specificUserIds: assignmentType === "specific"
+                    ? selectedUserIds
+                    : assignmentType === "everyone"
+                    ? users.map(u => u.id)  // All users
+                    : [],
                 notes: notes.trim() || null
             };
 
             const response = await axios.post('/api/todos', todoData);
 
-            onTodoCreate(Array.isArray(response.data) ? response.data : [response.data]);
+            // Az API most már 1 TODO-t ad vissza assignments-szel
+            onTodoCreate([response.data]);
             toast.success('Todo created successfully!');
             resetForm();
             onClose();
@@ -411,7 +418,7 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
                                     type="radio"
                                     value="all"
                                     checked={assignmentType === "all"}
-                                    onChange={(e) => setAssignmentType(e.target.value as "all" | "specific")}
+                                    onChange={(e) => setAssignmentType(e.target.value as "all" | "specific" | "everyone")}
                                     className="h-4 w-4 text-nexus-tertiary focus:ring-nexus-secondary border-gray-300"
                                 />
                                 <span className="ml-2 text-sm text-gray-700">{t.assignToAll}</span>
@@ -419,9 +426,19 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
                             <label className="flex items-center">
                                 <input
                                     type="radio"
+                                    value="everyone"
+                                    checked={assignmentType === "everyone"}
+                                    onChange={(e) => setAssignmentType(e.target.value as "all" | "specific" | "everyone")}
+                                    className="h-4 w-4 text-nexus-tertiary focus:ring-nexus-secondary border-gray-300"
+                                />
+                                <span className="ml-2 text-sm text-gray-700">{t.assignToEveryone}</span>
+                            </label>
+                            <label className="flex items-center">
+                                <input
+                                    type="radio"
                                     value="specific"
                                     checked={assignmentType === "specific"}
-                                    onChange={(e) => setAssignmentType(e.target.value as "all" | "specific")}
+                                    onChange={(e) => setAssignmentType(e.target.value as "all" | "specific" | "everyone")}
                                     className="h-4 w-4 text-nexus-tertiary focus:ring-nexus-secondary border-gray-300"
                                 />
                                 <span className="ml-2 text-sm text-gray-700">{t.assignToSpecific}</span>
