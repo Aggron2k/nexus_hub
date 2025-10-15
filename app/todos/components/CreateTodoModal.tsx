@@ -114,6 +114,7 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
             titleRequired: "Title is required",
             selectPosition: "Select a position",
             selectAtLeastOneUser: "Select at least one user",
+            dueDateBeforeStartDate: "Due date cannot be earlier than start date",
             priorities: {
                 LOW: "Low",
                 MEDIUM: "Medium",
@@ -140,6 +141,7 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
             titleRequired: "A cím kötelező",
             selectPosition: "Válassz pozíciót",
             selectAtLeastOneUser: "Válassz legalább egy felhasználót",
+            dueDateBeforeStartDate: "A határidő nem lehet korábbi, mint a kezdés dátuma",
             priorities: {
                 LOW: "Alacsony",
                 MEDIUM: "Közepes",
@@ -209,6 +211,16 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
         if (assignmentType === "specific" && selectedUserIds.length === 0) {
             toast.error(t.selectAtLeastOneUser);
             return;
+        }
+
+        // Validate that due date is not before start date
+        if (startDate && dueDate) {
+            const start = new Date(startDate);
+            const due = new Date(dueDate);
+            if (due < start) {
+                toast.error(t.dueDateBeforeStartDate);
+                return;
+            }
         }
 
         setIsLoading(true);
@@ -357,6 +369,7 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
                                 type="datetime-local"
                                 value={dueDate}
                                 onChange={(e) => setDueDate(e.target.value)}
+                                min={startDate || undefined}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-nexus-secondary focus:border-nexus-secondary"
                             />
                         </div>

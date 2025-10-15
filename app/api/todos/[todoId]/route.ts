@@ -37,6 +37,7 @@ export async function GET(
                                         id: true,
                                         name: true,
                                         displayNames: true,
+                                        descriptions: true,
                                         color: true
                                     }
                                 }
@@ -51,6 +52,15 @@ export async function GET(
                         id: true,
                         name: true,
                         email: true
+                    }
+                },
+                targetPosition: {
+                    select: {
+                        id: true,
+                        name: true,
+                        displayNames: true,
+                        descriptions: true,
+                        color: true
                     }
                 }
             }
@@ -143,6 +153,7 @@ export async function PATCH(
                                         id: true,
                                         name: true,
                                         displayNames: true,
+                                        descriptions: true,
                                         color: true
                                     }
                                 }
@@ -157,6 +168,15 @@ export async function PATCH(
                         id: true,
                         name: true,
                         email: true
+                    }
+                },
+                targetPosition: {
+                    select: {
+                        id: true,
+                        name: true,
+                        displayNames: true,
+                        descriptions: true,
+                        color: true
                     }
                 }
             }

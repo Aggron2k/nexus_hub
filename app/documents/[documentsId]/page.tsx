@@ -1,6 +1,7 @@
+// app/documents/[documentsId]/page.tsx
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import UploadDocument from "./components/UploadDocument";
@@ -16,6 +17,7 @@ interface User {
 }
 
 const DocumentsPage = () => {
+    const router = useRouter();
     const { documentsId } = useParams() as { documentsId: string }; // Explicit típus a params-hoz
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState<boolean>(true); // Loading állapot
@@ -39,12 +41,27 @@ const DocumentsPage = () => {
             })
             .catch((error) => {
                 console.error("Error fetching user data:", error);
+
+                // Ha 403 Forbidden, akkor átirányítjuk a saját profiljára
+                if (error.response?.status === 403) {
+                    toast.error("You can only view your own documents");
+                    // Lekérjük a saját user ID-t és átirányítjuk
+                    axios.get('/api/users/me')
+                        .then((meResponse) => {
+                            router.push(`/documents/${meResponse.data.id}`);
+                        })
+                        .catch(() => {
+                            router.push('/documents');
+                        });
+                    return;
+                }
+
                 const errorMessage = "Failed to fetch user data.";
                 setError(errorMessage);
                 toast.error(errorMessage); // Toast a hibára
                 setLoading(false); // Betöltés vége hiba esetén
             });
-    }, [documentsId]);
+    }, [documentsId, router]);
 
     const handleDocumentUploadSuccess = () => {
         toast.success("Document uploaded successfully!"); // Siker toast

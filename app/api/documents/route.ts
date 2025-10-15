@@ -1,8 +1,16 @@
+// app/api/documents/route.ts
 import { NextResponse } from 'next/server';
 import prisma from '@/app/libs/prismadb';
 import { pusherServer } from '@/app/libs/pusher';
+import getCurrentUser from '@/app/actions/getCurrentUser';
 
 export async function POST(req: Request) {
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await req.json();
     const { userId, name, fileType, fileUrl } = body;
 
@@ -11,6 +19,15 @@ export async function POST(req: Request) {
         return NextResponse.json(
             { error: 'All fields (userId, name, fileType, fileUrl) are required' },
             { status: 400 }
+        );
+    }
+
+    // Employee csak saját magának tölthet fel dokumentumot
+    const isManager = ['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role);
+    if (!isManager && userId !== currentUser.id) {
+        return NextResponse.json(
+            { error: 'Forbidden: You can only upload documents for yourself' },
+            { status: 403 }
         );
     }
 
@@ -43,11 +60,26 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId");
 
     if (!userId) {
         return NextResponse.json({ error: "User ID is required." }, { status: 400 });
+    }
+
+    // Employee csak a saját dokumentumait láthatja
+    const isManager = ['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role);
+    if (!isManager && userId !== currentUser.id) {
+        return NextResponse.json(
+            { error: 'Forbidden: You can only view your own documents' },
+            { status: 403 }
+        );
     }
 
     try {

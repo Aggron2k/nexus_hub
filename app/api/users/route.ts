@@ -50,29 +50,20 @@ export async function GET() {
             }
         });
 
-        // Feldolgozzuk a választ backward compatibility érdekében
+        // Feldolgozzuk a választ - backward compatibility
         const processedUsers = users.map(user => {
-            const { userPositions, ...userData } = user;
-            const primaryPosition = userPositions.find(up => up.isPrimary);
-            const firstPosition = userPositions.length > 0 ? userPositions[0] : null;
-            
+            const primaryPosition = user.userPositions.find(up => up.isPrimary);
+            const firstPosition = user.userPositions[0];
+
             return {
-                ...userData,
-                // Új formátum - több pozíció
-                positions: userPositions.map(up => ({
-                    id: up.position.id,
-                    name: up.position.name,
-                    displayNames: up.position.displayNames,
-                    descriptions: up.position.descriptions,
-                    color: up.position.color,
-                    isActive: up.position.isActive,
-                    order: up.position.order,
-                    isPrimary: up.isPrimary,
-                    assignedAt: up.assignedAt
-                })),
-                // Backward compatibility - elsődleges vagy első pozíció
-                position: primaryPosition?.position || firstPosition?.position || null,
-                positionId: primaryPosition?.position.id || firstPosition?.position.id || null
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                createdAt: user.createdAt,
+                // Backward compatibility
+                position: (primaryPosition || firstPosition)?.position || null,
+                positionId: (primaryPosition || firstPosition)?.position.id || null
             };
         });
 

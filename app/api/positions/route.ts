@@ -19,14 +19,15 @@ export async function GET() {
             select: {
                 id: true,
                 name: true,
-                displayNames: true,        // ← VÁLTOZÁS: displayName → displayNames
-                descriptions: true,        // ← VÁLTOZÁS: description → descriptions
+                displayNames: true,
+                descriptions: true,
                 color: true,
                 order: true,
-                isActive: true,           // ← HOZZÁADÁS
+                isActive: true,
                 _count: {
                     select: {
-                        userPositions: true
+                        userPositions: true,
+                        todos: true
                     }
                 }
             }
@@ -36,8 +37,8 @@ export async function GET() {
         const processedPositions = positions.map(position => ({
             ...position,
             _count: {
-                ...position._count,
-                users: position._count.userPositions
+                users: position._count.userPositions,
+                todos: position._count.todos
             }
         }));
 
