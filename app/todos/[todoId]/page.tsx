@@ -21,6 +21,7 @@ import {
 } from "react-icons/hi2";
 import LoadingModal from "@/app/components/LoadingModal";
 import { useRouter } from "next/navigation";
+import { pusherClient } from "@/app/libs/pusher";
 
 interface TodoAssignment {
     id: string;
@@ -194,7 +195,35 @@ export default function TodoDetailPage() {
         }
 
         fetchTodoDetails();
-    }, [todoId, currentUser]); // Add currentUser to dependencies
+
+        // Pusher channel subscription
+        if (currentUser?.email) {
+            const channelName = `private-${currentUser.email}`;
+            console.log('Subscribing to Pusher channel:', channelName);
+            const channel = pusherClient.subscribe(channelName);
+
+            // Listen for TODO updates
+            channel.bind('todo:update', (updatedTodo: TodoDetail) => {
+                if (updatedTodo.id === todoId) {
+                    setTodo(updatedTodo);
+                }
+            });
+
+            // Listen for TODO deletion
+            channel.bind('todo:delete', (data: { todoId: string }) => {
+                if (data.todoId === todoId) {
+                    toast.error("This todo has been deleted");
+                    router.push('/todos');
+                }
+            });
+
+            // Cleanup
+            return () => {
+                channel.unbind_all();
+                pusherClient.unsubscribe(channelName);
+            };
+        }
+    }, [todoId, currentUser?.email, router]); // Add currentUser.email to dependencies
 
     const fetchTodoDetails = async () => {
         try {
@@ -235,7 +264,11 @@ export default function TodoDetailPage() {
         try {
             await axios.delete(`/api/todos/${todoId}`);
             toast.success(t.deleted);
-            router.push('/todos'); // Navigate back to todos list
+
+            // Várunk 300ms hogy a Pusher event megérkezzen és frissítse a listát
+            setTimeout(() => {
+                router.push('/todos');
+            }, 300);
         } catch (error: any) {
             console.error("Error deleting todo:", error);
             const errorMessage = error?.response?.data || t.failedToDelete;

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
 import prisma from "@/app/libs/prismadb";
 import { TodoStatus } from "@prisma/client";
+import { pusherServer } from "@/app/libs/pusher";
 
 interface IParams {
     todoId: string;
@@ -193,6 +194,41 @@ export async function PATCH(
             }
         });
 
+        // Pusher értesítés minden hozzárendelt felhasználónak + minden managernek
+        const emailsToNotify = new Set<string>();
+
+        // Hozzárendelt felhasználók
+        updatedTodo.assignments.forEach((assignment) => {
+            if (assignment.user.email) {
+                emailsToNotify.add(assignment.user.email);
+            }
+        });
+
+        // Minden Manager, GeneralManager és CEO is kapjon értesítést
+        const managers = await prisma.user.findMany({
+            where: {
+                role: {
+                    in: ['Manager', 'GeneralManager', 'CEO']
+                }
+            },
+            select: {
+                email: true
+            }
+        });
+
+        managers.forEach((manager) => {
+            if (manager.email) {
+                emailsToNotify.add(manager.email);
+            }
+        });
+
+        // Küldj Pusher event mindenkinek
+        const pusherPromises = Array.from(emailsToNotify).map((email) => {
+            return pusherServer.trigger(`private-${email}`, 'todo:update', updatedTodo);
+        });
+
+        await Promise.all(pusherPromises);
+
         return NextResponse.json(updatedTodo);
     } catch (error) {
         console.error('PATCH /api/todos/[todoId] error:', error);
@@ -219,12 +255,64 @@ export async function DELETE(
         }
 
         const todo = await prisma.todo.findUnique({
-            where: { id: todoId }
+            where: { id: todoId },
+            include: {
+                assignments: {
+                    include: {
+                        user: {
+                            select: {
+                                email: true
+                            }
+                        }
+                    }
+                }
+            }
         });
 
         if (!todo) {
             return new NextResponse("Todo not found", { status: 404 });
         }
+
+        // Pusher értesítés minden hozzárendelt felhasználónak + minden managernek
+        console.log('Sending Pusher delete event for todo:', todoId);
+
+        // Gyűjtsük össze az összes email címet
+        const emailsToNotify = new Set<string>();
+
+        // Hozzárendelt felhasználók
+        todo.assignments.forEach((assignment) => {
+            if (assignment.user.email) {
+                emailsToNotify.add(assignment.user.email);
+            }
+        });
+
+        // Minden Manager, GeneralManager és CEO is kapjon értesítést
+        const managers = await prisma.user.findMany({
+            where: {
+                role: {
+                    in: ['Manager', 'GeneralManager', 'CEO']
+                }
+            },
+            select: {
+                email: true
+            }
+        });
+
+        managers.forEach((manager) => {
+            if (manager.email) {
+                emailsToNotify.add(manager.email);
+            }
+        });
+
+        // Küldj Pusher event mindenkinek
+        const pusherPromises = Array.from(emailsToNotify).map((email) => {
+            console.log('Sending to:', `private-${email}`);
+            return pusherServer.trigger(`private-${email}`, 'todo:delete', { todoId });
+        });
+
+        // Várjuk meg hogy minden Pusher event elküldésre kerüljön
+        await Promise.all(pusherPromises);
+        console.log('All Pusher events sent to', emailsToNotify.size, 'users');
 
         await prisma.todo.delete({
             where: { id: todoId }

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
 import prisma from "@/app/libs/prismadb";
 import { TodoPriority } from "@prisma/client";
+import { pusherServer } from "@/app/libs/pusher";
 
 export async function GET(request: NextRequest) {
     try {
@@ -248,6 +249,41 @@ export async function POST(request: NextRequest) {
                 }
             }
         });
+
+        // Pusher értesítés minden hozzárendelt felhasználónak + minden managernek
+        const emailsToNotify = new Set<string>();
+
+        // Hozzárendelt felhasználók
+        todo.assignments.forEach((assignment) => {
+            if (assignment.user.email) {
+                emailsToNotify.add(assignment.user.email);
+            }
+        });
+
+        // Minden Manager, GeneralManager és CEO is kapjon értesítést
+        const managers = await prisma.user.findMany({
+            where: {
+                role: {
+                    in: ['Manager', 'GeneralManager', 'CEO']
+                }
+            },
+            select: {
+                email: true
+            }
+        });
+
+        managers.forEach((manager) => {
+            if (manager.email) {
+                emailsToNotify.add(manager.email);
+            }
+        });
+
+        // Küldj Pusher event mindenkinek
+        const pusherPromises = Array.from(emailsToNotify).map((email) => {
+            return pusherServer.trigger(`private-${email}`, 'todo:new', todo);
+        });
+
+        await Promise.all(pusherPromises);
 
         return NextResponse.json(todo);
     } catch (error) {

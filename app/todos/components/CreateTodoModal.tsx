@@ -244,13 +244,18 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
                 notes: notes.trim() || null
             };
 
-            const response = await axios.post('/api/todos', todoData);
+            await axios.post('/api/todos', todoData);
 
-            // Az API most már 1 TODO-t ad vissza assignments-szel
-            onTodoCreate([response.data]);
+            // A Pusher event automatikusan hozzáadja a TODO-t
+            // Ne hívjuk az onTodoCreate-et mert duplikálódik a React batch update miatt
             toast.success('Todo created successfully!');
-            resetForm();
-            onClose();
+
+            // Kis késleltetés hogy a Pusher event megérkezzen
+            setTimeout(() => {
+                resetForm();
+                onClose();
+            }, 200);
+
         } catch (error) {
             console.error('Error creating todo:', error);
             toast.error('Failed to create todo');

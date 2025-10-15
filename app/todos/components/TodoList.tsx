@@ -2,7 +2,7 @@
 "use client";
 
 import clsx from "clsx";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { User } from "@prisma/client";
 import TodoBox from "./TodoBox";
 import { useLanguage } from "@/app/context/LanguageContext";
@@ -10,6 +10,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { HiPlus } from "react-icons/hi2";
 import axios from "axios";
 import CreateTodoModal from "./CreateTodoModal";
+import { pusherClient } from "@/app/libs/pusher";
 
 interface TodoAssignment {
     id: string;
@@ -76,6 +77,7 @@ const TodoList: React.FC<TodoListProps> = ({ currentUser }) => {
     const [todos, setTodos] = useState<TodoWithRelations[]>([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const pusherInitialized = useRef(false);
 
     const translations = {
         en: {
@@ -95,14 +97,73 @@ const TodoList: React.FC<TodoListProps> = ({ currentUser }) => {
     const t = translations[language];
     const isManager = currentUser && ['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role);
 
+    // Fetch todos only once on mount
     useEffect(() => {
         fetchTodos();
     }, []);
+
+    // Setup Pusher subscription
+    useEffect(() => {
+        if (!currentUser?.email || pusherInitialized.current) return;
+
+        pusherInitialized.current = true;
+        const channelName = `private-${currentUser.email}`;
+        console.log('Subscribing to Pusher channel:', channelName);
+        const channel = pusherClient.subscribe(channelName);
+
+        // Listen for new TODO creation
+        channel.bind('todo:new', (newTodo: TodoWithRelations) => {
+            const timestamp = new Date().toISOString();
+            console.log(`[${timestamp}] Pusher todo:new event received:`, newTodo.id, newTodo.title);
+            setTodos(prev => {
+                console.log(`[${timestamp}] Current todos count:`, prev.length, 'IDs:', prev.map(t => t.id));
+                // Ellenőrizzük hogy már létezik-e (duplikáció elkerülése)
+                const exists = prev.some(todo => todo.id === newTodo.id);
+                if (exists) {
+                    console.log(`[${timestamp}] TODO already exists in list, skipping duplicate:`, newTodo.id);
+                    return prev;
+                }
+                console.log(`[${timestamp}] Adding new TODO to list:`, newTodo.id);
+                return [newTodo, ...prev];
+            });
+        });
+
+        // Listen for TODO updates
+        channel.bind('todo:update', (updatedTodo: TodoWithRelations) => {
+            console.log('Pusher todo:update event received:', updatedTodo);
+            setTodos(prev => prev.map(todo =>
+                todo.id === updatedTodo.id ? updatedTodo : todo
+            ));
+        });
+
+        // Listen for TODO deletion
+        channel.bind('todo:delete', (data: { todoId: string }) => {
+            console.log('Pusher todo:delete event received:', data);
+            setTodos(prev => {
+                const newTodos = prev.filter(todo => todo.id !== data.todoId);
+                console.log('Filtered todos:', newTodos.length, 'from', prev.length);
+                return newTodos;
+            });
+        });
+
+        // Cleanup - csak production-ben vagy amikor valóban unmount-ol
+        return () => {
+            // React StrictMode alatt ne unsubscribe-oljunk
+            if (process.env.NODE_ENV === 'production') {
+                console.log('Unsubscribing from Pusher channel:', channelName);
+                channel.unbind_all();
+                pusherClient.unsubscribe(channelName);
+                pusherInitialized.current = false;
+            }
+        };
+    }, [currentUser?.email]);
 
     useEffect(() => {
         // Reset selectedTodoId when on /todos page
         if (pathname === "/todos") {
             setSelectedTodoId(null);
+            // Re-fetch todos amikor visszatérünk a /todos page-re
+            fetchTodos();
         } else {
             // Extract todo ID from URL
             const todoIdMatch = pathname.match(/\/todos\/(.+)/);
@@ -145,6 +206,10 @@ const TodoList: React.FC<TodoListProps> = ({ currentUser }) => {
         setTodos(prev => prev.map(todo =>
             todo.id === updatedTodo.id ? updatedTodo : todo
         ));
+    };
+
+    const handleTodoDelete = (todoId: string) => {
+        setTodos(prev => prev.filter(todo => todo.id !== todoId));
     };
 
     return (
