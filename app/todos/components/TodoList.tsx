@@ -212,12 +212,15 @@ const TodoList: React.FC<TodoListProps> = ({ currentUser }) => {
         setTodos(prev => prev.filter(todo => todo.id !== todoId));
     };
 
+    // Check if a todo is selected (mobile view control)
+    const isTodoSelected = pathname !== "/todos";
+
     return (
         <>
             <aside
                 className={clsx(
                     `fixed inset-y-0 pb-20 lg:pb-0 lg:left-20 lg:w-80 lg:block overflow-y-auto border-r border-gray-200`,
-                    pathname === "/todos" ? "block w-full left-0" : "hidden lg:block"
+                    isTodoSelected ? "hidden" : "block w-full left-0"
                 )}
             >
                 <div className="px-5">

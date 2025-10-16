@@ -87,21 +87,21 @@ const UserList: React.FC<UserListProps> = ({ items, currentUser }) => {
   // Egyedi szerepkörök listája
   const uniqueRoles = [...new Set(visibleUsers.map(user => user.role))];
 
+  // Check if a user is selected (mobile view control)
+  const isUserSelected = pathname !== "/users";
+
   return (
     <aside
       className={clsx(
         `fixed inset-y-0 pb-20 lg:pb-0 lg:left-20 lg:w-80 lg:block overflow-y-auto border-r border-gray-200`,
-        pathname === "/users" ? "block w-full left-0" : "hidden lg:block"
+        isUserSelected ? "hidden" : "block w-full left-0"
       )}
     >
       <div className="px-5">
         {/* Header */}
         <div className="flex items-center justify-between mb-4 pt-4">
-          <div className="flex items-center space-x-2">
-            <HiUsers className="h-6 w-6 text-gray-600" />
-            <div className="text-2xl font-bold text-neutral-800">
-              {translations[language].title}
-            </div>
+          <div className="text-2xl font-bold text-neutral-800">
+            {translations[language].title}
           </div>
         </div>
 

@@ -22,7 +22,7 @@ export default function TodosPage() {
     const t = translations[language];
 
     return (
-        <div className="lg:pl-80 h-full">
+        <div className="hidden lg:block lg:pl-80 h-full">
             <div className="h-full flex flex-col bg-nexus-bg">
                 {/* Header */}
                 <div className="bg-white border-b border-gray-200 px-6 py-4">

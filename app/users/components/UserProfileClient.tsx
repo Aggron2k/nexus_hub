@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { User, Role } from '@prisma/client';
-import { HiPencil, HiCheck, HiUser, HiBriefcase, HiCog, HiChatBubbleLeft } from 'react-icons/hi2';
+import { HiPencil, HiCheck, HiUser, HiBriefcase, HiChatBubbleLeft, HiChevronLeft, HiTrash, HiBanknotes, HiArrowUp } from 'react-icons/hi2';
 import { HiX } from 'react-icons/hi';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import LoadingModal from '@/app/components/LoadingModal';
 import { toast } from 'react-hot-toast';
+import Link from 'next/link';
 
 interface Position {
     id: string;
@@ -322,9 +323,15 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
             <div className="lg:pl-80 h-full">
                 <div className="h-full flex flex-col bg-nexus-bg">
                     {/* Header */}
-                    <div className="bg-white border-b border-gray-200 px-6 py-4">
+                    <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
+                                <Link
+                                    className="lg:hidden block text-nexus-tertiary hover:text-nexus-secondary transition cursor-pointer"
+                                    href="/users"
+                                >
+                                    <HiChevronLeft size={32} />
+                                </Link>
                                 <img src={selectedUser.image || '/images/placeholder.jpg'} alt={selectedUser.name || ''} className="h-10 w-10 rounded-full object-cover" />
                                 <div>
                                     <h1 className="text-xl font-bold text-gray-900">{selectedUser.name || 'Név nem megadva'}</h1>
@@ -337,12 +344,43 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                                 </div>
                             </div>
                             <div className="flex gap-2">
-                                {!isOwnProfile && <button onClick={handleChatClick} disabled={chatLoading} className="flex items-center gap-2 px-4 py-2 bg-nexus-primary text-nexus-tertiary rounded-lg hover:bg-opacity-90"><HiChatBubbleLeft className="h-4 w-4" />{t.chat}</button>}
-                                {(canEdit || isOwnProfile) && !isEditing && <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"><HiPencil className="h-4 w-4" />{t.edit}</button>}
+                                {!isOwnProfile && (
+                                    <button
+                                        onClick={handleChatClick}
+                                        disabled={chatLoading}
+                                        className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-nexus-primary text-nexus-tertiary rounded-lg hover:bg-opacity-90"
+                                    >
+                                        <HiChatBubbleLeft className="h-4 w-4" />
+                                        <span className="hidden sm:inline">{t.chat}</span>
+                                    </button>
+                                )}
+                                {(canEdit || isOwnProfile) && !isEditing && (
+                                    <button
+                                        onClick={() => setIsEditing(true)}
+                                        className="flex items-center gap-2 px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                                    >
+                                        <HiPencil className="h-4 w-4" />
+                                        <span className="hidden sm:inline">{t.edit}</span>
+                                    </button>
+                                )}
                                 {isEditing && (
                                     <>
-                                        <button onClick={handleSave} disabled={loading} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"><HiCheck className="h-4 w-4" />{loading ? t.saving : t.save}</button>
-                                        <button onClick={() => setIsEditing(false)} disabled={loading} className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"><HiX className="h-4 w-4" />{t.cancel}</button>
+                                        <button
+                                            onClick={handleSave}
+                                            disabled={loading}
+                                            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                                        >
+                                            <HiCheck className="h-4 w-4" />
+                                            <span className="hidden sm:inline">{loading ? t.saving : t.save}</span>
+                                        </button>
+                                        <button
+                                            onClick={() => setIsEditing(false)}
+                                            disabled={loading}
+                                            className="flex items-center gap-2 px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                                        >
+                                            <HiX className="h-4 w-4" />
+                                            <span className="hidden sm:inline">{t.cancel}</span>
+                                        </button>
                                     </>
                                 )}
                             </div>
@@ -357,14 +395,20 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                             {/* Tabs */}
                             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                                 <div className="border-b border-gray-200">
-                                    <nav className="-mb-px flex space-x-8 px-6">
+                                    <nav className="-mb-px flex space-x-4 sm:space-x-8 px-4 sm:px-6">
                                         {[
                                             { key: 'profile', icon: HiUser, label: t.profileTab },
                                             { key: 'employment', icon: HiBriefcase, label: t.employmentTab },
-                                            { key: 'bank', icon: HiCog, label: t.bankTab }
+                                            { key: 'bank', icon: HiBanknotes, label: t.bankTab }
                                         ].map(({ key, icon: Icon, label }) => (
-                                            <button key={key} onClick={() => setActiveTab(key as any)} className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${activeTab === key ? 'border-nexus-primary text-nexus-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-                                                <Icon className="h-4 w-4" />{label}
+                                            <button
+                                                key={key}
+                                                onClick={() => setActiveTab(key as any)}
+                                                className={`py-4 px-2 sm:px-3 border-b-2 font-medium text-sm flex items-center gap-2 ${activeTab === key ? 'border-nexus-primary text-nexus-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                                                title={label}
+                                            >
+                                                <Icon className="h-5 w-5" />
+                                                <span className="hidden sm:inline">{label}</span>
                                             </button>
                                         ))}
                                     </nav>
@@ -508,48 +552,52 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                                 {allUserPositions.length > 0 ? (
                                     <div className="space-y-3">
                                         {allUserPositions.map((position) => (
-                                            <div key={position.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                                                <div className="flex items-center space-x-3">
-                                                    <div 
-                                                        className="w-4 h-4 rounded-full flex-shrink-0" 
+                                            <div key={position.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-gray-200 rounded-lg gap-3">
+                                                <div className="flex items-center space-x-3 min-w-0 flex-1">
+                                                    <div
+                                                        className="w-4 h-4 rounded-full flex-shrink-0"
                                                         style={{ backgroundColor: position.color }}
                                                     />
-                                                    <div>
-                                                        <h4 className="text-sm font-medium text-gray-900">
-                                                            {position.displayNames[language] || position.name}
-                                                        </h4>
-                                                        {position.isPrimary && (
-                                                            <span className="text-xs text-nexus-tertiary bg-nexus-primary px-2 py-1 rounded-full">
-                                                                {t.primaryPosition}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <div className="text-xs text-gray-500">
-                                                        {new Date(position.assignedAt).toLocaleDateString()}
-                                                    </div>
-                                                    {canEdit && (
-                                                        <div className="flex gap-1">
-                                                            {!position.isPrimary && (
-                                                                <button
-                                                                    onClick={() => handleSetPrimaryPosition(position.id)}
-                                                                    className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded hover:bg-green-200 transition-colors"
-                                                                    disabled={loading}
-                                                                >
-                                                                    {t.setPrimary}
-                                                                </button>
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                            <h4 className="text-sm font-medium text-gray-900">
+                                                                {position.displayNames[language] || position.name}
+                                                            </h4>
+                                                            {position.isPrimary && (
+                                                                <span className="text-xs text-nexus-tertiary bg-nexus-primary px-2 py-0.5 rounded-full whitespace-nowrap">
+                                                                    {t.primaryPosition}
+                                                                </span>
                                                             )}
-                                                            <button
-                                                                onClick={() => handleRemovePosition(position.id)}
-                                                                className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded hover:bg-red-200 transition-colors"
-                                                                disabled={loading || position.isPrimary}
-                                                            >
-                                                                {t.removePosition}
-                                                            </button>
                                                         </div>
-                                                    )}
+                                                        <div className="text-xs text-gray-500 mt-1">
+                                                            {new Date(position.assignedAt).toLocaleDateString()}
+                                                        </div>
+                                                    </div>
                                                 </div>
+                                                {canEdit && (
+                                                    <div className="flex gap-2 sm:flex-shrink-0">
+                                                        {!position.isPrimary && (
+                                                            <button
+                                                                onClick={() => handleSetPrimaryPosition(position.id)}
+                                                                className="px-3 py-1.5 bg-green-100 text-green-700 text-xs rounded hover:bg-green-200 transition-colors whitespace-nowrap flex items-center gap-1"
+                                                                disabled={loading}
+                                                                title={t.setPrimary}
+                                                            >
+                                                                <HiArrowUp className="h-3.5 w-3.5" />
+                                                                <span className="hidden sm:inline">{t.setPrimary}</span>
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            onClick={() => handleRemovePosition(position.id)}
+                                                            className="px-3 py-1.5 bg-red-100 text-red-700 text-xs rounded hover:bg-red-200 transition-colors flex items-center gap-1"
+                                                            disabled={loading || position.isPrimary}
+                                                            title={t.removePosition}
+                                                        >
+                                                            <HiTrash className="h-3.5 w-3.5" />
+                                                            <span className="hidden sm:inline">{t.removePosition}</span>
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
                                     </div>

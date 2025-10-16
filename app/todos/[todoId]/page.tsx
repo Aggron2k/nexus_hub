@@ -1,12 +1,12 @@
 // app/todos/[todoId]/page.tsx
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useLanguage } from "@/app/context/LanguageContext";
-import { useCurrentUser } from "@/app/hooks/useCurrentUser"; // Import useCurrentUser hook
+import { useCurrentUser } from "@/app/hooks/useCurrentUser";
 import { format } from "date-fns";
 import { hu, enUS } from "date-fns/locale";
 import {
@@ -17,11 +17,12 @@ import {
     HiExclamationTriangle,
     HiCheckCircle,
     HiPlayCircle,
-    HiTrash
+    HiTrash,
+    HiChevronLeft
 } from "react-icons/hi2";
 import LoadingModal from "@/app/components/LoadingModal";
-import { useRouter } from "next/navigation";
 import { pusherClient } from "@/app/libs/pusher";
+import Link from "next/link";
 
 interface TodoAssignment {
     id: string;
@@ -319,15 +320,21 @@ export default function TodoDetailPage() {
         <div className="lg:pl-80 h-full">
             <div className="h-full flex flex-col bg-nexus-bg">
                 {/* Header */}
-                <div className="bg-white border-b border-gray-200 px-6 py-4">
+                <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
+                            <Link
+                                className="lg:hidden block text-nexus-tertiary hover:text-nexus-secondary transition cursor-pointer"
+                                href="/todos"
+                            >
+                                <HiChevronLeft size={32} />
+                            </Link>
                             <div className="p-2 bg-nexus-primary rounded-lg">
                                 <HiClipboardDocumentList className="h-6 w-6 text-nexus-tertiary" />
                             </div>
                             <div>
-                                <h1 className="text-2xl font-bold text-gray-900">{t.todoDetails}</h1>
-                                <p className="text-sm text-gray-600">{todo.title}</p>
+                                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t.todoDetails}</h1>
+                                <p className="text-sm text-gray-600 truncate max-w-[200px] sm:max-w-none">{todo.title}</p>
                             </div>
                         </div>
 
@@ -336,19 +343,19 @@ export default function TodoDetailPage() {
                             {todo.status === 'PENDING' && (
                                 <button
                                     onClick={() => updateTodoStatus('IN_PROGRESS')}
-                                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                    className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                                 >
                                     <HiPlayCircle className="h-4 w-4" />
-                                    {t.markInProgress}
+                                    <span className="hidden sm:inline">{t.markInProgress}</span>
                                 </button>
                             )}
                             {(todo.status === 'PENDING' || todo.status === 'IN_PROGRESS') && (
                                 <button
                                     onClick={() => updateTodoStatus('COMPLETED')}
-                                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                    className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                                 >
                                     <HiCheckCircle className="h-4 w-4" />
-                                    {t.markCompleted}
+                                    <span className="hidden sm:inline">{t.markCompleted}</span>
                                 </button>
                             )}
 
@@ -356,11 +363,11 @@ export default function TodoDetailPage() {
                             {isManager && (
                                 <button
                                     onClick={deleteTodo}
-                                    className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                    className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                                     title={t.deleteTodo}
                                 >
                                     <HiTrash className="h-4 w-4" />
-                                    {t.deleteTodo}
+                                    <span className="hidden sm:inline">{t.deleteTodo}</span>
                                 </button>
                             )}
                         </div>

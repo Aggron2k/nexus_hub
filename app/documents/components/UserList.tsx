@@ -87,7 +87,6 @@ const UserList: React.FC<UserListProps> = ({ items }) => {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4 pt-4">
                     <div className="flex items-center space-x-2">
-                        <HiUsers className="h-6 w-6 text-gray-600" />
                         <div className="text-2xl font-bold text-neutral-800">
                             {t.title}
                         </div>
