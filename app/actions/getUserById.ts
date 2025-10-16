@@ -25,28 +25,6 @@ const getUserById = async (id: string) => {
                         { isPrimary: 'desc' },
                         { assignedAt: 'desc' }
                     ]
-                },
-                // TODO kapcsolatok is lekérhetőek
-                assignedTodos: {
-                    select: {
-                        id: true,
-                        title: true,
-                        status: true,
-                        priority: true,
-                        dueDate: true
-                    },
-                    take: 5, // Csak az első 5 TODO
-                    orderBy: {
-                        dueDate: 'asc'
-                    }
-                },
-                createdTodos: {
-                    select: {
-                        id: true,
-                        title: true,
-                        status: true
-                    },
-                    take: 5
                 }
             },
         });

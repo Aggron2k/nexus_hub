@@ -109,7 +109,7 @@ const TodoFilters: React.FC<TodoFiltersProps> = ({
                             <option value="">{t.allUsers}</option>
                             {users.map(user => (
                                 <option key={user.id} value={user.id}>
-                                    {user.name} ({user.position})
+                                    {user.name}
                                 </option>
                             ))}
                         </select>

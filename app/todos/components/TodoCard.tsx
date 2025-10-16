@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { TodoWithRelations } from "../page";
 import { User, TodoStatus, TodoPriority } from "@prisma/client";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { format } from "date-fns";
 import { hu, enUS } from "date-fns/locale";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import NotesEditor from "./NotesEditor";
 import {
     HiCalendar,
     HiUser,
@@ -19,6 +19,29 @@ import {
     HiChevronDown,
     HiChevronUp
 } from "react-icons/hi2";
+
+interface TodoWithRelations {
+    id: string;
+    title: string;
+    description: string | null;
+    priority: TodoPriority;
+    status: TodoStatus;
+    startDate: Date | null;
+    dueDate: Date | null;
+    targetPosition: string | null;
+    assignedUserId: string;
+    notes: string | null;
+    assignedUser: {
+        id: string;
+        name: string;
+        email: string;
+    };
+    createdBy: {
+        id: string;
+        name: string;
+        email: string;
+    };
+}
 
 interface TodoCardProps {
     todo: TodoWithRelations;
@@ -262,11 +285,6 @@ const TodoCard: React.FC<TodoCardProps> = ({
                                 <span className="text-sm text-gray-600">{t.assignedTo}:</span>
                                 <span className="text-sm font-medium">
                                     {todo.assignedUser.name}
-                                    {todo.targetPosition && (
-                                        <span className="text-gray-500 ml-1">
-                                            ({t.positions[todo.targetPosition]})
-                                        </span>
-                                    )}
                                 </span>
                             </div>
 

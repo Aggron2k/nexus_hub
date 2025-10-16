@@ -76,7 +76,7 @@ const UserList: React.FC<UserListProps> = ({ items, currentUser }) => {
   useEffect(() => {
     if (pathname === "/users") {
       setSelectedUserId(null);
-    } else {
+    } else if (pathname) {
       const userIdMatch = pathname.match(/\/users\/(.+)/);
       if (userIdMatch) {
         setSelectedUserId(userIdMatch[1]);
@@ -85,7 +85,7 @@ const UserList: React.FC<UserListProps> = ({ items, currentUser }) => {
   }, [pathname]);
 
   // Egyedi szerepkörök listája
-  const uniqueRoles = [...new Set(visibleUsers.map(user => user.role))];
+  const uniqueRoles = Array.from(new Set(visibleUsers.map(user => user.role)));
 
   // Check if a user is selected (mobile view control)
   const isUserSelected = pathname !== "/users";

@@ -134,7 +134,6 @@ async function main() {
             email: 'kriszcs04@gmail.com',
             hashedPassword,
             role: Role.CEO,
-            positionId: positions[1].id, // Kitchen
             image: 'https://avatars.githubusercontent.com/u/40773732?v=4',
 
             // ÚJ MUNKAVÁLLALÓI ADATOK
@@ -177,7 +176,6 @@ async function main() {
                 email: 'anna.nagy@company.com',
                 hashedPassword,
                 role: Role.GeneralManager,
-                positionId: positions[2].id, // Storage
                 image: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
 
                 employeeId: 'EMP002',
@@ -210,7 +208,6 @@ async function main() {
                 email: 'peter.kovacs@company.com',
                 hashedPassword,
                 role: Role.Manager,
-                positionId: positions[1].id, // Kitchen
                 image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
 
                 employeeId: 'EMP003',
@@ -243,7 +240,6 @@ async function main() {
                 email: 'eva.szabo@company.com',
                 hashedPassword,
                 role: Role.Employee,
-                positionId: positions[0].id, // Cashier
                 image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
 
                 employeeId: 'EMP004',
@@ -276,7 +272,6 @@ async function main() {
                 email: 'marcell.toth@company.com',
                 hashedPassword,
                 role: Role.Employee,
-                positionId: positions[3].id, // Packer
                 image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
 
                 employeeId: 'EMP005',
@@ -309,7 +304,6 @@ async function main() {
                 email: 'tamas.varga@company.com',
                 hashedPassword,
                 role: Role.Employee,
-                positionId: positions[4].id, // Delivery
                 image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
 
                 employeeId: 'EMP006',
@@ -342,7 +336,6 @@ async function main() {
                 email: 'zsuzsa.molnar@company.com',
                 hashedPassword,
                 role: Role.Employee,
-                positionId: positions[5].id, // Cleaning
                 image: 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=150&h=150&fit=crop&crop=face',
 
                 employeeId: 'EMP007',
@@ -375,7 +368,6 @@ async function main() {
                 email: 'gabor.kiss@company.com',
                 hashedPassword,
                 role: Role.Employee,
-                positionId: positions[0].id, // Cashier
                 image: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=150&h=150&fit=crop&crop=face',
 
                 employeeId: 'EMP008',
@@ -417,7 +409,6 @@ async function main() {
                 priority: 'HIGH',
                 dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
                 targetPositionId: positions[1].id, // Kitchen
-                assignedUserId: users[1].id, // Manager (Kovács Péter)
                 createdById: users[0].id, // General Manager
                 notes: 'Különös figyelmet fordítani a friss alapanyagokra.'
             }
@@ -431,7 +422,6 @@ async function main() {
                 priority: 'MEDIUM',
                 dueDate: new Date(Date.now() + 8 * 60 * 60 * 1000),
                 targetPositionId: positions[0].id, // Cashier
-                assignedUserId: users[2].id, // Employee 1 (Szabó Éva)
                 createdById: users[0].id, // General Manager
                 notes: 'Minden nyugtát ellenőrizni kell.'
             }
@@ -445,7 +435,6 @@ async function main() {
                 priority: 'URGENT',
                 dueDate: new Date(Date.now() + 2 * 60 * 60 * 1000),
                 targetPositionId: positions[3].id, // Packer
-                assignedUserId: users[3].id, // Employee 2 (Tóth Marcell)
                 createdById: users[0].id, // General Manager
                 notes: 'SÜRGŐS! Azonnal kezelendő!'
             }
@@ -459,7 +448,6 @@ async function main() {
                 priority: 'HIGH',
                 dueDate: new Date(Date.now() + 5 * 60 * 60 * 1000),
                 targetPositionId: positions[4].id, // Delivery
-                assignedUserId: users[4].id, // Employee 3 (Varga Tamás)
                 createdById: users[1].id, // Manager
                 notes: 'GPS koordináták mellékelve minden címhez.'
             }
@@ -468,13 +456,55 @@ async function main() {
 
     console.log(`✅ ${sampleTodos.length} minta TODO létrehozva!`);
 
+    // Create TODO assignments
+    console.log('📌 TODO hozzárendelések létrehozása...');
+    await Promise.all([
+        // Reggeli menu -> Kovács Péter (Manager)
+        prisma.todoAssignment.create({
+            data: {
+                todoId: sampleTodos[0].id,
+                userId: users[1].id,
+                status: 'PENDING'
+            }
+        }),
+
+        // Kassza ellenőrzés -> Szabó Éva (Employee 1)
+        prisma.todoAssignment.create({
+            data: {
+                todoId: sampleTodos[1].id,
+                userId: users[2].id,
+                status: 'PENDING'
+            }
+        }),
+
+        // Csomagolási hiba -> Tóth Marcell (Employee 2)
+        prisma.todoAssignment.create({
+            data: {
+                todoId: sampleTodos[2].id,
+                userId: users[3].id,
+                status: 'PENDING'
+            }
+        }),
+
+        // Kiszállítások -> Varga Tamás (Employee 3)
+        prisma.todoAssignment.create({
+            data: {
+                todoId: sampleTodos[3].id,
+                userId: users[4].id,
+                status: 'PENDING'
+            }
+        })
+    ]);
+
+    console.log(`✅ TODO hozzárendelések létrehozva!`);
+
     // Összefoglaló statistikák
     console.log('\n📊 Seed eredmények:');
     console.log('===================');
 
     console.log('\n🏢 Pozíciók:');
     for (const position of positions) {
-        const userCount = await prisma.user.count({
+        const userCount = await prisma.userPosition.count({
             where: { positionId: position.id }
         });
         const todoCount = await prisma.todo.count({
@@ -487,15 +517,16 @@ async function main() {
 
     console.log('\n👥 Felhasználók:');
     for (const user of allUsers) {
-        const position = await prisma.position.findUnique({
-            where: { id: user.positionId! }
+        const userPosition = await prisma.userPosition.findFirst({
+            where: { userId: user.id, isPrimary: true },
+            include: { position: true }
         });
-        const todoCount = await prisma.todo.count({
-            where: { assignedUserId: user.id }
+        const todoAssignments = await prisma.todoAssignment.count({
+            where: { userId: user.id }
         });
-        const positionName = position ? (position.displayNames as any)?.hu || position.name : 'Nincs pozíció';
+        const positionName = userPosition?.position ? (userPosition.position.displayNames as any)?.hu || userPosition.position.name : 'Nincs pozíció';
         const employeeStatus = user.employmentStatus === 'ACTIVE' ? '✅' : '❌';
-        console.log(`${employeeStatus} ${user.name} (${user.employeeId}) - ${user.role} - ${positionName} - ${todoCount} TODO - ${user.weeklyWorkHours}h/hét`);
+        console.log(`${employeeStatus} ${user.name} (${user.employeeId}) - ${user.role} - ${positionName} - ${todoAssignments} TODO hozzárendelés - ${user.weeklyWorkHours}h/hét`);
     }
 
     console.log('\n🎉 Seed sikeresen befejezve!');

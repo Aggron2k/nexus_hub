@@ -71,7 +71,7 @@ interface TodoWithRelations {
 interface CreateTodoModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onTodoCreate: (todos: TodoWithRelations[]) => void;
+    onTodoCreate: () => void;
 }
 
 const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
@@ -169,7 +169,7 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
         }
     }, [targetPositionId, users]);
 
-    const getPositionDisplayName = (position: Position) => {
+    const getPositionDisplayName = (position: Position | UserWithPosition['position']) => {
         if (!position || !position.displayNames) {
             return 'N/A';
         }

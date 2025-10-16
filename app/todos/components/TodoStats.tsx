@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/app/context/LanguageContext";
+import axios from "axios";
 
 interface TodoStats {
     total: number;

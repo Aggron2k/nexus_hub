@@ -88,8 +88,7 @@ const TodosClient: React.FC<TodosClientProps> = ({ currentUser }) => {
     const isManager = currentUser && ['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role);
 
     // Todo létrehozás kezelése
-    const handleTodoCreate = (newTodos: TodoWithRelations[]) => {
-        setTodos(prev => [...newTodos, ...prev]);
+    const handleTodoCreate = () => {
         setShowCreateModal(false);
     };
 
@@ -156,9 +155,6 @@ const TodosClient: React.FC<TodosClientProps> = ({ currentUser }) => {
                                                 <span className="px-2 py-1 text-xs bg-nexus-primary text-nexus-tertiary rounded-full">
                                                     {isManager ? t.manager : t.employee}
                                                 </span>
-                                            </div>
-                                            <div className="text-sm text-gray-600">
-                                                Position: {currentUser.position || 'Not specified'}
                                             </div>
                                         </div>
 

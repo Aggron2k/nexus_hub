@@ -164,7 +164,7 @@ const TodoList: React.FC<TodoListProps> = ({ currentUser }) => {
             setSelectedTodoId(null);
             // Re-fetch todos amikor visszatérünk a /todos page-re
             fetchTodos();
-        } else {
+        } else if (pathname) {
             // Extract todo ID from URL
             const todoIdMatch = pathname.match(/\/todos\/(.+)/);
             if (todoIdMatch) {
@@ -197,9 +197,11 @@ const TodoList: React.FC<TodoListProps> = ({ currentUser }) => {
         router.push(`/todos/${todoId}`);
     };
 
-    const handleTodoCreate = (newTodos: TodoWithRelations[]) => {
-        setTodos(prev => [...newTodos, ...prev]);
+    const handleTodoCreate = () => {
+        // A Pusher automatikusan hozzáadja az új TODO-kat
         setShowCreateModal(false);
+        // Frissítsük a listát
+        fetchTodos();
     };
 
     const handleTodoUpdate = (updatedTodo: TodoWithRelations) => {
