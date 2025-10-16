@@ -106,27 +106,4 @@ export const authOptions: AuthOptions = {
             console.log("Successful login:", user.email);
         },
     },
-    // Biztonságos cookie beállítások
-    cookies: {
-        sessionToken: {
-            name: `next-auth.session-token`,
-            options: {
-                httpOnly: true,
-                sameSite: 'lax',
-                path: '/',
-                secure: process.env.NODE_ENV === 'production',
-                // URL paraméterek elkerülése érdekében
-                domain: process.env.NODE_ENV === 'production' ? '.yourdomain.com' : undefined
-            }
-        },
-        callbackUrl: {
-            name: `next-auth.callback-url`,
-            options: {
-                httpOnly: true,
-                sameSite: 'lax',
-                path: '/',
-                secure: process.env.NODE_ENV === 'production'
-            }
-        }
-    }
 };
