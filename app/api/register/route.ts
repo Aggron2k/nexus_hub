@@ -37,7 +37,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { email, name, password } = body;
+        const { email, name, password, role } = body;
 
         // Adatok validálása
         if (!email || !name || !password) {
@@ -55,6 +55,10 @@ export async function POST(request: NextRequest) {
             return new NextResponse("Password must be at least 6 characters", { status: 400 });
         }
 
+        // Role validálás (ha meg van adva)
+        const validRoles = ['Employee', 'Manager', 'GeneralManager', 'CEO'];
+        const userRole = role && validRoles.includes(role) ? role : 'Employee';
+
         // Ellenőrizzük, hogy már létezik-e a felhasználó
         const existingUser = await prisma.user.findUnique({
             where: {
@@ -69,13 +73,13 @@ export async function POST(request: NextRequest) {
         // Jelszó hash-elése
         const hashedPassword = await bcrypt.hash(password, 12);
 
-        // Új felhasználó létrehozása alapértelmezett Employee szerepkörrel
+        // Új felhasználó létrehozása megadott vagy alapértelmezett Employee szerepkörrel
         const user = await prisma.user.create({
             data: {
                 email: email.toLowerCase(),
                 name: name.trim(),
                 hashedPassword,
-                role: 'Employee' // Alapértelmezett szerepkör
+                role: userRole
             }
         });
 

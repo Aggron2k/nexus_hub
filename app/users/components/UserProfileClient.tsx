@@ -421,8 +421,7 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                                             {[
                                                 { key: 'name', label: t.name, type: 'text' },
                                                 { key: 'email', label: t.email, type: 'email' },
-                                                { key: 'role', label: t.role, type: 'select', options: [{ value: Role.Employee, label: t.employee }, { value: Role.Manager, label: t.manager }, { value: Role.GeneralManager, label: t.generalManager }, { value: Role.CEO, label: t.ceo }], disabled: !canEdit },
-                                                { key: 'positionId', label: t.position, type: 'select', options: positions.map(p => ({ value: p.id, label: p.displayNames[language] || p.name })) }
+                                                { key: 'role', label: t.role, type: 'select', options: [{ value: Role.Employee, label: t.employee }, { value: Role.Manager, label: t.manager }, { value: Role.GeneralManager, label: t.generalManager }, { value: Role.CEO, label: t.ceo }], disabled: !canEdit }
                                             ].map(({ key, label, type, options, disabled }) => (
                                                 <div key={key}>
                                                     <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
@@ -436,7 +435,7 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                                                             <input type={type} value={editData[key as keyof typeof editData] as string} onChange={(e) => setEditData({ ...editData, [key]: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-nexus-primary focus:border-nexus-primary" />
                                                         )
                                                     ) : (
-                                                        <p className="text-gray-900">{key === 'role' ? getRoleDisplayName(selectedUser[key]) : key === 'positionId' ? (userPosition?.displayNames[language] || userPosition?.name || '-') : (selectedUser[key as keyof typeof selectedUser] as string) || '-'}</p>
+                                                        <p className="text-gray-900">{key === 'role' ? getRoleDisplayName(selectedUser[key]) : (selectedUser[key as keyof typeof selectedUser] as string) || '-'}</p>
                                                     )}
                                                 </div>
                                             ))}

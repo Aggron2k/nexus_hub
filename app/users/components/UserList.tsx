@@ -6,7 +6,8 @@ import { useRouter, usePathname } from "next/navigation";
 import clsx from "clsx";
 import UserBox from "./UserBox";
 import { useLanguage } from "@/app/context/LanguageContext";
-import { HiMagnifyingGlass, HiUsers } from "react-icons/hi2";
+import { HiMagnifyingGlass, HiUsers, HiUserPlus } from "react-icons/hi2";
+import NewUserModal from "./NewUserModal";
 
 interface UserListProps {
   items: User[];
@@ -20,6 +21,7 @@ const UserList: React.FC<UserListProps> = ({ items, currentUser }) => {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('all');
+  const [isNewUserModalOpen, setIsNewUserModalOpen] = useState(false);
 
   // Fordítások
   const translations = {
@@ -33,7 +35,8 @@ const UserList: React.FC<UserListProps> = ({ items, currentUser }) => {
       employee: "Employee",
       manager: "Manager",
       generalManager: "General Manager",
-      ceo: "CEO"
+      ceo: "CEO",
+      addUser: "Add User"
     },
     hu: {
       title: "Munkatársak",
@@ -45,7 +48,8 @@ const UserList: React.FC<UserListProps> = ({ items, currentUser }) => {
       employee: "Alkalmazott",
       manager: "Menedzser",
       generalManager: "Általános Vezető",
-      ceo: "Vezérigazgató"
+      ceo: "Vezérigazgató",
+      addUser: "Felhasználó hozzáadása"
     },
   };
 
@@ -53,6 +57,7 @@ const UserList: React.FC<UserListProps> = ({ items, currentUser }) => {
 
   // Jogosultság ellenőrzése
   const canViewOthers = ['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role);
+  const canEdit = ['GeneralManager', 'CEO'].includes(currentUser.role);
 
   // Mindig tartalmazza a saját felhasználót is, de elkerüli a duplikációt
   const visibleUsers = canViewOthers
@@ -91,18 +96,37 @@ const UserList: React.FC<UserListProps> = ({ items, currentUser }) => {
   const isUserSelected = pathname !== "/users";
 
   return (
-    <aside
-      className={clsx(
-        `fixed inset-y-0 pb-20 lg:pb-0 lg:left-20 lg:w-80 lg:block overflow-y-auto border-r border-gray-200`,
-        isUserSelected ? "hidden" : "block w-full left-0"
-      )}
-    >
+    <>
+      {/* New User Modal */}
+      <NewUserModal
+        currentUser={currentUser}
+        isOpen={isNewUserModalOpen}
+        onClose={() => setIsNewUserModalOpen(false)}
+      />
+
+      <aside
+        className={clsx(
+          `fixed inset-y-0 pb-20 lg:pb-0 lg:left-20 lg:w-80 lg:block overflow-y-auto border-r border-gray-200`,
+          isUserSelected ? "hidden" : "block w-full left-0"
+        )}
+      >
       <div className="px-5">
         {/* Header */}
         <div className="flex items-center justify-between mb-4 pt-4">
           <div className="text-2xl font-bold text-neutral-800">
             {translations[language].title}
           </div>
+
+          {/* Add User Button - Only for GeneralManager/CEO */}
+          {canEdit && (
+            <div
+              onClick={() => setIsNewUserModalOpen(true)}
+              className="rounded-full p-2 bg-nexus-tertiary text-white hover:bg-nexus-primary focus-visible:bg-nexus-primary cursor-pointer transition hover:text-black"
+              title={t.addUser}
+            >
+              <HiUserPlus size={20} />
+            </div>
+          )}
         </div>
 
         {/* Keresés és szűrők (csak ha van jogosultsága) */}
@@ -179,6 +203,7 @@ const UserList: React.FC<UserListProps> = ({ items, currentUser }) => {
         </div>
       </div>
     </aside>
+    </>
   );
 };
 
