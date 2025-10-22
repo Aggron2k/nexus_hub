@@ -57,7 +57,8 @@ export async function GET(
             }
         });
 
-        if (!user) {
+        // Törölt user nem látható (404 helyett)
+        if (!user || user.deletedAt) {
             return new NextResponse("User not found", { status: 404 });
         }
 
@@ -339,7 +340,7 @@ export async function DELETE(
             return new NextResponse("Cannot delete own account", { status: 400 });
         }
 
-        // Ellenőrizzük, hogy létezik-e a felhasználó
+        // Ellenőrizzük, hogy létezik-e a felhasználó és nincs már törölve
         const userToDelete = await prisma.user.findUnique({
             where: { id: userId }
         });
@@ -348,14 +349,23 @@ export async function DELETE(
             return new NextResponse("User not found", { status: 404 });
         }
 
+        if (userToDelete.deletedAt) {
+            return new NextResponse("User already deleted", { status: 400 });
+        }
+
         // CEO nem törölhető (kivéve másik CEO által)
         if (userToDelete.role === 'CEO' && currentUser.role !== 'CEO') {
             return new NextResponse("Cannot delete CEO account", { status: 403 });
         }
 
-        // Felhasználó törlése
-        await prisma.user.delete({
-            where: { id: userId }
+        // SOFT DELETE: deletedAt és employmentStatus beállítása
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                deletedAt: new Date(),
+                deletedBy: currentUser.id,
+                employmentStatus: EmploymentStatus.TERMINATED
+            }
         });
 
         return new NextResponse("User deleted successfully", { status: 200 });

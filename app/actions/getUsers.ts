@@ -15,7 +15,8 @@ const getUsers = async () => {
             where: {
                 NOT: {
                     email: session.user.email as string
-                }
+                },
+                deletedAt: null  // Csak nem törölt userek
             }
         });
 

@@ -143,6 +143,10 @@ model User {
   // Megjegyzések
   notes String?
 
+  // SOFT DELETE támogatás
+  deletedAt DateTime? // Ha kitöltött, a user törölve van
+  deletedBy String? @db.ObjectId // Ki törölte (CEO/GeneralManager ID)
+
   conversationIds String[] @db.ObjectId
   conversations Conversation[] @relation(fields: [conversationIds], references: [id])
 

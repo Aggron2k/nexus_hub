@@ -45,6 +45,9 @@ export async function GET() {
                 },
                 createdAt: true
             },
+            where: {
+                deletedAt: null  // Csak nem törölt userek
+            },
             orderBy: {
                 name: 'asc'
             }

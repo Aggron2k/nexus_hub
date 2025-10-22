@@ -16,7 +16,8 @@ const getCurrentUser = async () => {
       }
     });
 
-    if (!currentUser) {
+    // Törölt felhasználó NEM jelentkezhet be
+    if (!currentUser || currentUser.deletedAt) {
       return null;
     }
 

@@ -97,6 +97,19 @@ export const authOptions: AuthOptions = {
 
         // Signin callback - további védelem
         async signIn({ user, account, profile, email, credentials }) {
+            // Ellenőrizzük, hogy a user nincs törölve
+            if (user?.email) {
+                const dbUser = await prisma.user.findUnique({
+                    where: { email: user.email },
+                    select: { deletedAt: true }
+                });
+
+                // Ha törölt user, megtagadjuk a bejelentkezést
+                if (dbUser?.deletedAt) {
+                    return false;
+                }
+            }
+
             return true; // Engedélyezi a bejelentkezést
         },
     },

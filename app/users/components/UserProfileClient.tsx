@@ -68,6 +68,7 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
     const [showPasswordSection, setShowPasswordSection] = useState(false);
     const [showAddPositionModal, setShowAddPositionModal] = useState(false);
     const [availablePositions, setAvailablePositions] = useState<Position[]>([]);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const [editData, setEditData] = useState({
         name: '',
@@ -117,9 +118,12 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
             quickStats: "Quick Stats", daysInTeam: "Days in team", currentRole: "Current role",
             oauthPasswordMessage: "Password change is not available for users authenticated with OAuth providers (Google, GitHub).",
             positions: "Positions", primaryPosition: "Primary Position", addPosition: "Add Position", removePosition: "Remove Position",
-            selectPosition: "Select Position", setPrimary: "Set as Primary", managingPositions: "Managing Positions", 
-            positionAdded: "Position added successfully", positionRemoved: "Position removed successfully", 
-            positionSetPrimary: "Primary position updated", selectPositionToAdd: "Select a position to add"
+            selectPosition: "Select Position", setPrimary: "Set as Primary", managingPositions: "Managing Positions",
+            positionAdded: "Position added successfully", positionRemoved: "Position removed successfully",
+            positionSetPrimary: "Primary position updated", selectPositionToAdd: "Select a position to add",
+            deleteUser: "Delete User", deleteConfirmTitle: "Delete User?",
+            deleteConfirmMessage: "Are you sure you want to delete {name}? This will deactivate their account and they won't be able to log in.",
+            deleteConfirmButton: "Yes, Delete", userDeleted: "User deleted successfully"
         },
         hu: {
             profile: "Felhasználói Profil", edit: "Szerkesztés", save: "Mentés", cancel: "Mégse", saving: "Mentés...",
@@ -137,8 +141,11 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
             oauthPasswordMessage: "A jelszó módosítása nem elérhető OAuth szolgáltatókkal (Google, GitHub) bejelentkezett felhasználók számára.",
             positions: "Pozíciók", primaryPosition: "Elsődleges pozíció", addPosition: "Pozíció hozzáadása", removePosition: "Pozíció eltávolítása",
             selectPosition: "Pozíció kiválasztása", setPrimary: "Beállítás elsődlegesként", managingPositions: "Pozíciók kezelése",
-            positionAdded: "Pozíció sikeresen hozzáadva", positionRemoved: "Pozíció sikeresen eltávolítva", 
-            positionSetPrimary: "Elsődleges pozíció frissítve", selectPositionToAdd: "Válassz egy pozíciót a hozzáadáshoz"
+            positionAdded: "Pozíció sikeresen hozzáadva", positionRemoved: "Pozíció sikeresen eltávolítva",
+            positionSetPrimary: "Elsődleges pozíció frissítve", selectPositionToAdd: "Válassz egy pozíciót a hozzáadáshoz",
+            deleteUser: "Felhasználó törlése", deleteConfirmTitle: "Felhasználó törlése?",
+            deleteConfirmMessage: "Biztosan törölni szeretnéd {name} felhasználót? Ez deaktiválja a fiókját és nem fog tudni bejelentkezni.",
+            deleteConfirmButton: "Igen, törlés", userDeleted: "Felhasználó sikeresen törölve"
         }
     };
 
@@ -251,6 +258,28 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
             .finally(() => setChatLoading(false));
     }, [selectedUser, isOwnProfile, router]);
 
+    // Felhasználó törlése
+    const handleDelete = async () => {
+        if (!selectedUser) return;
+
+        setLoading(true);
+        try {
+            await axios.delete(`/api/users/${selectedUser.id}`);
+            toast.success(t.userDeleted);
+            setShowDeleteConfirm(false);
+            router.push('/users');
+            router.refresh();
+        } catch (error: any) {
+            if (error.response?.data) {
+                toast.error(error.response.data);
+            } else {
+                toast.error('Hiba történt a törlés során');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Pozíció kezelő függvények
     const handleAddPosition = async (positionId: string, isPrimary = false) => {
         if (!selectedUser) return;
@@ -361,6 +390,15 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                                     >
                                         <HiPencil className="h-4 w-4" />
                                         <span className="hidden sm:inline">{t.edit}</span>
+                                    </button>
+                                )}
+                                {canEdit && !isOwnProfile && !isEditing && (
+                                    <button
+                                        onClick={() => setShowDeleteConfirm(true)}
+                                        className="flex items-center gap-2 px-3 sm:px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50"
+                                    >
+                                        <HiTrash className="h-4 w-4" />
+                                        <span className="hidden sm:inline">{t.deleteUser}</span>
                                     </button>
                                 )}
                                 {isEditing && (
@@ -666,6 +704,38 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                                         </option>
                                     ))}
                             </select>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+                        <div className="p-6">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                                {t.deleteConfirmTitle}
+                            </h3>
+                            <p className="text-sm text-gray-600 mb-6">
+                                {t.deleteConfirmMessage.replace('{name}', selectedUser?.name || selectedUser?.email || '')}
+                            </p>
+                            <div className="flex gap-3 justify-end">
+                                <button
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    disabled={loading}
+                                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                                >
+                                    {t.cancel}
+                                </button>
+                                <button
+                                    onClick={handleDelete}
+                                    disabled={loading}
+                                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                                >
+                                    {loading ? '...' : t.deleteConfirmButton}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
