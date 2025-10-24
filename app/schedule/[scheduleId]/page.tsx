@@ -3,9 +3,10 @@
 import { useParams, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/app/context/LanguageContext";
-import { HiCalendar, HiArrowLeft } from "react-icons/hi2";
+import { HiCalendar, HiArrowLeft, HiPlus } from "react-icons/hi2";
 import Link from "next/link";
 import { DayPilot, DayPilotScheduler } from "@daypilot/daypilot-lite-react";
+import AddShiftModal from "../components/AddShiftModal";
 
 export default function ScheduleDetailPage() {
   const params = useParams();
@@ -15,6 +16,8 @@ export default function ScheduleDetailPage() {
   const { language } = useLanguage();
   const [schedule, setSchedule] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAddShiftModalOpen, setIsAddShiftModalOpen] = useState(false);
+  const [shifts, setShifts] = useState<any[]>([]);
 
   // Fordítások
   const translations = {
@@ -79,37 +82,85 @@ export default function ScheduleDetailPage() {
     events: []
   });
 
-  // Beosztás lekérése
+  // Beosztás és műszakok lekérése
   useEffect(() => {
-    const fetchSchedule = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch(`/api/schedule/${scheduleId}`);
-        if (!response.ok) {
+        // Schedule lekérése
+        const scheduleResponse = await fetch(`/api/schedule/${scheduleId}`);
+        if (!scheduleResponse.ok) {
           throw new Error('Failed to fetch schedule');
         }
-        const data = await response.json();
-        setSchedule(data);
+        const scheduleData = await scheduleResponse.json();
+        setSchedule(scheduleData);
 
-        // Frissítjük a scheduler start date-jét
-        const startDate = dateParam ? new Date(dateParam) : new Date(data.weekStart);
-        const days = dateParam ? 1 : 7;
+        // Műszakok lekérése
+        const shiftsResponse = await fetch(`/api/shifts?scheduleId=${scheduleId}`);
+        if (shiftsResponse.ok) {
+          const shiftsData = await shiftsResponse.json();
+          setShifts(shiftsData);
 
-        setSchedulerConfig(prev => ({
-          ...prev,
-          startDate: startDate,
-          days: days
-        }));
+          // Resources (felhasználók) és Events (műszakok) létrehozása
+          const uniqueUsers = new Map();
+          const events: any[] = [];
+
+          shiftsData.forEach((shift: any) => {
+            // Ha van date param, csak az adott napi műszakokat mutatjuk
+            if (dateParam) {
+              const shiftDate = new Date(shift.date).toISOString().split('T')[0];
+              if (shiftDate !== dateParam) {
+                return;
+              }
+            }
+
+            // User hozzáadása a resources-hoz
+            if (!uniqueUsers.has(shift.userId)) {
+              uniqueUsers.set(shift.userId, {
+                name: shift.user.name,
+                id: shift.userId
+              });
+            }
+
+            // Event létrehozása
+            const positionName = (shift.position.displayNames as any)?.[language] || shift.position.name;
+            const startTime = new Date(shift.startTime);
+            const endTime = new Date(shift.endTime);
+            const startTimeStr = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const endTimeStr = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            events.push({
+              id: shift.id,
+              start: shift.startTime,
+              end: shift.endTime,
+              resource: shift.userId,
+              text: `${positionName}: ${startTimeStr} - ${endTimeStr}`,
+              backColor: shift.position.color || '#3B82F6',
+              borderColor: 'darker'
+            });
+          });
+
+          // Resources és Events frissítése
+          const resources = Array.from(uniqueUsers.values());
+
+          setSchedulerConfig(prev => ({
+            ...prev,
+            startDate: dateParam ? new Date(dateParam) : new Date(scheduleData.weekStart),
+            days: dateParam ? 1 : 7,
+            resources: resources.length > 0 ? resources : [{ name: "No shifts yet", id: "empty" }],
+            events: events
+          }));
+        }
       } catch (error) {
-        console.error('Error fetching schedule:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
     if (scheduleId) {
-      fetchSchedule();
+      fetchData();
     }
-  }, [scheduleId]);
+  }, [scheduleId, dateParam, language]);
 
   if (isLoading) {
     return (
@@ -152,54 +203,75 @@ export default function ScheduleDetailPage() {
   };
 
   return (
-    <div className="lg:pl-80 h-full flex flex-col">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <Link
-          href="/schedule"
-          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-3"
-        >
-          <HiArrowLeft className="h-4 w-4" />
-          {t.back}
-        </Link>
+    <>
+      {/* Add Shift Modal */}
+      <AddShiftModal
+        isOpen={isAddShiftModalOpen}
+        onClose={() => setIsAddShiftModalOpen(false)}
+        scheduleId={scheduleId}
+        selectedDate={dateParam || new Date(schedule?.weekStart || new Date()).toISOString().split('T')[0]}
+      />
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-nexus-primary rounded-lg">
-              <HiCalendar className="h-6 w-6 text-nexus-tertiary" />
+      <div className="lg:pl-80 h-full flex flex-col">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <Link
+            href="/schedule"
+            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-3"
+          >
+            <HiArrowLeft className="h-4 w-4" />
+            {t.back}
+          </Link>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-nexus-primary rounded-lg">
+                <HiCalendar className="h-6 w-6 text-nexus-tertiary" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {dateParam ? formatDate(new Date(dateParam)) : t.week}
+                </h1>
+                {!dateParam && (
+                  <p className="text-sm text-gray-600">
+                    {formatWeek(schedule.weekStart, schedule.weekEnd)}
+                  </p>
+                )}
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {dateParam ? formatDate(new Date(dateParam)) : t.week}
-              </h1>
-              {!dateParam && (
-                <p className="text-sm text-gray-600">
-                  {formatWeek(schedule.weekStart, schedule.weekEnd)}
-                </p>
-              )}
+
+            <div className="flex items-center gap-3">
+              {/* Add Shift Button */}
+              <button
+                onClick={() => setIsAddShiftModalOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-nexus-tertiary text-white rounded-md hover:bg-nexus-primary transition"
+              >
+                <HiPlus className="h-5 w-5" />
+                {language === 'hu' ? 'Műszak hozzáadása' : 'Add Shift'}
+              </button>
+
+              <span
+                className={`text-xs px-3 py-1 rounded-full ${
+                  schedule.isPublished
+                    ? "bg-green-100 text-green-800"
+                    : "bg-gray-100 text-gray-800"
+                }`}
+              >
+                {schedule.isPublished ? t.published : t.draft}
+              </span>
             </div>
           </div>
+        </div>
 
-          <span
-            className={`text-xs px-3 py-1 rounded-full ${
-              schedule.isPublished
-                ? "bg-green-100 text-green-800"
-                : "bg-gray-100 text-gray-800"
-            }`}
-          >
-            {schedule.isPublished ? t.published : t.draft}
-          </span>
+        {/* DayPilot Scheduler */}
+        <div className="flex-1 p-6 bg-nexus-bg overflow-auto">
+          <div className="bg-white rounded-lg shadow">
+            <DayPilotScheduler
+              {...schedulerConfig}
+            />
+          </div>
         </div>
       </div>
-
-      {/* DayPilot Scheduler */}
-      <div className="flex-1 p-6 bg-nexus-bg overflow-auto">
-        <div className="bg-white rounded-lg shadow">
-          <DayPilotScheduler
-            {...schedulerConfig}
-          />
-        </div>
-      </div>
-    </div>
+    </>
   );
 }
