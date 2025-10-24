@@ -52,10 +52,11 @@ model Position {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdById String? @db.ObjectId
-  
+
   // Kapcsolatok - many-to-many a User-rel
   userPositions UserPosition[]
   todos Todo[]
+  shifts Shift[] @relation("ShiftPosition")
 }
 
 // Many-to-many kapcsolótábla User és Position között
@@ -160,9 +161,11 @@ model User {
   // TODO kapcsolatok
   todoAssignments TodoAssignment[] @relation("TodoAssignments")
   createdTodos Todo[] @relation("CreatedBy")
-  
-  // Position létrehozás kapcsolatot eltávolítottuk a ciklikus referencia elkerülése érdekében
-  
+
+  // Schedule kapcsolatok
+  shifts Shift[] @relation("UserShifts")
+  createdSchedules WeekSchedule[] @relation("ScheduleCreatedBy")
+
   @@index([employeeId]) // Egyedi index csak nem-null értékekre
 }
 
@@ -283,4 +286,69 @@ model Todo {
   @@index([status])
   @@index([dueDate])
   @@index([targetPositionId])
+}
+
+// SCHEDULE MODELS - Munkabeosztás kezelése
+
+// Heti beosztás
+model WeekSchedule {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Hét kezdete (hétfő)
+  weekStart DateTime
+  // Hét vége (vasárnap)
+  weekEnd DateTime
+
+  // Ki hozta létre
+  createdById String @db.ObjectId
+  createdBy User @relation("ScheduleCreatedBy", fields: [createdById], references: [id])
+
+  // Státusz
+  isPublished Boolean @default(false) // Publikálva van-e (látják-e a dolgozók)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Kapcsolat a műszakokkal
+  shifts Shift[]
+
+  @@index([weekStart])
+  @@index([weekEnd])
+  @@index([isPublished])
+}
+
+// Műszak - egy adott napon egy dolgozó munkabeosztása
+model Shift {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Melyik heti beosztáshoz tartozik
+  weekScheduleId String @db.ObjectId
+  weekSchedule WeekSchedule @relation(fields: [weekScheduleId], references: [id], onDelete: Cascade)
+
+  // Melyik dolgozó
+  userId String @db.ObjectId
+  user User @relation("UserShifts", fields: [userId], references: [id], onDelete: Cascade)
+
+  // Melyik pozícióban dolgozik ezen a műszakban
+  positionId String @db.ObjectId
+  position Position @relation("ShiftPosition", fields: [positionId], references: [id])
+
+  // Dátum és idő
+  date DateTime // Melyik nap
+  startTime DateTime // Mikor kezd
+  endTime DateTime // Mikor végez
+
+  // Számított mező - hány órát dolgozik
+  hoursWorked Float? // pl. 8.5 óra
+
+  // Megjegyzések
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([weekScheduleId])
+  @@index([userId])
+  @@index([positionId])
+  @@index([date])
 }

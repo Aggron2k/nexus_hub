@@ -72,8 +72,9 @@ const useRoutes = () => {
         },
         {
             label: translations[language].calendar,
-            href: '#',
+            href: '/schedule',
             icon: HiCalendarDays,
+            active: pathname === '/schedule',
         },
         {
             label: translations[language].tasks,
