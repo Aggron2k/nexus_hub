@@ -1,5 +1,6 @@
 // app/documents/layout.tsx
 import getAllUsers from "@/app/actions/getAllUsers";
+import getDeletedUsers from "@/app/actions/getDeletedUsers";
 import getCurrentUser from "@/app/actions/getCurrentUser";
 import Sidebar from "../components/sidebar/Sidebar";
 import UserList from "./components/UserList";
@@ -11,6 +12,7 @@ export default async function UsersLayout({
 }) {
     const currentUser = await getCurrentUser();
     const allUsers = await getAllUsers();
+    const deletedUsers = await getDeletedUsers(); // CEO számára
 
     // Ha Employee, csak a saját profilját mutassuk
     const users = currentUser?.role === 'Employee'
@@ -20,7 +22,7 @@ export default async function UsersLayout({
     return (
         <Sidebar>
             <div className="h-full">
-                <UserList items={users} />
+                <UserList items={users} deletedItems={deletedUsers} currentUser={currentUser} />
                 {children}
             </div>
         </Sidebar>

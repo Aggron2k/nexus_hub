@@ -10,15 +10,18 @@ import { HiMagnifyingGlass, HiUsers } from "react-icons/hi2";
 
 interface UserListProps {
     items: User[];
+    deletedItems?: User[];
+    currentUser: User | null;
 }
 
-const UserList: React.FC<UserListProps> = ({ items }) => {
+const UserList: React.FC<UserListProps> = ({ items, deletedItems = [], currentUser }) => {
     const router = useRouter();
     const pathname = usePathname();
     const { language } = useLanguage();
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedRole, setSelectedRole] = useState<string>('all');
+    const [showDeleted, setShowDeleted] = useState(false);
 
     const translations = {
         en: {
@@ -29,7 +32,13 @@ const UserList: React.FC<UserListProps> = ({ items }) => {
             employee: "Employee",
             manager: "Manager",
             generalManager: "General Manager",
-            ceo: "CEO"
+            ceo: "CEO",
+            deletedUsers: "Deleted Users",
+            showDeleted: "Show Deleted",
+            hideDeleted: "Hide Deleted",
+            restore: "Restore",
+            deletedAt: "Deleted at",
+            restoreError: "Failed to restore user"
         },
         hu: {
             title: "Dokumentumok",
@@ -39,7 +48,13 @@ const UserList: React.FC<UserListProps> = ({ items }) => {
             employee: "Alkalmazott",
             manager: "Menedzser",
             generalManager: "Általános Vezető",
-            ceo: "Vezérigazgató"
+            ceo: "Vezérigazgató",
+            deletedUsers: "Törölt felhasználók",
+            showDeleted: "Törölt mutatása",
+            hideDeleted: "Törölt elrejtése",
+            restore: "Visszaállítás",
+            deletedAt: "Törlés ideje",
+            restoreError: "Nem sikerült visszaállítani a felhasználót"
         }
     };
 
@@ -61,6 +76,25 @@ const UserList: React.FC<UserListProps> = ({ items }) => {
             }
         }
     }, [pathname]);
+
+    // Restore user handler
+    const handleRestoreUser = async (userId: string) => {
+        try {
+            const response = await fetch(`/api/users/${userId}/restore`, {
+                method: 'POST',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to restore user');
+            }
+
+            // Frissítjük az oldalt Next.js router-rel
+            router.refresh();
+        } catch (error) {
+            console.error('Error restoring user:', error);
+            alert(t.restoreError);
+        }
+    };
 
     // Szűrés
     const filteredUsers = items.filter(user => {
@@ -153,6 +187,57 @@ const UserList: React.FC<UserListProps> = ({ items }) => {
                         {filteredUsers.length} / {items.length} felhasználó
                     </p>
                 </div>
+
+                {/* Törölt felhasználók - Csak CEO láthatja */}
+                {currentUser?.role === 'CEO' && deletedItems.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                        <button
+                            onClick={() => setShowDeleted(!showDeleted)}
+                            className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-md transition"
+                        >
+                            <span>{t.deletedUsers} ({deletedItems.length})</span>
+                            <span className="text-xs">{showDeleted ? t.hideDeleted : t.showDeleted}</span>
+                        </button>
+
+                        {showDeleted && (
+                            <div className="mt-2 space-y-2">
+                                {deletedItems.map((user) => (
+                                    <div
+                                        key={user.id}
+                                        className="p-3 bg-red-50 border border-red-200 rounded-md"
+                                    >
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <img
+                                                        src={user.image || '/images/placeholder.jpg'}
+                                                        alt={user.name || 'User'}
+                                                        className="w-8 h-8 rounded-full"
+                                                    />
+                                                    <div>
+                                                        <p className="text-sm font-medium text-gray-900">
+                                                            {user.name}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500">{user.email}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-2 text-xs text-gray-600">
+                                                    <p>{t.deletedAt}: {user.deletedAt ? new Date(user.deletedAt).toLocaleDateString(language === 'hu' ? 'hu-HU' : 'en-US') : 'N/A'}</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => handleRestoreUser(user.id)}
+                                                className="ml-2 px-3 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition"
+                                            >
+                                                {t.restore}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </aside>
     );
