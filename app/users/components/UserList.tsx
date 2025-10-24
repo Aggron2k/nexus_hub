@@ -11,10 +11,11 @@ import NewUserModal from "./NewUserModal";
 
 interface UserListProps {
   items: User[];
+  deletedItems?: User[];
   currentUser: User;
 }
 
-const UserList: React.FC<UserListProps> = ({ items, currentUser }) => {
+const UserList: React.FC<UserListProps> = ({ items, deletedItems = [], currentUser }) => {
   const router = useRouter();
   const pathname = usePathname();
   const { language } = useLanguage();
@@ -22,6 +23,7 @@ const UserList: React.FC<UserListProps> = ({ items, currentUser }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const [isNewUserModalOpen, setIsNewUserModalOpen] = useState(false);
+  const [showDeleted, setShowDeleted] = useState(false);
 
   // Fordítások
   const translations = {
@@ -36,7 +38,16 @@ const UserList: React.FC<UserListProps> = ({ items, currentUser }) => {
       manager: "Manager",
       generalManager: "General Manager",
       ceo: "CEO",
-      addUser: "Add User"
+      addUser: "Add User",
+      deletedUsers: "Deleted Users",
+      showDeleted: "Show Deleted",
+      hideDeleted: "Hide Deleted",
+      restore: "Restore",
+      deletedBy: "Deleted by",
+      deletedAt: "Deleted at",
+      restoringUser: "Restoring user...",
+      userRestored: "User restored successfully!",
+      restoreError: "Failed to restore user"
     },
     hu: {
       title: "Munkatársak",
@@ -49,7 +60,16 @@ const UserList: React.FC<UserListProps> = ({ items, currentUser }) => {
       manager: "Menedzser",
       generalManager: "Általános Vezető",
       ceo: "Vezérigazgató",
-      addUser: "Felhasználó hozzáadása"
+      addUser: "Felhasználó hozzáadása",
+      deletedUsers: "Törölt felhasználók",
+      showDeleted: "Törölt mutatása",
+      hideDeleted: "Törölt elrejtése",
+      restore: "Visszaállítás",
+      deletedBy: "Törölte",
+      deletedAt: "Törlés ideje",
+      restoringUser: "Felhasználó visszaállítása...",
+      userRestored: "Felhasználó sikeresen visszaállítva!",
+      restoreError: "Nem sikerült visszaállítani a felhasználót"
     },
   };
 
@@ -88,6 +108,25 @@ const UserList: React.FC<UserListProps> = ({ items, currentUser }) => {
       }
     }
   }, [pathname]);
+
+  // Restore user handler
+  const handleRestoreUser = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/users/${userId}/restore`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to restore user');
+      }
+
+      // Frissítjük az oldalt Next.js router-rel
+      router.refresh();
+    } catch (error) {
+      console.error('Error restoring user:', error);
+      alert(t.restoreError);
+    }
+  };
 
   // Egyedi szerepkörök listája
   const uniqueRoles = Array.from(new Set(visibleUsers.map(user => user.role)));
@@ -201,6 +240,57 @@ const UserList: React.FC<UserListProps> = ({ items, currentUser }) => {
             {filteredUsers.length} / {visibleUsers.length} {translations[language].title.toLowerCase()}
           </p>
         </div>
+
+        {/* Törölt felhasználók - Csak CEO láthatja */}
+        {currentUser.role === 'CEO' && deletedItems.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => setShowDeleted(!showDeleted)}
+              className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-md transition"
+            >
+              <span>{t.deletedUsers} ({deletedItems.length})</span>
+              <span className="text-xs">{showDeleted ? t.hideDeleted : t.showDeleted}</span>
+            </button>
+
+            {showDeleted && (
+              <div className="mt-2 space-y-2">
+                {deletedItems.map((user) => (
+                  <div
+                    key={user.id}
+                    className="p-3 bg-red-50 border border-red-200 rounded-md"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={user.image || '/images/placeholder.jpg'}
+                            alt={user.name || 'User'}
+                            className="w-8 h-8 rounded-full"
+                          />
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {user.name}
+                            </p>
+                            <p className="text-xs text-gray-500">{user.email}</p>
+                          </div>
+                        </div>
+                        <div className="mt-2 text-xs text-gray-600">
+                          <p>{t.deletedAt}: {user.deletedAt ? new Date(user.deletedAt).toLocaleDateString(language === 'hu' ? 'hu-HU' : 'en-US') : 'N/A'}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleRestoreUser(user.id)}
+                        className="ml-2 px-3 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition"
+                      >
+                        {t.restore}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </aside>
     </>

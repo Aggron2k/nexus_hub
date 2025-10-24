@@ -8,19 +8,21 @@ const getUsers = async () => {
     }
 
     try{
-        const users = await prisma.user.findMany({
+        const allUsers = await prisma.user.findMany({
             orderBy: {
                 createdAt: 'desc',
             },
             where: {
                 NOT: {
                     email: session.user.email as string
-                },
-                deletedAt: null  // Csak nem törölt userek
+                }
             }
         });
 
-        return users;
+        // Kiszűrjük a törölt felhasználókat
+        const activeUsers = allUsers.filter(user => !user.deletedAt);
+
+        return activeUsers;
     }catch(error: any){
         return [];
     }

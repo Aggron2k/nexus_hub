@@ -361,7 +361,7 @@ async function main() {
             }
         }),
 
-        // Inactive Employee
+        // Deleted Employee (SOFT DELETED)
         prisma.user.create({
             data: {
                 name: 'Kiss Gábor',
@@ -372,7 +372,7 @@ async function main() {
 
                 employeeId: 'EMP008',
                 phoneNumber: '+36708901234',
-                employmentStatus: EmploymentStatus.INACTIVE, // Inaktív státusz
+                employmentStatus: EmploymentStatus.TERMINATED, // Megszüntetett státusz
                 weeklyWorkHours: 0,
                 birthCountry: 'Magyarország',
                 birthCity: 'Szombathely',
@@ -389,7 +389,11 @@ async function main() {
                 hireDate: new Date('2019-08-15'),
                 hourlyRate: 2100,
                 currency: 'HUF',
-                notes: 'Jelenleg szabadságon, visszatérés 2025 szeptemberében várható'
+                notes: 'Munkaviszonya 2024 decemberében megszüntetésre került',
+
+                // SOFT DELETE mezők
+                deletedAt: new Date('2024-12-15'),
+                deletedBy: ceoUser.id // CEO törölte
             }
         })
     ]);

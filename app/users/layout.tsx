@@ -1,4 +1,5 @@
-import getUsers from '../actions/getUsers';
+import getAllUsers from '../actions/getAllUsers';
+import getDeletedUsers from '../actions/getDeletedUsers';
 import getCurrentUser from '../actions/getCurrentUser';
 import { redirect } from 'next/navigation';
 import Sidebar from '../components/sidebar/Sidebar';
@@ -15,12 +16,13 @@ export default async function UsersLayout({
     redirect('/login');
   }
 
-  const users = await getUsers();
+  const users = await getAllUsers();
+  const deletedUsers = await getDeletedUsers(); // CEO számára
 
   return (
     <Sidebar>
       <div className="h-full">
-        <UserList items={users} currentUser={currentUser} />
+        <UserList items={users} deletedItems={deletedUsers} currentUser={currentUser} />
         {children}
       </div>
     </Sidebar>
