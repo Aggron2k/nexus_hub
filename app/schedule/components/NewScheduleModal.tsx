@@ -100,9 +100,9 @@ const NewScheduleModal: React.FC<NewScheduleModalProps> = ({
 
       const data = await response.json();
 
-      // Bezárjuk a modalt és navigálunk az új beosztáshoz
+      // Bezárjuk a modalt és navigálunk az új beosztáshoz (automatikusan a hétfőhöz)
       onClose();
-      router.push(`/schedule/${data.id}`);
+      router.push(`/schedule/${data.id}?date=${weekStart}`);
       router.refresh();
     } catch (error) {
       console.error('Error creating schedule:', error);

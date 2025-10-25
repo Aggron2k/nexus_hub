@@ -9,7 +9,11 @@ async function main() {
 
     // Törölünk minden meglévő adatot (opcionális)
     console.log('📝 Meglévő adatok törlése...');
+    await prisma.shift.deleteMany();
+    await prisma.weekSchedule.deleteMany();
+    await prisma.todoAssignment.deleteMany();
     await prisma.todo.deleteMany();
+    await prisma.userPosition.deleteMany();
     await prisma.user.deleteMany();
     await prisma.position.deleteMany();
 
@@ -398,10 +402,110 @@ async function main() {
         })
     ]);
 
-    console.log('📝 TODO-k létrehozása...');
+    console.log('🔗 UserPosition kapcsolatok létrehozása...');
 
     // All users for easier reference
     const allUsers = [ceoUser, ...users];
+
+    // Pozíciók hozzárendelése felhasználókhoz
+    await Promise.all([
+        // CEO - minden pozícióhoz hozzáfér
+        prisma.userPosition.create({
+            data: {
+                userId: ceoUser.id,
+                positionId: positions[0].id, // Cashier
+                isPrimary: false
+            }
+        }),
+        prisma.userPosition.create({
+            data: {
+                userId: ceoUser.id,
+                positionId: positions[1].id, // Kitchen
+                isPrimary: true
+            }
+        }),
+
+        // General Manager (Nagy Anna) - Raktár
+        prisma.userPosition.create({
+            data: {
+                userId: users[0].id, // Nagy Anna
+                positionId: positions[2].id, // Storage
+                isPrimary: true
+            }
+        }),
+        prisma.userPosition.create({
+            data: {
+                userId: users[0].id,
+                positionId: positions[3].id, // Packer
+                isPrimary: false
+            }
+        }),
+
+        // Manager (Kovács Péter) - Konyha
+        prisma.userPosition.create({
+            data: {
+                userId: users[1].id, // Kovács Péter
+                positionId: positions[1].id, // Kitchen
+                isPrimary: true
+            }
+        }),
+
+        // Employee 1 (Szabó Éva) - Pénztáros
+        prisma.userPosition.create({
+            data: {
+                userId: users[2].id, // Szabó Éva
+                positionId: positions[0].id, // Cashier
+                isPrimary: true
+            }
+        }),
+
+        // Employee 2 (Tóth Marcell) - Csomagoló
+        prisma.userPosition.create({
+            data: {
+                userId: users[3].id, // Tóth Marcell
+                positionId: positions[3].id, // Packer
+                isPrimary: true
+            }
+        }),
+        prisma.userPosition.create({
+            data: {
+                userId: users[3].id,
+                positionId: positions[2].id, // Storage
+                isPrimary: false
+            }
+        }),
+
+        // Employee 3 (Varga Tamás) - Kiszállítás
+        prisma.userPosition.create({
+            data: {
+                userId: users[4].id, // Varga Tamás
+                positionId: positions[4].id, // Delivery
+                isPrimary: true
+            }
+        }),
+
+        // Employee 4 (Molnár Zsuzsanna) - Takarítás
+        prisma.userPosition.create({
+            data: {
+                userId: users[5].id, // Molnár Zsuzsanna
+                positionId: positions[5].id, // Cleaning
+                isPrimary: true
+            }
+        }),
+
+        // Deleted Employee (Kiss Gábor) - Csomagoló (törölt user, de megmaradnak a pozíciói)
+        prisma.userPosition.create({
+            data: {
+                userId: users[6].id, // Kiss Gábor
+                positionId: positions[3].id, // Packer
+                isPrimary: true
+            }
+        })
+    ]);
+
+    console.log('✅ UserPosition kapcsolatok létrehozva!');
+
+    console.log('📝 TODO-k létrehozása...');
 
     // Sample TODOs
     const sampleTodos = await Promise.all([

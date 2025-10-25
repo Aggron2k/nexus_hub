@@ -24,7 +24,6 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
   const { language } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
-  const [positions, setPositions] = useState<any[]>([]);
 
   // Form state
   const [selectedUserId, setSelectedUserId] = useState("");
@@ -32,6 +31,10 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
   const [startTime, setStartTime] = useState("08:00");
   const [endTime, setEndTime] = useState("16:00");
   const [notes, setNotes] = useState("");
+
+  // Kiválasztott user alapján elérhető pozíciók
+  const selectedUser = users.find(u => u.id === selectedUserId);
+  const availablePositions = selectedUser?.userPositions?.map((up: any) => up.position) || [];
 
   // Fordítások
   const translations = {
@@ -81,22 +84,20 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
 
   const t = translations[language];
 
-  // Felhasználók és pozíciók lekérése
+  // Felhasználók lekérése
   useEffect(() => {
     if (isOpen) {
-      fetchUsersAndPositions();
+      fetchUsers();
     }
   }, [isOpen]);
 
-  const fetchUsersAndPositions = async () => {
+  const fetchUsers = async () => {
     try {
-      // Felhasználók lekérése - használjuk a getAllUsers actiont
+      // Felhasználók lekérése
       const usersResponse = await fetch('/api/schedule/users');
-      console.log('Users response status:', usersResponse.status);
 
       if (usersResponse.ok) {
         const usersData = await usersResponse.json();
-        console.log('Users data:', usersData);
 
         // Szűrjük ki a törölt usereket és csak aktív dolgozókat vegyünk
         const activeUsers = usersData.filter((user: any) =>
@@ -106,18 +107,6 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
         setUsers(activeUsers);
       } else {
         console.error('Failed to fetch users:', usersResponse.statusText);
-      }
-
-      // Pozíciók lekérése
-      const positionsResponse = await fetch('/api/positions');
-      console.log('Positions response status:', positionsResponse.status);
-
-      if (positionsResponse.ok) {
-        const positionsData = await positionsResponse.json();
-        console.log('Positions data:', positionsData);
-        setPositions(positionsData);
-      } else {
-        console.error('Failed to fetch positions:', positionsResponse.statusText);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -229,7 +218,11 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
             </label>
             <select
               value={selectedUserId}
-              onChange={(e) => setSelectedUserId(e.target.value)}
+              onChange={(e) => {
+                setSelectedUserId(e.target.value);
+                // Reset position when user changes
+                setSelectedPositionId("");
+              }}
               disabled={isLoading}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-nexus-tertiary focus:border-transparent disabled:opacity-50"
               required
@@ -251,12 +244,12 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
             <select
               value={selectedPositionId}
               onChange={(e) => setSelectedPositionId(e.target.value)}
-              disabled={isLoading}
+              disabled={isLoading || !selectedUserId}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-nexus-tertiary focus:border-transparent disabled:opacity-50"
               required
             >
               <option value="">{t.selectPositionPlaceholder}</option>
-              {positions.map((position) => (
+              {availablePositions.map((position: any) => (
                 <option key={position.id} value={position.id}>
                   {(position.displayNames as any)?.[language] || position.name}
                 </option>
