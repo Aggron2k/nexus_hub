@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { TodoPriority } from "@prisma/client";
 import { HiXMark } from "react-icons/hi2";
@@ -79,6 +80,7 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
     onClose,
     onTodoCreate
 }) => {
+    const router = useRouter();
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [priority, setPriority] = useState<TodoPriority>("MEDIUM");
@@ -156,10 +158,28 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
     const t = translations[language];
 
     useEffect(() => {
-        if (isOpen) {
-            fetchUsers();
-            fetchPositions();
-        }
+
+        const loadData = async () => {
+            if (!isOpen) {
+                return;
+            }
+
+            try {
+                // Fetch users
+                const usersResponse = await axios.get('/api/users');
+                setUsers(usersResponse.data);
+
+                // Fetch positions
+                const positionsResponse = await axios.get('/api/positions');
+                const activePositions = positionsResponse.data.filter((pos: Position) => pos.isActive);
+                setPositions(activePositions);
+            } catch (error) {
+                console.error('Error loading data:', error);
+                toast.error('Failed to load data');
+            }
+        };
+
+        loadData();
     }, [isOpen]);
 
     useEffect(() => {
@@ -246,15 +266,14 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
 
             await axios.post('/api/todos', todoData);
 
-            // A Pusher event automatikusan hozzáadja a TODO-t
-            // Ne hívjuk az onTodoCreate-et mert duplikálódik a React batch update miatt
             toast.success('Todo created successfully!');
 
-            // Kis késleltetés hogy a Pusher event megérkezzen
-            setTimeout(() => {
-                resetForm();
-                onClose();
-            }, 200);
+            // Reset form and close modal
+            resetForm();
+            onClose();
+
+            // Refresh the page to show the new TODO (same as User creation)
+            router.refresh();
 
         } catch (error) {
             console.error('Error creating todo:', error);

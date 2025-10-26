@@ -162,6 +162,7 @@ export async function POST(request: NextRequest) {
             // Minden felhasználó aki az adott pozícióban van
             const usersWithPosition = await prisma.user.findMany({
                 where: {
+                    deletedAt: null, // Csak aktív felhasználók
                     userPositions: {
                         some: {
                             positionId: targetPositionId
@@ -177,7 +178,7 @@ export async function POST(request: NextRequest) {
 
             userIds = usersWithPosition.map(user => user.id);
         } else if (specificUserIds && specificUserIds.length > 0) {
-            // Specifikus felhasználók
+            // Specifikus felhasználók (beleértve az "everyone" opciót is)
             userIds = specificUserIds;
         } else {
             return new NextResponse("No users specified", { status: 400 });

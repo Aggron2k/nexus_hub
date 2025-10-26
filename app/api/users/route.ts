@@ -16,12 +16,14 @@ export async function GET() {
             return new NextResponse("Forbidden", { status: 403 });
         }
 
-        const users = await prisma.user.findMany({
+        // Lekérjük az összes felhasználót (ugyanúgy mint getAllUsers)
+        const allUsers = await prisma.user.findMany({
             select: {
                 id: true,
                 name: true,
                 email: true,
                 role: true,
+                deletedAt: true, // Szükséges a szűréshez
                 userPositions: {
                     select: {
                         isPrimary: true,
@@ -45,13 +47,13 @@ export async function GET() {
                 },
                 createdAt: true
             },
-            where: {
-                deletedAt: null  // Csak nem törölt userek
-            },
             orderBy: {
                 name: 'asc'
             }
         });
+
+        // Kiszűrjük a törölt felhasználókat (ugyanúgy mint getAllUsers)
+        const users = allUsers.filter(user => !user.deletedAt);
 
         // Feldolgozzuk a választ - backward compatibility
         const processedUsers = users.map(user => {

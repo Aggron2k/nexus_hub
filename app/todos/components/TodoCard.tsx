@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { User, TodoStatus, TodoPriority } from "@prisma/client";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { format } from "date-fns";
@@ -54,6 +55,7 @@ const TodoCard: React.FC<TodoCardProps> = ({
     onUpdate,
     currentUser
 }) => {
+    const router = useRouter();
     const [isExpanded, setIsExpanded] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
     const { language } = useLanguage();
@@ -176,6 +178,9 @@ const TodoCard: React.FC<TodoCardProps> = ({
 
             onUpdate(response.data);
             toast.success('Status updated successfully');
+
+            // Refresh the page to show updated TODO (same as User/Schedule updates)
+            router.refresh();
         } catch (error) {
             console.error('Error updating todo status:', error);
             toast.error('Failed to update status');
@@ -191,6 +196,9 @@ const TodoCard: React.FC<TodoCardProps> = ({
             const response = await axios.patch(`/api/todos/${todo.id}`, { notes });
             onUpdate(response.data);
             toast.success('Notes updated successfully');
+
+            // Refresh the page to show updated TODO
+            router.refresh();
         } catch (error) {
             console.error('Error updating notes:', error);
             toast.error('Failed to update notes');
