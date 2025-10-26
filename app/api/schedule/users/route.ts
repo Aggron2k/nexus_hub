@@ -20,6 +20,7 @@ export async function GET(request: Request) {
                 image: true,
                 role: true,
                 deletedAt: true,
+                employmentStatus: true, // Munkavállalói állapot
                 userPositions: {
                     where: {
                         position: {
@@ -44,11 +45,13 @@ export async function GET(request: Request) {
             }
         });
 
-        // Szűrjük ki a törölt usereket JavaScript-ben (ha a mező nincs definiálva, undefined lesz)
-        const activeUsers = allUsers.filter(user => !user.deletedAt);
+        // Szűrjük ki a törölt usereket és az inaktív munkavállalókat
+        const activeUsers = allUsers.filter(user =>
+            !user.deletedAt && user.employmentStatus === 'ACTIVE'
+        );
 
         console.log('Total users:', allUsers.length);
-        console.log('Active users:', activeUsers.length);
+        console.log('Active users (not deleted + ACTIVE status):', activeUsers.length);
         console.log('Users with positions:', activeUsers.filter(u => u.userPositions.length > 0).length);
 
         return NextResponse.json(activeUsers);

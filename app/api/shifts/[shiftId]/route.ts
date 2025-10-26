@@ -9,6 +9,13 @@ interface RouteParams {
     };
 }
 
+// Helper funkció: Ellenőrzi hogy van-e overlap két időintervallum között
+function hasTimeOverlap(start1: Date, end1: Date, start2: Date, end2: Date): boolean {
+    // Két időintervallum átfedi egymást, ha:
+    // start1 < end2 ÉS start2 < end1
+    return start1 < end2 && start2 < end1;
+}
+
 export async function PUT(request: Request, { params }: RouteParams) {
     try {
         const currentUser = await getCurrentUser();
@@ -43,6 +50,41 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
         if (!existingShift) {
             return new NextResponse("Shift not found", { status: 404 });
+        }
+
+        // Ellenőrizzük hogy van-e overlap más műszakokkal (kivéve az aktuálisat)
+        const otherShifts = await prisma.shift.findMany({
+            where: {
+                userId: userId,
+                date: new Date(date),
+                id: { not: shiftId } // Kizárjuk az aktuális műszakot
+            },
+            select: {
+                id: true,
+                startTime: true,
+                endTime: true,
+                position: {
+                    select: {
+                        name: true,
+                        displayNames: true
+                    }
+                }
+            }
+        });
+
+        const newStartTime = new Date(startTime);
+        const newEndTime = new Date(endTime);
+
+        // Ellenőrizzük hogy van-e overlap
+        for (const otherShift of otherShifts) {
+            if (hasTimeOverlap(newStartTime, newEndTime, otherShift.startTime, otherShift.endTime)) {
+                const existingStart = otherShift.startTime.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
+                const existingEnd = otherShift.endTime.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
+                return new NextResponse(
+                    `A felhasználónak már van műszakja ezen az időpontban: ${existingStart} - ${existingEnd}`,
+                    { status: 409 }
+                );
+            }
         }
 
         // Frissítjük a műszakot

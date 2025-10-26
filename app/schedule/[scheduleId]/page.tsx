@@ -106,6 +106,13 @@ export default function ScheduleDetailPage() {
             const endTimeStr = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             args.e.data.text = `${positionName}: ${startTimeStr} - ${endTimeStr}`;
             args.control.events.update(args.e);
+          } else if (response.status === 409) {
+            // Overlap conflict
+            const errorMessage = await response.text();
+            console.error("Shift overlap detected:", errorMessage);
+            alert(errorMessage);
+            // Visszaállítjuk az eredeti állapotot - refresh az oldalt
+            window.location.reload();
           } else {
             console.error("Failed to update shift");
             alert(language === 'hu' ? 'Nem sikerült frissíteni a műszakot' : 'Failed to update shift');
@@ -203,10 +210,15 @@ export default function ScheduleDetailPage() {
             const startTimeStr = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const endTimeStr = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+            // DayPilot helyi időben várja az időpontokat (nem UTC)
+            // Konvertáljuk a helyi időzónába
+            const localStart = new Date(startTime.getTime() - (startTime.getTimezoneOffset() * 60000));
+            const localEnd = new Date(endTime.getTime() - (endTime.getTimezoneOffset() * 60000));
+
             events.push({
               id: shift.id,
-              start: shift.startTime,
-              end: shift.endTime,
+              start: localStart.toISOString(),
+              end: localEnd.toISOString(),
               resource: shift.userId,
               text: `${positionName}: ${startTimeStr} - ${endTimeStr}`,
               backColor: shift.position.color || '#3B82F6',

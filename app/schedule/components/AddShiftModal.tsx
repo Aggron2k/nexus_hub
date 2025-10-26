@@ -134,11 +134,15 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
       if (usersResponse.ok) {
         const usersData = await usersResponse.json();
 
-        // Szűrjük ki a törölt usereket és csak aktív dolgozókat vegyünk
+        // Extra szűrés: törölt, inaktív státuszú, és pozíció nélküli userek kiszűrése
         const activeUsers = usersData.filter((user: any) =>
-          !user.deletedAt && user.userPositions && user.userPositions.length > 0
+          !user.deletedAt &&
+          user.employmentStatus === 'ACTIVE' &&
+          user.userPositions &&
+          user.userPositions.length > 0
         );
 
+        console.log('Fetched users for shift modal:', activeUsers.length);
         setUsers(activeUsers);
       } else {
         console.error('Failed to fetch users:', usersResponse.statusText);
@@ -205,6 +209,14 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
           notes: notes || undefined,
         }),
       });
+
+      if (response.status === 409) {
+        // Overlap conflict - A felhasználónak már van műszakja ezen az időpontban
+        const errorMessage = await response.text();
+        alert(errorMessage);
+        setIsLoading(false);
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(isEditMode ? 'Failed to update shift' : 'Failed to add shift');

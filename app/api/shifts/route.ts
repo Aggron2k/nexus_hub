@@ -3,6 +3,13 @@ import { NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
 import prisma from "@/app/libs/prismadb";
 
+// Helper funkció: Ellenőrzi hogy van-e overlap két időintervallum között
+function hasTimeOverlap(start1: Date, end1: Date, start2: Date, end2: Date): boolean {
+    // Két időintervallum átfedi egymást, ha:
+    // start1 < end2 ÉS start2 < end1
+    return start1 < end2 && start2 < end1;
+}
+
 export async function POST(request: Request) {
     try {
         const currentUser = await getCurrentUser();
@@ -27,6 +34,40 @@ export async function POST(request: Request) {
         // Validáció
         if (!weekScheduleId || !userId || !positionId || !date || !startTime || !endTime) {
             return new NextResponse("Missing required fields", { status: 400 });
+        }
+
+        // Ellenőrizzük hogy van-e már létező műszak ugyanezzel a felhasználóval ugyanezen időben
+        const existingShifts = await prisma.shift.findMany({
+            where: {
+                userId: userId,
+                date: new Date(date)
+            },
+            select: {
+                id: true,
+                startTime: true,
+                endTime: true,
+                position: {
+                    select: {
+                        name: true,
+                        displayNames: true
+                    }
+                }
+            }
+        });
+
+        const newStartTime = new Date(startTime);
+        const newEndTime = new Date(endTime);
+
+        // Ellenőrizzük hogy van-e overlap
+        for (const existingShift of existingShifts) {
+            if (hasTimeOverlap(newStartTime, newEndTime, existingShift.startTime, existingShift.endTime)) {
+                const existingStart = existingShift.startTime.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
+                const existingEnd = existingShift.endTime.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
+                return new NextResponse(
+                    `A felhasználónak már van műszakja ezen az időpontban: ${existingStart} - ${existingEnd}`,
+                    { status: 409 }
+                );
+            }
         }
 
         // Létrehozzuk a műszakot
