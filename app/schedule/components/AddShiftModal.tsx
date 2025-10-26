@@ -1,6 +1,5 @@
 "use client";
 
-import { User } from "@prisma/client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/app/context/LanguageContext";
@@ -12,6 +11,14 @@ interface AddShiftModalProps {
   onClose: () => void;
   scheduleId: string;
   selectedDate: string; // YYYY-MM-DD formátum
+  editShift?: {
+    id: string;
+    userId: string;
+    positionId: string;
+    startTime: string;
+    endTime: string;
+    notes?: string;
+  } | null;
 }
 
 const AddShiftModal: React.FC<AddShiftModalProps> = ({
@@ -19,7 +26,9 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
   onClose,
   scheduleId,
   selectedDate,
+  editShift,
 }) => {
+  const isEditMode = !!editShift;
   const router = useRouter();
   const { language } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +48,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
   // Fordítások
   const translations = {
     en: {
-      title: "Add Shift",
+      title: isEditMode ? "Edit Shift" : "Add Shift",
       selectUser: "Select Employee",
       selectUserPlaceholder: "Choose an employee",
       selectPosition: "Select Position",
@@ -48,11 +57,14 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
       endTime: "End Time",
       notes: "Notes (optional)",
       notesPlaceholder: "Additional notes...",
-      addButton: "Add Shift",
+      addButton: isEditMode ? "Update Shift" : "Add Shift",
       cancelButton: "Cancel",
-      adding: "Adding...",
-      error: "Failed to add shift",
-      success: "Shift added successfully!",
+      adding: isEditMode ? "Updating..." : "Adding...",
+      error: isEditMode ? "Failed to update shift" : "Failed to add shift",
+      success: isEditMode ? "Shift updated successfully!" : "Shift added successfully!",
+      deleteButton: "Delete Shift",
+      deleting: "Deleting...",
+      deleteConfirm: "Are you sure you want to delete this shift?",
       validation: {
         selectUser: "Please select an employee",
         selectPosition: "Please select a position",
@@ -60,7 +72,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
       }
     },
     hu: {
-      title: "Műszak hozzáadása",
+      title: isEditMode ? "Műszak szerkesztése" : "Műszak hozzáadása",
       selectUser: "Válassz alkalmazottat",
       selectUserPlaceholder: "Válassz egy alkalmazottat",
       selectPosition: "Válassz pozíciót",
@@ -69,11 +81,14 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
       endTime: "Befejezés időpontja",
       notes: "Megjegyzések (opcionális)",
       notesPlaceholder: "További megjegyzések...",
-      addButton: "Műszak hozzáadása",
+      addButton: isEditMode ? "Műszak frissítése" : "Műszak hozzáadása",
       cancelButton: "Mégse",
-      adding: "Hozzáadás...",
-      error: "Nem sikerült hozzáadni a műszakot",
-      success: "Műszak sikeresen hozzáadva!",
+      adding: isEditMode ? "Frissítés..." : "Hozzáadás...",
+      error: isEditMode ? "Nem sikerült frissíteni a műszakot" : "Nem sikerült hozzáadni a műszakot",
+      success: isEditMode ? "Műszak sikeresen frissítve!" : "Műszak sikeresen hozzáadva!",
+      deleteButton: "Műszak törlése",
+      deleting: "Törlés...",
+      deleteConfirm: "Biztosan törölni szeretnéd ezt a műszakot?",
       validation: {
         selectUser: "Kérlek válassz egy alkalmazottat",
         selectPosition: "Kérlek válassz egy pozíciót",
@@ -84,12 +99,32 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
 
   const t = translations[language];
 
-  // Felhasználók lekérése
+  // Felhasználók lekérése és előre kitöltés edit módban
   useEffect(() => {
     if (isOpen) {
       fetchUsers();
+
+      // Edit módban előre kitöltjük a mezőket
+      if (editShift) {
+        setSelectedUserId(editShift.userId);
+        setSelectedPositionId(editShift.positionId);
+
+        // Időpontok formázása HH:MM formátumra
+        const startDate = new Date(editShift.startTime);
+        const endDate = new Date(editShift.endTime);
+
+        const formatTime = (date: Date) => {
+          const hours = date.getHours().toString().padStart(2, '0');
+          const minutes = date.getMinutes().toString().padStart(2, '0');
+          return `${hours}:${minutes}`;
+        };
+
+        setStartTime(formatTime(startDate));
+        setEndTime(formatTime(endDate));
+        setNotes(editShift.notes || "");
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, editShift]);
 
   const fetchUsers = async () => {
     try {
@@ -151,8 +186,11 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
       const endDateTime = new Date(`${selectedDate}T${endTime}:00`);
       const hoursWorked = calculateHours();
 
-      const response = await fetch('/api/shifts', {
-        method: 'POST',
+      const url = isEditMode ? `/api/shifts/${editShift!.id}` : '/api/shifts';
+      const method = isEditMode ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -169,7 +207,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to add shift');
+        throw new Error(isEditMode ? 'Failed to update shift' : 'Failed to add shift');
       }
 
       // Bezárjuk a modalt és frissítjük az oldalt
@@ -183,8 +221,35 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
       setEndTime("16:00");
       setNotes("");
     } catch (error) {
-      console.error('Error adding shift:', error);
+      console.error('Error saving shift:', error);
       alert(t.error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!isEditMode || !editShift) return;
+
+    if (!confirm(t.deleteConfirm)) return;
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`/api/shifts/${editShift.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete shift');
+      }
+
+      // Bezárjuk a modalt és frissítjük az oldalt
+      onClose();
+      router.refresh();
+    } catch (error) {
+      console.error('Error deleting shift:', error);
+      alert(language === 'hu' ? 'Nem sikerült törölni a műszakot' : 'Failed to delete shift');
     } finally {
       setIsLoading(false);
     }
@@ -313,22 +378,36 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
           </div>
 
           {/* Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isLoading}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
-            >
-              {t.cancelButton}
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="px-4 py-2 text-sm font-medium text-white bg-nexus-tertiary hover:bg-nexus-primary rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? t.adding : t.addButton}
-            </button>
+          <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+            <div>
+              {isEditMode && (
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={isLoading}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? t.deleting : t.deleteButton}
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isLoading}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+              >
+                {t.cancelButton}
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="px-4 py-2 text-sm font-medium text-white bg-nexus-tertiary hover:bg-nexus-primary rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? t.adding : t.addButton}
+              </button>
+            </div>
           </div>
         </div>
       </form>

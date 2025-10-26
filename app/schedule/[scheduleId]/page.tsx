@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { HiCalendar, HiArrowLeft, HiPlus } from "react-icons/hi2";
 import Link from "next/link";
@@ -18,6 +18,8 @@ export default function ScheduleDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAddShiftModalOpen, setIsAddShiftModalOpen] = useState(false);
   const [shifts, setShifts] = useState<any[]>([]);
+  const [editingShift, setEditingShift] = useState<any>(null);
+  const shiftsRef = useRef<any[]>([]);
 
   // Fordítások
   const translations = {
@@ -50,29 +52,101 @@ export default function ScheduleDetailPage() {
     scale: "Hour",
     days: dateParam ? 1 : 7, // Ha van date param, csak 1 nap
     startDate: dateParam ? new Date(dateParam) : new Date(),
-    timeRangeSelectedHandling: "Enabled",
-    onTimeRangeSelected: async (args: any) => {
-      const dp = args.control;
-      const modal = await DayPilot.Modal.prompt("Create a new shift:", "Shift");
-      dp.clearSelection();
-      if (!modal.result) { return; }
+    timeRangeSelectedHandling: "Disabled", // Letiltjuk az üres területre kattintást
+    eventDeleteHandling: "Disabled",
+    eventResizeHandling: "Update", // Engedélyezzük az események átméretezését
+    onEventResized: async (args: any) => {
+      console.log("Event resized!", args.e.id());
+      console.log("New start:", args.newStart.toString());
+      console.log("New end:", args.newEnd.toString());
 
-      dp.events.add({
-        start: args.start,
-        end: args.end,
-        id: DayPilot.guid(),
-        resource: args.resource,
-        text: modal.result
-      });
+      // Megkeressük a shift-et
+      const shiftToUpdate = shiftsRef.current.find(shift => shift.id === args.e.id());
+
+      if (shiftToUpdate) {
+        console.log("Updating shift in database...");
+
+        try {
+          // Órák kiszámítása
+          const startTime = new Date(args.newStart.toString());
+          const endTime = new Date(args.newEnd.toString());
+          const hoursWorked = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+
+          const response = await fetch(`/api/shifts/${args.e.id()}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              weekScheduleId: shiftToUpdate.weekScheduleId,
+              userId: shiftToUpdate.userId,
+              positionId: shiftToUpdate.positionId,
+              date: shiftToUpdate.date,
+              startTime: startTime.toISOString(),
+              endTime: endTime.toISOString(),
+              hoursWorked,
+              notes: shiftToUpdate.notes || undefined,
+            }),
+          });
+
+          if (response.ok) {
+            console.log("Shift updated successfully!");
+
+            // Frissítjük a shiftsRef-et
+            const updatedShift = await response.json();
+            const index = shiftsRef.current.findIndex(s => s.id === args.e.id());
+            if (index !== -1) {
+              shiftsRef.current[index] = updatedShift;
+              setShifts([...shiftsRef.current]);
+            }
+
+            // Frissítjük az event text-et az új időpontokkal
+            const positionName = (shiftToUpdate.position.displayNames as any)?.[language] || shiftToUpdate.position.name;
+            const startTimeStr = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const endTimeStr = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            args.e.data.text = `${positionName}: ${startTimeStr} - ${endTimeStr}`;
+            args.control.events.update(args.e);
+          } else {
+            console.error("Failed to update shift");
+            alert(language === 'hu' ? 'Nem sikerült frissíteni a műszakot' : 'Failed to update shift');
+            // Visszaállítjuk az eredeti állapotot
+            args.control.message(language === 'hu' ? 'A frissítés sikertelen volt' : 'Update failed');
+          }
+        } catch (error) {
+          console.error('Error updating shift:', error);
+          alert(language === 'hu' ? 'Hiba történt a műszak frissítése közben' : 'Error updating shift');
+        }
+      }
     },
-    eventDeleteHandling: "Update",
-    onEventClick: async (args: any) => {
-      const dp = args.control;
-      const modal = await DayPilot.Modal.prompt("Update shift:", args.e.text());
-      if (!modal.result) { return; }
-      const e = args.e;
-      e.data.text = modal.result;
-      dp.events.update(e);
+    onEventClick: (args: any) => {
+      console.log("Event clicked!", args.e.id());
+      console.log("Available shifts in ref:", shiftsRef.current);
+
+      // Megkeressük a shift-et a shiftsRef-ben az event ID alapján
+      const clickedShift = shiftsRef.current.find(shift => shift.id === args.e.id());
+
+      console.log("Found shift:", clickedShift);
+
+      if (clickedShift) {
+        // Beállítjuk a szerkesztendő shift-et
+        const editData = {
+          id: clickedShift.id,
+          userId: clickedShift.userId,
+          positionId: clickedShift.positionId,
+          startTime: clickedShift.startTime,
+          endTime: clickedShift.endTime,
+          notes: clickedShift.notes || "",
+        };
+
+        console.log("Setting edit data:", editData);
+        setEditingShift(editData);
+
+        // Megnyitjuk a modalt
+        console.log("Opening modal...");
+        setIsAddShiftModalOpen(true);
+      } else {
+        console.log("Shift not found in shifts array!");
+      }
     },
     resources: [
       { name: "Resource 1", id: "R1" },
@@ -99,6 +173,7 @@ export default function ScheduleDetailPage() {
         if (shiftsResponse.ok) {
           const shiftsData = await shiftsResponse.json();
           setShifts(shiftsData);
+          shiftsRef.current = shiftsData; // Frissítjük a ref-et is
 
           // Resources (felhasználók) és Events (műszakok) létrehozása
           const uniqueUsers = new Map();
@@ -204,12 +279,16 @@ export default function ScheduleDetailPage() {
 
   return (
     <>
-      {/* Add Shift Modal */}
+      {/* Add/Edit Shift Modal */}
       <AddShiftModal
         isOpen={isAddShiftModalOpen}
-        onClose={() => setIsAddShiftModalOpen(false)}
+        onClose={() => {
+          setIsAddShiftModalOpen(false);
+          setEditingShift(null);
+        }}
         scheduleId={scheduleId}
-        selectedDate={dateParam || new Date(schedule?.weekStart || new Date()).toISOString().split('T')[0]}
+        selectedDate={editingShift ? new Date(editingShift.startTime).toISOString().split('T')[0] : (dateParam || new Date(schedule?.weekStart || new Date()).toISOString().split('T')[0])}
+        editShift={editingShift}
       />
 
       <div className="lg:pl-80 h-full flex flex-col">
@@ -243,7 +322,10 @@ export default function ScheduleDetailPage() {
             <div className="flex items-center gap-3">
               {/* Add Shift Button */}
               <button
-                onClick={() => setIsAddShiftModalOpen(true)}
+                onClick={() => {
+                  setEditingShift(null);
+                  setIsAddShiftModalOpen(true);
+                }}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-nexus-tertiary text-white rounded-md hover:bg-nexus-primary transition"
               >
                 <HiPlus className="h-5 w-5" />
