@@ -127,6 +127,156 @@ export async function PUT(request: Request, { params }: RouteParams) {
     }
 }
 
+// PATCH - Actual hours recording
+export async function PATCH(request: Request, { params }: RouteParams) {
+    try {
+        const currentUser = await getCurrentUser();
+
+        // Csak Manager+ rögzíthet tényleges munkaórákat
+        if (!currentUser || !['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role)) {
+            return new NextResponse("Unauthorized", { status: 403 });
+        }
+
+        const { shiftId } = params;
+        const body = await request.json();
+        const { actualStartTime, actualEndTime, actualStatus } = body;
+
+        // Ellenőrizzük, hogy létezik-e a műszak
+        const existingShift = await prisma.shift.findUnique({
+            where: { id: shiftId },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        image: true
+                    }
+                },
+                position: {
+                    select: {
+                        id: true,
+                        name: true,
+                        displayNames: true,
+                        color: true
+                    }
+                }
+            }
+        });
+
+        if (!existingShift) {
+            return new NextResponse("Shift not found", { status: 404 });
+        }
+
+        // Validációk
+        // 1. Nem lehet actual hours-t rögzíteni a műszak vége előtt
+        const now = new Date();
+        if (now < existingShift.endTime) {
+            return new NextResponse(
+                "Tényleges munkaórák csak a műszak befejezése után rögzíthetők",
+                { status: 400 }
+            );
+        }
+
+        // 2. actualStatus kötelező
+        if (!actualStatus || !['PRESENT', 'SICK', 'ABSENT'].includes(actualStatus)) {
+            return new NextResponse(
+                "Érvényes actualStatus szükséges (PRESENT, SICK, ABSENT)",
+                { status: 400 }
+            );
+        }
+
+        // 3. Ha PRESENT, akkor actualStartTime és actualEndTime kötelező
+        if (actualStatus === 'PRESENT') {
+            if (!actualStartTime || !actualEndTime) {
+                return new NextResponse(
+                    "PRESENT státusz esetén actualStartTime és actualEndTime kötelező",
+                    { status: 400 }
+                );
+            }
+
+            const actualStart = new Date(actualStartTime);
+            const actualEnd = new Date(actualEndTime);
+
+            // 4. actualStartTime < actualEndTime
+            if (actualStart >= actualEnd) {
+                return new NextResponse(
+                    "actualStartTime korábbinakMust be earlier than actualEndTime",
+                    { status: 400 }
+                );
+            }
+
+            // 5. Számoljuk ki az actualHoursWorked-t
+            const actualHoursWorked = (actualEnd.getTime() - actualStart.getTime()) / (1000 * 60 * 60);
+
+            // Frissítjük a shift-et actual hours adatokkal
+            const updatedShift = await prisma.shift.update({
+                where: { id: shiftId },
+                data: {
+                    actualStartTime: actualStart,
+                    actualEndTime: actualEnd,
+                    actualStatus: actualStatus,
+                    actualHoursWorked: actualHoursWorked
+                },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                            image: true
+                        }
+                    },
+                    position: {
+                        select: {
+                            id: true,
+                            name: true,
+                            displayNames: true,
+                            color: true
+                        }
+                    }
+                }
+            });
+
+            return NextResponse.json(updatedShift);
+        } else {
+            // SICK vagy ABSENT - nincs szükség időpontokra
+            const updatedShift = await prisma.shift.update({
+                where: { id: shiftId },
+                data: {
+                    actualStartTime: null,
+                    actualEndTime: null,
+                    actualStatus: actualStatus,
+                    actualHoursWorked: null
+                },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                            image: true
+                        }
+                    },
+                    position: {
+                        select: {
+                            id: true,
+                            name: true,
+                            displayNames: true,
+                            color: true
+                        }
+                    }
+                }
+            });
+
+            return NextResponse.json(updatedShift);
+        }
+    } catch (error) {
+        console.error('PATCH /api/shifts/[shiftId] error:', error);
+        return new NextResponse("Internal Error", { status: 500 });
+    }
+}
+
 export async function DELETE(request: Request, { params }: RouteParams) {
     try {
         const currentUser = await getCurrentUser();

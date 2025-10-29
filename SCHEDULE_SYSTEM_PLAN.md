@@ -1181,55 +1181,56 @@ SCENARIO: Nagy Anna has shift Monday 8:00-16:00
 
 #### 3.1 Request Display in Calendar
 
-- [ ] **Task:** Modify DayPilot scheduler to show 3 rows per user
+- [x] **Task:** Modify DayPilot scheduler to show 3 rows per user
   - Row 1: ShiftRequests
   - Row 2: Shifts (existing)
   - Row 3: Actual hours
   - File: `app/schedule/[scheduleId]/page.tsx`
   - Dependencies: Database Phase 1
-  - Acceptance: 3 distinct rows visible
+  - Acceptance: 3 distinct rows visible using `children` array with 3 sub-resources
 
-- [ ] **Task:** Fetch and display ShiftRequests in Row 1
+- [x] **Task:** Fetch and display ShiftRequests in Row 1
   - Light gray for PENDING, green border for APPROVED, red for REJECTED
   - Dependencies: 3-row layout
-  - Acceptance: Requests display with correct colors
+  - Acceptance: Requests display with correct colors in Row 1
 
-- [ ] **Task:** Implement color coding for request statuses
-  - PENDING: light gray, APPROVED: green, REJECTED: red
+- [x] **Task:** Implement color coding for request statuses
+  - PENDING: light gray (#E5E7EB), APPROVED: light green (#D1FAE5), REJECTED: light red (#FEE2E2)
   - Dependencies: ShiftRequest display
   - Acceptance: Colors match design
 
-- [ ] **Task:** Add TIME_OFF indicator
+- [x] **Task:** Add TIME_OFF indicator
   - Special display for time off requests
   - Dependencies: Request display
-  - Acceptance: TIME_OFF shows as orange block
+  - Acceptance: TIME_OFF shows as light orange/yellow block (#FEF3C7)
 
 #### 3.2 Request Review System
 
-- [ ] **Task:** Create request review modal (GM/CEO)
+- [x] **Task:** Create request review modal (GM/CEO)
   - Shows request details, employee notes
-  - File: `app/schedule/[scheduleId]/components/ReviewRequestModal.tsx`
+  - File: `app/schedule/components/ReviewRequestModal.tsx`
   - Dependencies: Request display in calendar
-  - Acceptance: Modal opens on Row 1 click
+  - Acceptance: Modal opens on Row 1 click with full request details
 
-- [ ] **Task:** Implement "Approve" flow
-  - Position selection modal
-  - Creates Shift record
-  - Updates ShiftRequest status
+- [x] **Task:** Implement "Approve" flow
+  - Opens ConvertRequestModal for position selection
+  - Creates Shift record via convert API
+  - Updates ShiftRequest status to CONVERTED_TO_SHIFT
   - Dependencies: Review modal
-  - Acceptance: Approval creates shift, updates request
+  - Acceptance: Approval flow opens convert modal, creates shift successfully
 
-- [ ] **Task:** Implement "Reject" flow
-  - Rejection reason textarea
-  - Updates ShiftRequest status
+- [x] **Task:** Implement "Reject" flow
+  - Rejection reason textarea in ReviewRequestModal
+  - Updates ShiftRequest status via PATCH /api/shift-requests/[id]/review
   - Dependencies: Review modal
-  - Acceptance: Rejection updates request with reason
+  - Acceptance: Rejection updates request with reason and status
 
-- [ ] **Task:** Add request approval to AddShiftModal
-  - Option to approve request while creating shift
-  - File: `app/schedule/components/AddShiftModal.tsx`
+- [x] **Task:** Add request approval to AddShiftModal
+  - ~~Option to approve request while creating shift~~
+  - Implemented via ConvertRequestModal which already exists
+  - File: `app/schedule/components/ConvertRequestModal.tsx`
   - Dependencies: Approval flow
-  - Acceptance: Can link shift to approved request
+  - Acceptance: Can convert approved request to shift with position selection
 
 #### 3.3 Actual Hours Recording
 
@@ -1264,16 +1265,16 @@ SCENARIO: Nagy Anna has shift Monday 8:00-16:00
 
 #### 3.4 Week Schedule Management
 
-- [ ] **Task:** Add `requestDeadline` field to week creation modal
+- [x] **Task:** Add `requestDeadline` field to week creation modal
   - Date picker, default to Friday before week
-  - File: `app/schedule/page.tsx` (week creation modal)
+  - File: `app/schedule/components/NewScheduleModal.tsx`
   - Dependencies: Database Phase 1
-  - Acceptance: Can set custom deadline
+  - Acceptance: Can set custom deadline, auto-suggests previous Friday, max date validation
 
-- [ ] **Task:** Display deadline status in schedule view
+- [x] **Task:** Display deadline status in schedule view
   - Show if requests are open/closed
   - Dependencies: Week creation with deadline
-  - Acceptance: Deadline displayed, status indicator
+  - Acceptance: Deadline displayed in schedule header with open/closed status (green/red)
 
 ---
 
@@ -1281,29 +1282,32 @@ SCENARIO: Nagy Anna has shift Monday 8:00-16:00
 
 #### 4.1 Shift API Enhancements
 
-- [ ] **Task:** Enhance `PATCH /api/shifts/[shiftId]` for actual hours
+- [x] **Task:** Enhance `PATCH /api/shifts/[shiftId]` for actual hours
   - Accept `actualStartTime`, `actualEndTime`, `actualStatus`
   - File: `app/api/shifts/[shiftId]/route.ts`
   - Dependencies: Database Phase 1
-  - Acceptance: Can update actual hours fields
+  - Acceptance: Can update actual hours fields via PATCH endpoint
 
-- [ ] **Task:** Add validations for actual hours
+- [x] **Task:** Add validations for actual hours
   - Time check (cannot record before shift ends)
   - Status-dependent fields (times required if PRESENT)
+  - actualStartTime < actualEndTime validation
   - Dependencies: Enhanced PATCH endpoint
-  - Acceptance: Validations enforce rules
+  - Acceptance: Validations enforce all rules with proper error messages
 
 #### 4.2 Actual Hours UI Integration
 
-- [ ] **Task:** Integrate actual hours modal into schedule calendar
-  - Open modal on Row 2 click (shift)
+- [x] **Task:** Integrate actual hours modal into schedule calendar
+  - Open modal on Row 2 click (shift) if shift has ended and user is GM/CEO
+  - File: `app/schedule/components/ActualHoursModal.tsx`
   - Dependencies: Phase 3.3 actual hours modal
-  - Acceptance: Modal opens and saves actual hours
+  - Acceptance: Modal opens and saves actual hours, blocks recording before shift end
 
-- [ ] **Task:** Update Row 3 display after recording
+- [x] **Task:** Update Row 3 display after recording
+  - Row 3 shows actual hours with color coding (PRESENT: dark gray, SICK: yellow, ABSENT: red)
   - Refresh calendar after save
   - Dependencies: Actual hours integration
-  - Acceptance: Row 3 updates immediately
+  - Acceptance: Row 3 updates immediately with correct colors and times
 
 #### 4.3 Hour Summary with Actual Hours
 
@@ -1559,10 +1563,10 @@ SCENARIO: Nagy Anna has shift Monday 8:00-16:00
 ---
 
 ### Phase 3: GM/CEO Features - UI
-- [ ] 0/3 UI tasks complete **(0%)**
-  - [ ] Add shift request review panel to schedule detail page
-  - [ ] Add "Convert to Shift" button/modal for approved requests
-  - [ ] Update calendar to show 3 rows per user (requests, shifts, actual hours)
+- [x] 3/3 UI tasks complete **(100%)**
+  - [x] ~~Add shift request review panel to schedule detail page~~ Implemented as ReviewRequestModal with 3-row calendar
+  - [x] Add "Convert to Shift" button/modal for approved requests (ConvertRequestModal)
+  - [x] Update calendar to show 3 rows per user (requests, shifts, actual hours)
 
 ---
 

@@ -7,7 +7,9 @@ import { HiCalendar, HiArrowLeft, HiPlus } from "react-icons/hi2";
 import Link from "next/link";
 import { DayPilot, DayPilotScheduler } from "@daypilot/daypilot-lite-react";
 import AddShiftModal from "../components/AddShiftModal";
-import ShiftRequestReviewPanel from "../components/ShiftRequestReviewPanel";
+import ReviewRequestModal from "../components/ReviewRequestModal";
+import ConvertRequestModal from "../components/ConvertRequestModal";
+import ActualHoursModal from "../components/ActualHoursModal";
 import axios from "axios";
 
 export default function ScheduleDetailPage() {
@@ -23,6 +25,12 @@ export default function ScheduleDetailPage() {
   const [editingShift, setEditingShift] = useState<any>(null);
   const shiftsRef = useRef<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [shiftRequests, setShiftRequests] = useState<any[]>([]);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [isActualHoursModalOpen, setIsActualHoursModalOpen] = useState(false);
+  const [selectedShiftForActualHours, setSelectedShiftForActualHours] = useState<any>(null);
 
   // Fordítások
   const translations = {
@@ -129,33 +137,50 @@ export default function ScheduleDetailPage() {
       }
     },
     onEventClick: (args: any) => {
-      console.log("Event clicked!", args.e.id());
-      console.log("Available shifts in ref:", shiftsRef.current);
+      const eventType = args.e.data.tags?.type;
+      console.log("Event clicked!", args.e.id(), "Type:", eventType);
 
-      // Megkeressük a shift-et a shiftsRef-ben az event ID alapján
-      const clickedShift = shiftsRef.current.find(shift => shift.id === args.e.id());
+      if (eventType === 'request') {
+        // ShiftRequest-re kattintottak
+        const requestData = args.e.data.tags.data;
+        console.log("Request clicked:", requestData);
+        setSelectedRequest(requestData);
+        setIsReviewModalOpen(true);
+      } else if (eventType === 'shift') {
+        // Shift-re kattintottak
+        const shiftData = args.e.data.tags.data;
 
-      console.log("Found shift:", clickedShift);
+        // Megkeressük a shift-et a shiftsRef-ben az event ID alapján
+        const clickedShift = shiftsRef.current.find(shift => shift.id === args.e.id());
 
-      if (clickedShift) {
-        // Beállítjuk a szerkesztendő shift-et
-        const editData = {
-          id: clickedShift.id,
-          userId: clickedShift.userId,
-          positionId: clickedShift.positionId,
-          startTime: clickedShift.startTime,
-          endTime: clickedShift.endTime,
-          notes: clickedShift.notes || "",
-        };
+        if (clickedShift) {
+          // Ellenőrizzük hogy véget ért-e a műszak
+          const now = new Date();
+          const shiftEnd = new Date(clickedShift.endTime);
+          const hasEnded = now > shiftEnd;
 
-        console.log("Setting edit data:", editData);
-        setEditingShift(editData);
+          // Ha van currentUser és GM/CEO és a műszak véget ért -> ActualHoursModal
+          // Különben -> Edit modal
+          if (currentUser && ['GeneralManager', 'CEO'].includes(currentUser.role) && hasEnded) {
+            setSelectedShiftForActualHours(clickedShift);
+            setIsActualHoursModalOpen(true);
+          } else {
+            // Edit modal (eredeti viselkedés)
+            const editData = {
+              id: clickedShift.id,
+              userId: clickedShift.userId,
+              positionId: clickedShift.positionId,
+              startTime: clickedShift.startTime,
+              endTime: clickedShift.endTime,
+              notes: clickedShift.notes || "",
+            };
 
-        // Megnyitjuk a modalt
-        console.log("Opening modal...");
-        setIsAddShiftModalOpen(true);
-      } else {
-        console.log("Shift not found in shifts array!");
+            setEditingShift(editData);
+            setIsAddShiftModalOpen(true);
+          }
+        } else {
+          console.log("Shift not found in shifts array!");
+        }
       }
     },
     resources: [
@@ -179,66 +204,6 @@ export default function ScheduleDetailPage() {
     fetchCurrentUser();
   }, []);
 
-  // Műszakok újratöltése
-  const refreshShifts = async () => {
-    try {
-      const shiftsResponse = await fetch(`/api/shifts?scheduleId=${scheduleId}`);
-      if (shiftsResponse.ok) {
-        const shiftsData = await shiftsResponse.json();
-        setShifts(shiftsData);
-        shiftsRef.current = shiftsData;
-
-        // Resources és Events frissítése
-        const uniqueUsers = new Map();
-        const events: any[] = [];
-
-        shiftsData.forEach((shift: any) => {
-          if (dateParam) {
-            const shiftDate = new Date(shift.date).toISOString().split('T')[0];
-            if (shiftDate !== dateParam) {
-              return;
-            }
-          }
-
-          if (!uniqueUsers.has(shift.userId)) {
-            uniqueUsers.set(shift.userId, {
-              name: shift.user.name,
-              id: shift.userId
-            });
-          }
-
-          const positionName = (shift.position.displayNames as any)?.[language] || shift.position.name;
-          const startTime = new Date(shift.startTime);
-          const endTime = new Date(shift.endTime);
-          const startTimeStr = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          const endTimeStr = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-          const localStart = new Date(startTime.getTime() - (startTime.getTimezoneOffset() * 60000));
-          const localEnd = new Date(endTime.getTime() - (endTime.getTimezoneOffset() * 60000));
-
-          events.push({
-            id: shift.id,
-            start: localStart.toISOString(),
-            end: localEnd.toISOString(),
-            resource: shift.userId,
-            text: `${positionName}: ${startTimeStr} - ${endTimeStr}`,
-            backColor: shift.position.color || '#3B82F6',
-            borderColor: 'darker'
-          });
-        });
-
-        const resources = Array.from(uniqueUsers.values());
-        setSchedulerConfig(prev => ({
-          ...prev,
-          resources: resources.length > 0 ? resources : [{ name: "No shifts yet", id: "empty" }],
-          events: events
-        }));
-      }
-    } catch (error) {
-      console.error('Error refreshing shifts:', error);
-    }
-  };
-
   // Beosztás és műszakok lekérése
   useEffect(() => {
     const fetchData = async () => {
@@ -251,6 +216,13 @@ export default function ScheduleDetailPage() {
         const scheduleData = await scheduleResponse.json();
         setSchedule(scheduleData);
 
+        // ShiftRequests lekérése
+        const requestsResponse = await fetch(`/api/shift-requests?weekScheduleId=${scheduleId}`);
+        if (requestsResponse.ok) {
+          const requestsData = await requestsResponse.json();
+          setShiftRequests(requestsData);
+        }
+
         // Műszakok lekérése
         const shiftsResponse = await fetch(`/api/shifts?scheduleId=${scheduleId}`);
         if (shiftsResponse.ok) {
@@ -258,12 +230,88 @@ export default function ScheduleDetailPage() {
           setShifts(shiftsData);
           shiftsRef.current = shiftsData; // Frissítjük a ref-et is
 
-          // Resources (felhasználók) és Events (műszakok) létrehozása
+          // Resources (felhasználók) és Events (műszakok + kérések) létrehozása
           const uniqueUsers = new Map();
           const events: any[] = [];
 
+          // Gyűjtsük össze az összes usert (shifts + requests alapján)
           shiftsData.forEach((shift: any) => {
-            // Ha van date param, csak az adott napi műszakokat mutatjuk
+            if (!uniqueUsers.has(shift.userId)) {
+              uniqueUsers.set(shift.userId, {
+                name: shift.user.name,
+                id: shift.userId
+              });
+            }
+          });
+
+          requestsData.forEach((request: any) => {
+            if (!uniqueUsers.has(request.userId)) {
+              uniqueUsers.set(request.userId, {
+                name: request.user?.name || 'Unknown',
+                id: request.userId
+              });
+            }
+          });
+
+          // ShiftRequest events létrehozása (Row 1)
+          requestsData.forEach((request: any) => {
+            if (dateParam) {
+              const requestDate = new Date(request.date).toISOString().split('T')[0];
+              if (requestDate !== dateParam) {
+                return;
+              }
+            }
+
+            let startTime, endTime, text;
+            const requestDate = new Date(request.date);
+
+            if (request.type === "SPECIFIC_TIME" && request.preferredStartTime) {
+              startTime = new Date(request.preferredStartTime);
+              endTime = new Date(request.preferredEndTime);
+              const startTimeStr = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              const endTimeStr = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              text = `Request: ${startTimeStr} - ${endTimeStr}`;
+            } else if (request.type === "AVAILABLE_ALL_DAY") {
+              startTime = new Date(requestDate);
+              startTime.setHours(0, 0, 0);
+              endTime = new Date(requestDate);
+              endTime.setHours(23, 59, 59);
+              text = language === 'hu' ? "Elérhető egész nap" : "Available All Day";
+            } else { // TIME_OFF
+              startTime = new Date(requestDate);
+              startTime.setHours(0, 0, 0);
+              endTime = new Date(requestDate);
+              endTime.setHours(23, 59, 59);
+              text = language === 'hu' ? "Szabadság" : "Time Off";
+            }
+
+            const localStart = new Date(startTime.getTime() - (startTime.getTimezoneOffset() * 60000));
+            const localEnd = new Date(endTime.getTime() - (endTime.getTimezoneOffset() * 60000));
+
+            // Színkódolás
+            let backColor = '#E5E7EB'; // Light Gray (PENDING)
+            if (request.type === "TIME_OFF") {
+              backColor = '#FEF3C7'; // Light Orange/Yellow
+            } else if (request.status === "APPROVED") {
+              backColor = '#D1FAE5'; // Light Green
+            } else if (request.status === "REJECTED") {
+              backColor = '#FEE2E2'; // Light Red
+            }
+
+            events.push({
+              id: `request_${request.id}`,
+              start: localStart.toISOString(),
+              end: localEnd.toISOString(),
+              resource: `${request.userId}_requests`,
+              text: text,
+              backColor: backColor,
+              borderColor: request.status === "APPROVED" ? '#10B981' : 'darker',
+              tags: { type: 'request', data: request }
+            });
+          });
+
+          // Shift events létrehozása (Row 2)
+          shiftsData.forEach((shift: any) => {
             if (dateParam) {
               const shiftDate = new Date(shift.date).toISOString().split('T')[0];
               if (shiftDate !== dateParam) {
@@ -271,23 +319,12 @@ export default function ScheduleDetailPage() {
               }
             }
 
-            // User hozzáadása a resources-hoz
-            if (!uniqueUsers.has(shift.userId)) {
-              uniqueUsers.set(shift.userId, {
-                name: shift.user.name,
-                id: shift.userId
-              });
-            }
-
-            // Event létrehozása
             const positionName = (shift.position.displayNames as any)?.[language] || shift.position.name;
             const startTime = new Date(shift.startTime);
             const endTime = new Date(shift.endTime);
             const startTimeStr = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const endTimeStr = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            // DayPilot helyi időben várja az időpontokat (nem UTC)
-            // Konvertáljuk a helyi időzónába
             const localStart = new Date(startTime.getTime() - (startTime.getTimezoneOffset() * 60000));
             const localEnd = new Date(endTime.getTime() - (endTime.getTimezoneOffset() * 60000));
 
@@ -295,21 +332,109 @@ export default function ScheduleDetailPage() {
               id: shift.id,
               start: localStart.toISOString(),
               end: localEnd.toISOString(),
-              resource: shift.userId,
+              resource: `${shift.userId}_shifts`,
               text: `${positionName}: ${startTimeStr} - ${endTimeStr}`,
               backColor: shift.position.color || '#3B82F6',
-              borderColor: 'darker'
+              borderColor: 'darker',
+              tags: { type: 'shift', data: shift }
             });
+
+            // Actual Hours events létrehozása (Row 3)
+            if (shift.actualStatus) {
+              let actualBackColor = '#4B5563'; // Dark Gray (PRESENT)
+              let actualText = '';
+
+              if (shift.actualStatus === 'PRESENT' && shift.actualStartTime && shift.actualEndTime) {
+                const actualStart = new Date(shift.actualStartTime);
+                const actualEnd = new Date(shift.actualEndTime);
+                const actualStartStr = actualStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const actualEndStr = actualEnd.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                actualText = `Actual: ${actualStartStr} - ${actualEndStr}`;
+                actualBackColor = '#4B5563'; // Dark Gray
+
+                const localActualStart = new Date(actualStart.getTime() - (actualStart.getTimezoneOffset() * 60000));
+                const localActualEnd = new Date(actualEnd.getTime() - (actualEnd.getTimezoneOffset() * 60000));
+
+                events.push({
+                  id: `actual_${shift.id}`,
+                  start: localActualStart.toISOString(),
+                  end: localActualEnd.toISOString(),
+                  resource: `${shift.userId}_actual`,
+                  text: actualText,
+                  backColor: actualBackColor,
+                  borderColor: 'darker',
+                  tags: { type: 'actual', data: shift }
+                });
+              } else if (shift.actualStatus === 'SICK') {
+                // SICK - full day yellow block
+                actualText = language === 'hu' ? 'Beteg' : 'Sick';
+                actualBackColor = '#FCD34D'; // Yellow
+
+                const shiftDate = new Date(shift.date);
+                const dayStart = new Date(shiftDate);
+                dayStart.setHours(0, 0, 0, 0);
+                const dayEnd = new Date(shiftDate);
+                dayEnd.setHours(23, 59, 59, 999);
+
+                const localDayStart = new Date(dayStart.getTime() - (dayStart.getTimezoneOffset() * 60000));
+                const localDayEnd = new Date(dayEnd.getTime() - (dayEnd.getTimezoneOffset() * 60000));
+
+                events.push({
+                  id: `actual_${shift.id}`,
+                  start: localDayStart.toISOString(),
+                  end: localDayEnd.toISOString(),
+                  resource: `${shift.userId}_actual`,
+                  text: actualText,
+                  backColor: actualBackColor,
+                  borderColor: 'darker',
+                  tags: { type: 'actual', data: shift }
+                });
+              } else if (shift.actualStatus === 'ABSENT') {
+                // ABSENT - full day red block
+                actualText = language === 'hu' ? 'Hiányzott' : 'Absent';
+                actualBackColor = '#EF4444'; // Red
+
+                const shiftDate = new Date(shift.date);
+                const dayStart = new Date(shiftDate);
+                dayStart.setHours(0, 0, 0, 0);
+                const dayEnd = new Date(shiftDate);
+                dayEnd.setHours(23, 59, 59, 999);
+
+                const localDayStart = new Date(dayStart.getTime() - (dayStart.getTimezoneOffset() * 60000));
+                const localDayEnd = new Date(dayEnd.getTime() - (dayEnd.getTimezoneOffset() * 60000));
+
+                events.push({
+                  id: `actual_${shift.id}`,
+                  start: localDayStart.toISOString(),
+                  end: localDayEnd.toISOString(),
+                  resource: `${shift.userId}_actual`,
+                  text: actualText,
+                  backColor: actualBackColor,
+                  borderColor: 'darker',
+                  tags: { type: 'actual', data: shift }
+                });
+              }
+            }
           });
 
-          // Resources és Events frissítése
-          const resources = Array.from(uniqueUsers.values());
+          // Resources létrehozása 3-soros nézettel (split)
+          const resources = Array.from(uniqueUsers.values()).map(user => ({
+            name: user.name,
+            id: user.id,
+            expanded: true,
+            children: [
+              { name: language === 'hu' ? 'Kérések' : 'Requests', id: `${user.id}_requests` },
+              { name: language === 'hu' ? 'Műszakok' : 'Shifts', id: `${user.id}_shifts` },
+              { name: language === 'hu' ? 'Tényleges' : 'Actual', id: `${user.id}_actual` }
+            ]
+          }));
 
           setSchedulerConfig(prev => ({
             ...prev,
             startDate: dateParam ? new Date(dateParam) : new Date(scheduleData.weekStart),
             days: dateParam ? 1 : 7,
-            resources: resources.length > 0 ? resources : [{ name: "No shifts yet", id: "empty" }],
+            resources: resources.length > 0 ? resources : [{ name: "No data yet", id: "empty" }],
             events: events
           }));
         }
@@ -379,6 +504,62 @@ export default function ScheduleDetailPage() {
         editShift={editingShift}
       />
 
+      {/* Review Request Modal */}
+      <ReviewRequestModal
+        isOpen={isReviewModalOpen}
+        onClose={() => {
+          setIsReviewModalOpen(false);
+          setSelectedRequest(null);
+        }}
+        request={selectedRequest}
+        onSuccess={() => {
+          // Újratöltjük az adatokat
+          window.location.reload();
+        }}
+        onApprove={(request) => {
+          // Approve gomb -> ConvertRequestModal megnyitása
+          setSelectedRequest(request);
+          setIsConvertModalOpen(true);
+        }}
+      />
+
+      {/* Convert Request Modal */}
+      {selectedRequest && (
+        <ConvertRequestModal
+          isOpen={isConvertModalOpen}
+          onClose={() => {
+            setIsConvertModalOpen(false);
+            setSelectedRequest(null);
+          }}
+          request={selectedRequest}
+          onSuccess={() => {
+            setIsConvertModalOpen(false);
+            setIsReviewModalOpen(false);
+            setSelectedRequest(null);
+            // Újratöltjük az adatokat
+            window.location.reload();
+          }}
+        />
+      )}
+
+      {/* Actual Hours Modal */}
+      {selectedShiftForActualHours && (
+        <ActualHoursModal
+          isOpen={isActualHoursModalOpen}
+          onClose={() => {
+            setIsActualHoursModalOpen(false);
+            setSelectedShiftForActualHours(null);
+          }}
+          shift={selectedShiftForActualHours}
+          onSuccess={() => {
+            setIsActualHoursModalOpen(false);
+            setSelectedShiftForActualHours(null);
+            // Újratöltjük az adatokat
+            window.location.reload();
+          }}
+        />
+      )}
+
       <div className="lg:pl-80 h-full flex flex-col">
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-6 py-4">
@@ -400,9 +581,29 @@ export default function ScheduleDetailPage() {
                   {dateParam ? formatDate(new Date(dateParam)) : t.week}
                 </h1>
                 {!dateParam && (
-                  <p className="text-sm text-gray-600">
-                    {formatWeek(schedule.weekStart, schedule.weekEnd)}
-                  </p>
+                  <>
+                    <p className="text-sm text-gray-600">
+                      {formatWeek(schedule.weekStart, schedule.weekEnd)}
+                    </p>
+                    {schedule.requestDeadline && (
+                      <p className="text-xs mt-1">
+                        {new Date() > new Date(schedule.requestDeadline) ? (
+                          <span className="text-red-600">
+                            {language === 'hu' ? 'Kérési határidő lejárt' : 'Request deadline passed'}: {new Date(schedule.requestDeadline).toLocaleDateString(language === 'hu' ? 'hu-HU' : 'en-US')}
+                          </span>
+                        ) : (
+                          <span className="text-green-600">
+                            {language === 'hu' ? 'Kérések nyitva' : 'Requests open'}: {new Date(schedule.requestDeadline).toLocaleDateString(language === 'hu' ? 'hu-HU' : 'en-US')}
+                          </span>
+                        )}
+                      </p>
+                    )}
+                    {!schedule.requestDeadline && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        {language === 'hu' ? 'Nincs kérési határidő' : 'No request deadline'}
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -435,15 +636,6 @@ export default function ScheduleDetailPage() {
 
         {/* Content Area */}
         <div className="flex-1 p-6 bg-nexus-bg overflow-auto">
-          {/* Shift Request Review Panel - csak GM/CEO számára */}
-          {currentUser && (
-            <ShiftRequestReviewPanel
-              weekScheduleId={scheduleId}
-              currentUser={currentUser}
-              onShiftCreated={refreshShifts}
-            />
-          )}
-
           {/* DayPilot Scheduler */}
           <div className="bg-white rounded-lg shadow">
             <DayPilotScheduler
