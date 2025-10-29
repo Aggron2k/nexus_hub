@@ -7,6 +7,8 @@ import { HiCalendar, HiArrowLeft, HiPlus } from "react-icons/hi2";
 import Link from "next/link";
 import { DayPilot, DayPilotScheduler } from "@daypilot/daypilot-lite-react";
 import AddShiftModal from "../components/AddShiftModal";
+import ShiftRequestReviewPanel from "../components/ShiftRequestReviewPanel";
+import axios from "axios";
 
 export default function ScheduleDetailPage() {
   const params = useParams();
@@ -20,6 +22,7 @@ export default function ScheduleDetailPage() {
   const [shifts, setShifts] = useState<any[]>([]);
   const [editingShift, setEditingShift] = useState<any>(null);
   const shiftsRef = useRef<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   // Fordítások
   const translations = {
@@ -162,6 +165,79 @@ export default function ScheduleDetailPage() {
     ],
     events: []
   });
+
+  // Felhasználó lekérése
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await axios.get('/api/users/me');
+        setCurrentUser(response.data);
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      }
+    };
+    fetchCurrentUser();
+  }, []);
+
+  // Műszakok újratöltése
+  const refreshShifts = async () => {
+    try {
+      const shiftsResponse = await fetch(`/api/shifts?scheduleId=${scheduleId}`);
+      if (shiftsResponse.ok) {
+        const shiftsData = await shiftsResponse.json();
+        setShifts(shiftsData);
+        shiftsRef.current = shiftsData;
+
+        // Resources és Events frissítése
+        const uniqueUsers = new Map();
+        const events: any[] = [];
+
+        shiftsData.forEach((shift: any) => {
+          if (dateParam) {
+            const shiftDate = new Date(shift.date).toISOString().split('T')[0];
+            if (shiftDate !== dateParam) {
+              return;
+            }
+          }
+
+          if (!uniqueUsers.has(shift.userId)) {
+            uniqueUsers.set(shift.userId, {
+              name: shift.user.name,
+              id: shift.userId
+            });
+          }
+
+          const positionName = (shift.position.displayNames as any)?.[language] || shift.position.name;
+          const startTime = new Date(shift.startTime);
+          const endTime = new Date(shift.endTime);
+          const startTimeStr = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const endTimeStr = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+          const localStart = new Date(startTime.getTime() - (startTime.getTimezoneOffset() * 60000));
+          const localEnd = new Date(endTime.getTime() - (endTime.getTimezoneOffset() * 60000));
+
+          events.push({
+            id: shift.id,
+            start: localStart.toISOString(),
+            end: localEnd.toISOString(),
+            resource: shift.userId,
+            text: `${positionName}: ${startTimeStr} - ${endTimeStr}`,
+            backColor: shift.position.color || '#3B82F6',
+            borderColor: 'darker'
+          });
+        });
+
+        const resources = Array.from(uniqueUsers.values());
+        setSchedulerConfig(prev => ({
+          ...prev,
+          resources: resources.length > 0 ? resources : [{ name: "No shifts yet", id: "empty" }],
+          events: events
+        }));
+      }
+    } catch (error) {
+      console.error('Error refreshing shifts:', error);
+    }
+  };
 
   // Beosztás és műszakok lekérése
   useEffect(() => {
@@ -357,8 +433,18 @@ export default function ScheduleDetailPage() {
           </div>
         </div>
 
-        {/* DayPilot Scheduler */}
+        {/* Content Area */}
         <div className="flex-1 p-6 bg-nexus-bg overflow-auto">
+          {/* Shift Request Review Panel - csak GM/CEO számára */}
+          {currentUser && (
+            <ShiftRequestReviewPanel
+              weekScheduleId={scheduleId}
+              currentUser={currentUser}
+              onShiftCreated={refreshShifts}
+            />
+          )}
+
+          {/* DayPilot Scheduler */}
           <div className="bg-white rounded-lg shadow">
             <DayPilotScheduler
               {...schedulerConfig}

@@ -49,9 +49,15 @@ export async function POST(
 
     const { requestId } = params;
     const body = await request.json();
-    const { startTime, endTime, notes } = body;
+    const { positionId, startTime, endTime, notes } = body;
 
     // Validáció
+    if (!positionId) {
+      return new NextResponse("Pozíció kiválasztása kötelező", {
+        status: 400,
+      });
+    }
+
     if (!startTime || !endTime) {
       return new NextResponse("Kezdő és befejező időpont kötelező", {
         status: 400,
@@ -72,7 +78,15 @@ export async function POST(
     const existingRequest = await prisma.shiftRequest.findUnique({
       where: { id: requestId },
       include: {
-        user: true,
+        user: {
+          include: {
+            userPositions: {
+              include: {
+                position: true
+              }
+            }
+          }
+        },
         position: true,
         weekSchedule: true,
       },
@@ -93,6 +107,15 @@ export async function POST(
     if (existingRequest.type === "TIME_OFF") {
       return new NextResponse(
         "Szabadság kérést nem lehet műszakká alakítani",
+        { status: 400 }
+      );
+    }
+
+    // Ellenőrizzük, hogy a kiválasztott pozíció az employee UserPositions listájában van-e
+    const userPositionIds = existingRequest.user.userPositions.map((up: any) => up.positionId);
+    if (!userPositionIds.includes(positionId)) {
+      return new NextResponse(
+        "A kiválasztott pozíció nincs az alkalmazott pozíciói között",
         { status: 400 }
       );
     }
@@ -135,12 +158,12 @@ export async function POST(
 
     // Shift létrehozása tranzakcióban
     const result = await prisma.$transaction(async (tx) => {
-      // Shift létrehozása
+      // Shift létrehozása a GM/CEO által kiválasztott pozícióval
       const newShift = await tx.shift.create({
         data: {
           weekScheduleId: existingRequest.weekScheduleId,
           userId: existingRequest.userId,
-          positionId: existingRequest.positionId,
+          positionId: positionId, // A body-ból jövő positionId
           shiftRequestId: existingRequest.id,
           date: existingRequest.date,
           startTime: shiftStartTime,
@@ -161,11 +184,12 @@ export async function POST(
         },
       });
 
-      // Kérés státuszának frissítése
+      // Kérés státuszának frissítése és pozíció mentése
       await tx.shiftRequest.update({
         where: { id: requestId },
         data: {
           status: "CONVERTED_TO_SHIFT",
+          positionId: positionId, // Elmentsük melyik pozícióra lett konvertálva
         },
       });
 
