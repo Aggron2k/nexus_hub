@@ -36,6 +36,25 @@ enum EmploymentStatus {
   TERMINATED  // Megszüntetett
 }
 
+enum ShiftRequestType {
+  SPECIFIC_TIME    // Konkrét időpont (pl. 7:00-15:00)
+  AVAILABLE_ALL_DAY // Egész nap elérhető
+  TIME_OFF         // Szabadság/Időkérés
+}
+
+enum ShiftRequestStatus {
+  PENDING          // Várakozik jóváhagyásra
+  APPROVED         // Jóváhagyva
+  REJECTED         // Elutasítva
+  CONVERTED_TO_SHIFT // Műszakká alakítva
+}
+
+enum ActualWorkStatus {
+  PRESENT          // Jelen volt
+  SICK             // Beteg volt
+  ABSENT           // Hiányzott (igazolatlan)
+}
+
 // Új Position model - dinamikus pozíciók
 model Position {
   id String @id @default(auto()) @map("_id") @db.ObjectId
@@ -57,6 +76,7 @@ model Position {
   userPositions UserPosition[]
   todos Todo[]
   shifts Shift[] @relation("ShiftPosition")
+  shiftRequests ShiftRequest[] @relation("ShiftRequestPosition")
 }
 
 // Many-to-many kapcsolótábla User és Position között
@@ -110,6 +130,9 @@ model User {
   
   // Heti munkaidő (órában)
   weeklyWorkHours Int? // pl. 40, 20, 8
+
+  // Heti elvárt munkaórák (célérték)
+  weeklyRequiredHours Float? @default(40) // pl. 40.0
   
   // Születési hely
   birthCountry String? // pl. "Magyarország", "Hungary"
@@ -165,6 +188,8 @@ model User {
   // Schedule kapcsolatok
   shifts Shift[] @relation("UserShifts")
   createdSchedules WeekSchedule[] @relation("ScheduleCreatedBy")
+  shiftRequests ShiftRequest[] @relation("UserShiftRequests")
+  actualWorkHours ActualWorkHours[] @relation("UserActualWorkHours")
 
   @@index([employeeId]) // Egyedi index csak nem-null értékekre
 }
@@ -299,6 +324,9 @@ model WeekSchedule {
   // Hét vége (vasárnap)
   weekEnd DateTime
 
+  // Kérések beküldési határideje (pl. péntek az előző héten)
+  requestDeadline DateTime?
+
   // Ki hozta létre
   createdById String @db.ObjectId
   createdBy User @relation("ScheduleCreatedBy", fields: [createdById], references: [id])
@@ -309,12 +337,14 @@ model WeekSchedule {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Kapcsolat a műszakokkal
+  // Kapcsolat a műszakokkal és kérésekkel
   shifts Shift[]
+  shiftRequests ShiftRequest[]
 
   @@index([weekStart])
   @@index([weekEnd])
   @@index([isPublished])
+  @@index([requestDeadline])
 }
 
 // Műszak - egy adott napon egy dolgozó munkabeosztása
@@ -333,6 +363,10 @@ model Shift {
   positionId String @db.ObjectId
   position Position @relation("ShiftPosition", fields: [positionId], references: [id])
 
+  // Kapcsolat a műszak kéréshez (ha kérésből lett létrehozva)
+  shiftRequestId String? @db.ObjectId
+  shiftRequest ShiftRequest? @relation(fields: [shiftRequestId], references: [id])
+
   // Dátum és idő
   date DateTime // Melyik nap
   startTime DateTime // Mikor kezd
@@ -347,8 +381,97 @@ model Shift {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Kapcsolat az actual work hours-hoz
+  actualWorkHours ActualWorkHours?
+
   @@index([weekScheduleId])
   @@index([userId])
   @@index([positionId])
   @@index([date])
+  @@index([shiftRequestId])
+}
+
+// Műszak kérés - dolgozó által benyújtott műszak igény
+model ShiftRequest {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Melyik heti beosztáshoz tartozik
+  weekScheduleId String @db.ObjectId
+  weekSchedule WeekSchedule @relation(fields: [weekScheduleId], references: [id], onDelete: Cascade)
+
+  // Ki kéri a műszakot
+  userId String @db.ObjectId
+  user User @relation("UserShiftRequests", fields: [userId], references: [id], onDelete: Cascade)
+
+  // Melyik pozícióra kéri (nullable - GM/CEO tölti ki convert során)
+  positionId String? @db.ObjectId
+  position Position? @relation("ShiftRequestPosition", fields: [positionId], references: [id])
+
+  // Kérés típusa
+  type ShiftRequestType
+
+  // Dátum
+  date DateTime
+
+  // Időpontok (csak SPECIFIC_TIME esetén kötelező)
+  preferredStartTime DateTime?
+  preferredEndTime DateTime?
+
+  // Státusz
+  status ShiftRequestStatus @default(PENDING)
+
+  // Megjegyzések
+  notes String?
+  rejectionReason String? // Ha elutasítva, miért
+
+  // Ki hagyta jóvá/utasította el
+  reviewedById String? @db.ObjectId
+  reviewedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Ha jóváhagyva és műszakká alakítva
+  convertedShifts Shift[]
+
+  @@index([weekScheduleId])
+  @@index([userId])
+  @@index([positionId])
+  @@index([date])
+  @@index([status])
+  @@index([type])
+}
+
+// Tényleges munkaidő - ténylegesen ledolgozott órák
+model ActualWorkHours {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Melyik műszakhoz tartozik
+  shiftId String @unique @db.ObjectId
+  shift Shift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+
+  // Melyik dolgozó (denormalizált az egyszerűbb lekérdezéshez)
+  userId String @db.ObjectId
+  user User @relation("UserActualWorkHours", fields: [userId], references: [id], onDelete: Cascade)
+
+  // Ténylegesen ledolgozott idő
+  actualStartTime DateTime?
+  actualEndTime DateTime?
+  actualHoursWorked Float? // Számított mező
+
+  // Státusz
+  status ActualWorkStatus @default(PRESENT)
+
+  // Megjegyzések
+  notes String?
+
+  // Ki rögzítette
+  recordedById String? @db.ObjectId
+  recordedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
 }

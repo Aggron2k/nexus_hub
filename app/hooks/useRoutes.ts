@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { HiChat } from "react-icons/hi";
-import { HiArrowLeftOnRectangle, HiUsers, HiCalendarDays, HiClock, HiDocument } from "react-icons/hi2";
+import { HiArrowLeftOnRectangle, HiUsers, HiCalendarDays, HiClock, HiDocument, HiClipboardDocumentList } from "react-icons/hi2";
 import { HiCash } from "react-icons/hi";
 import { FaTasks } from "react-icons/fa";
 import { BiTrip } from "react-icons/bi";
@@ -26,6 +26,7 @@ const useRoutes = () => {
             chat: "Chat",
             users: "People",
             calendar: "Calendar",
+            myRequests: "My Requests",
             tasks: "Tasks",
             clockInOut: "Clock In/Out",
             documents: "Documents",
@@ -40,6 +41,7 @@ const useRoutes = () => {
             chat: "Csevegés",
             users: "Emberek",
             calendar: "Naptár",
+            myRequests: "Kéréseim",
             tasks: "Feladatok",
             clockInOut: "Be/Kilépés",
             documents: "Iratok",
@@ -75,6 +77,12 @@ const useRoutes = () => {
             href: '/schedule',
             icon: HiCalendarDays,
             active: pathname === '/schedule',
+        },
+        {
+            label: translations[language].myRequests,
+            href: '/my-requests',
+            icon: HiClipboardDocumentList,
+            active: pathname === '/my-requests',
         },
         {
             label: translations[language].tasks,
