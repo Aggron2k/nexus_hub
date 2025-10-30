@@ -145,19 +145,18 @@ export default function ScheduleDetailPage() {
   };
 
   // DayPilot konfiguráció
-  const [schedulerConfig, setSchedulerConfig] = useState({
+  const [schedulerConfig, setSchedulerConfig] = useState<DayPilot.SchedulerConfig>({
     timeHeaders: [
       { groupBy: "Day", format: "dddd M/d" },
       { groupBy: "Hour", format: "H" } // 24 órás formátum (0-23), "HH" = kétjegyű (00-23)
     ],
     scale: "Hour",
     days: dateParam ? 1 : 7, // Ha van date param, csak 1 nap
-    startDate: dateParam ? new Date(dateParam) : new Date(),
+    startDate: dateParam ? new DayPilot.Date(dateParam) : new DayPilot.Date(),
     timeRangeSelectedHandling: "Disabled", // Letiltjuk az üres területre kattintást
     eventDeleteHandling: "Disabled",
     eventResizeHandling: "Update", // Engedélyezzük az események átméretezését
-    hourWidth: 50, // Óra oszlop szélesség (alapértelmezett 40, növeljük 50-re a jobb olvashatóságért)
-    cellWidthSpec: "Auto", // Automatikus szélesség az óráknak
+    cellWidth: 50, // Óra oszlop szélesség (alapértelmezett 40, növeljük 50-re a jobb olvashatóságért)
     onEventResized: async (args: any) => {
       console.log("Event resized!", args.e.id());
       console.log("New start:", args.newStart.toString());
@@ -296,74 +295,74 @@ export default function ScheduleDetailPage() {
 
         // ShiftRequest events létrehozása (Row 1)
         requestsData.forEach((request: any) => {
-            const requestDate = new Date(request.date);
+          const requestDate = new Date(request.date);
 
-            if (dateParam) {
-              // A request.date mező dátum része (YYYY-MM-DD) local time-ban
-              const year = requestDate.getFullYear();
-              const month = String(requestDate.getMonth() + 1).padStart(2, '0');
-              const day = String(requestDate.getDate()).padStart(2, '0');
-              const requestDateStr = `${year}-${month}-${day}`;
+          if (dateParam) {
+            // A request.date mező dátum része (YYYY-MM-DD) local time-ban
+            const year = requestDate.getFullYear();
+            const month = String(requestDate.getMonth() + 1).padStart(2, '0');
+            const day = String(requestDate.getDate()).padStart(2, '0');
+            const requestDateStr = `${year}-${month}-${day}`;
 
-              console.log(`🔍 Filtering: request date=${requestDateStr}, dateParam=${dateParam}`);
+            console.log(`🔍 Filtering: request date=${requestDateStr}, dateParam=${dateParam}`);
 
-              if (requestDateStr !== dateParam) {
-                console.log(`   ❌ Skipped (date mismatch)`);
-                return;
-              }
-              console.log(`   ✅ Included`);
+            if (requestDateStr !== dateParam) {
+              console.log(`   ❌ Skipped (date mismatch)`);
+              return;
             }
+            console.log(`   ✅ Included`);
+          }
 
-            let startTime, endTime, text;
+          let startTime, endTime, text;
 
-            if (request.type === "SPECIFIC_TIME" && request.preferredStartTime) {
-              startTime = new Date(request.preferredStartTime);
-              endTime = new Date(request.preferredEndTime);
-              const startTimeStr = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              const endTimeStr = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              text = `Request: ${startTimeStr} - ${endTimeStr}`;
-            } else if (request.type === "AVAILABLE_ALL_DAY") {
-              startTime = new Date(requestDate);
-              startTime.setHours(8, 0, 0, 0);
-              endTime = new Date(requestDate);
-              endTime.setHours(20, 0, 0, 0);
-              text = language === 'hu' ? "Elérhető egész nap" : "Available All Day";
-            } else { // TIME_OFF
-              startTime = new Date(requestDate);
-              startTime.setHours(8, 0, 0, 0);
-              endTime = new Date(requestDate);
-              endTime.setHours(20, 0, 0, 0);
-              text = language === 'hu' ? "Szabadság" : "Time Off";
-            }
+          if (request.type === "SPECIFIC_TIME" && request.preferredStartTime) {
+            startTime = new Date(request.preferredStartTime);
+            endTime = new Date(request.preferredEndTime);
+            const startTimeStr = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const endTimeStr = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            text = `Request: ${startTimeStr} - ${endTimeStr}`;
+          } else if (request.type === "AVAILABLE_ALL_DAY") {
+            startTime = new Date(requestDate);
+            startTime.setHours(8, 0, 0, 0);
+            endTime = new Date(requestDate);
+            endTime.setHours(20, 0, 0, 0);
+            text = language === 'hu' ? "Elérhető egész nap" : "Available All Day";
+          } else { // TIME_OFF
+            startTime = new Date(requestDate);
+            startTime.setHours(8, 0, 0, 0);
+            endTime = new Date(requestDate);
+            endTime.setHours(20, 0, 0, 0);
+            text = language === 'hu' ? "Szabadság" : "Time Off";
+          }
 
-            // Színkódolás
-            let backColor = '#E5E7EB'; // Light Gray (PENDING)
-            if (request.type === "TIME_OFF") {
-              backColor = '#FEF3C7'; // Light Orange/Yellow
-            } else if (request.status === "APPROVED") {
-              backColor = '#D1FAE5'; // Light Green
-            } else if (request.status === "REJECTED") {
-              backColor = '#FEE2E2'; // Light Red
-            }
+          // Színkódolás
+          let backColor = '#E5E7EB'; // Light Gray (PENDING)
+          if (request.type === "TIME_OFF") {
+            backColor = '#FEF3C7'; // Light Orange/Yellow
+          } else if (request.status === "APPROVED") {
+            backColor = '#D1FAE5'; // Light Green
+          } else if (request.status === "REJECTED") {
+            backColor = '#FEE2E2'; // Light Red
+          }
 
-            // DayPilot LOCAL TIME formátum (YYYY-MM-DDTHH:mm:ss, Z nélkül)
-            const startStr = `${startTime.getFullYear()}-${String(startTime.getMonth()+1).padStart(2,'0')}-${String(startTime.getDate()).padStart(2,'0')}T${String(startTime.getHours()).padStart(2,'0')}:${String(startTime.getMinutes()).padStart(2,'0')}:${String(startTime.getSeconds()).padStart(2,'0')}`;
-            const endStr = `${endTime.getFullYear()}-${String(endTime.getMonth()+1).padStart(2,'0')}-${String(endTime.getDate()).padStart(2,'0')}T${String(endTime.getHours()).padStart(2,'0')}:${String(endTime.getMinutes()).padStart(2,'0')}:${String(endTime.getSeconds()).padStart(2,'0')}`;
+          // DayPilot LOCAL TIME formátum (YYYY-MM-DDTHH:mm:ss, Z nélkül)
+          const startStr = `${startTime.getFullYear()}-${String(startTime.getMonth() + 1).padStart(2, '0')}-${String(startTime.getDate()).padStart(2, '0')}T${String(startTime.getHours()).padStart(2, '0')}:${String(startTime.getMinutes()).padStart(2, '0')}:${String(startTime.getSeconds()).padStart(2, '0')}`;
+          const endStr = `${endTime.getFullYear()}-${String(endTime.getMonth() + 1).padStart(2, '0')}-${String(endTime.getDate()).padStart(2, '0')}T${String(endTime.getHours()).padStart(2, '0')}:${String(endTime.getMinutes()).padStart(2, '0')}:${String(endTime.getSeconds()).padStart(2, '0')}`;
 
-            console.log(`📋 Creating request event: ${request.type} for ${request.user?.name} on ${requestDate.toISOString().split('T')[0]}`);
-            console.log(`   Start: ${startStr}, End: ${endStr}`);
+          console.log(`📋 Creating request event: ${request.type} for ${request.user?.name} on ${requestDate.toISOString().split('T')[0]}`);
+          console.log(`   Start: ${startStr}, End: ${endStr}`);
 
-            events.push({
-              id: `request_${request.id}`,
-              start: startStr,
-              end: endStr,
-              resource: request.userId, // Egyszerűsített - direkt userId
-              text: text,
-              backColor: backColor,
-              borderColor: request.status === "APPROVED" ? '#10B981' : 'darker',
-              tags: { type: 'request', data: request }
-            });
+          events.push({
+            id: `request_${request.id}`,
+            start: startStr,
+            end: endStr,
+            resource: request.userId, // Egyszerűsített - direkt userId
+            text: text,
+            backColor: backColor,
+            borderColor: request.status === "APPROVED" ? '#10B981' : 'darker',
+            tags: { type: 'request', data: request }
           });
+        });
 
         // Shift events létrehozása (Row 2)
         shiftsData.forEach((shift: any) => {
@@ -387,8 +386,8 @@ export default function ScheduleDetailPage() {
           const endTimeStr = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
           // DayPilot LOCAL TIME formátum (YYYY-MM-DDTHH:mm:ss, Z nélkül)
-          const startStr = `${startTime.getFullYear()}-${String(startTime.getMonth()+1).padStart(2,'0')}-${String(startTime.getDate()).padStart(2,'0')}T${String(startTime.getHours()).padStart(2,'0')}:${String(startTime.getMinutes()).padStart(2,'0')}:${String(startTime.getSeconds()).padStart(2,'0')}`;
-          const endStr = `${endTime.getFullYear()}-${String(endTime.getMonth()+1).padStart(2,'0')}-${String(endTime.getDate()).padStart(2,'0')}T${String(endTime.getHours()).padStart(2,'0')}:${String(endTime.getMinutes()).padStart(2,'0')}:${String(endTime.getSeconds()).padStart(2,'0')}`;
+          const startStr = `${startTime.getFullYear()}-${String(startTime.getMonth() + 1).padStart(2, '0')}-${String(startTime.getDate()).padStart(2, '0')}T${String(startTime.getHours()).padStart(2, '0')}:${String(startTime.getMinutes()).padStart(2, '0')}:${String(startTime.getSeconds()).padStart(2, '0')}`;
+          const endStr = `${endTime.getFullYear()}-${String(endTime.getMonth() + 1).padStart(2, '0')}-${String(endTime.getDate()).padStart(2, '0')}T${String(endTime.getHours()).padStart(2, '0')}:${String(endTime.getMinutes()).padStart(2, '0')}:${String(endTime.getSeconds()).padStart(2, '0')}`;
 
           console.log(`👷 Creating shift event: ${positionName} for ${shift.user?.name} - ${startTimeStr} to ${endTimeStr}`);
           console.log(`   Start: ${startStr}, End: ${endStr}`);
@@ -419,8 +418,8 @@ export default function ScheduleDetailPage() {
               actualText = `Actual: ${actualStartStr} - ${actualEndStr}`;
               actualBackColor = '#4B5563'; // Dark Gray
 
-              const actualStartStr2 = `${actualStart.getFullYear()}-${String(actualStart.getMonth()+1).padStart(2,'0')}-${String(actualStart.getDate()).padStart(2,'0')}T${String(actualStart.getHours()).padStart(2,'0')}:${String(actualStart.getMinutes()).padStart(2,'0')}:${String(actualStart.getSeconds()).padStart(2,'0')}`;
-              const actualEndStr2 = `${actualEnd.getFullYear()}-${String(actualEnd.getMonth()+1).padStart(2,'0')}-${String(actualEnd.getDate()).padStart(2,'0')}T${String(actualEnd.getHours()).padStart(2,'0')}:${String(actualEnd.getMinutes()).padStart(2,'0')}:${String(actualEnd.getSeconds()).padStart(2,'0')}`;
+              const actualStartStr2 = `${actualStart.getFullYear()}-${String(actualStart.getMonth() + 1).padStart(2, '0')}-${String(actualStart.getDate()).padStart(2, '0')}T${String(actualStart.getHours()).padStart(2, '0')}:${String(actualStart.getMinutes()).padStart(2, '0')}:${String(actualStart.getSeconds()).padStart(2, '0')}`;
+              const actualEndStr2 = `${actualEnd.getFullYear()}-${String(actualEnd.getMonth() + 1).padStart(2, '0')}-${String(actualEnd.getDate()).padStart(2, '0')}T${String(actualEnd.getHours()).padStart(2, '0')}:${String(actualEnd.getMinutes()).padStart(2, '0')}:${String(actualEnd.getSeconds()).padStart(2, '0')}`;
 
               events.push({
                 id: `actual_${shift.id}`,
@@ -443,8 +442,8 @@ export default function ScheduleDetailPage() {
               const dayEnd = new Date(shiftDate);
               dayEnd.setHours(20, 0, 0, 0);
 
-              const sickStartStr = `${dayStart.getFullYear()}-${String(dayStart.getMonth()+1).padStart(2,'0')}-${String(dayStart.getDate()).padStart(2,'0')}T${String(dayStart.getHours()).padStart(2,'0')}:${String(dayStart.getMinutes()).padStart(2,'0')}:${String(dayStart.getSeconds()).padStart(2,'0')}`;
-              const sickEndStr = `${dayEnd.getFullYear()}-${String(dayEnd.getMonth()+1).padStart(2,'0')}-${String(dayEnd.getDate()).padStart(2,'0')}T${String(dayEnd.getHours()).padStart(2,'0')}:${String(dayEnd.getMinutes()).padStart(2,'0')}:${String(dayEnd.getSeconds()).padStart(2,'0')}`;
+              const sickStartStr = `${dayStart.getFullYear()}-${String(dayStart.getMonth() + 1).padStart(2, '0')}-${String(dayStart.getDate()).padStart(2, '0')}T${String(dayStart.getHours()).padStart(2, '0')}:${String(dayStart.getMinutes()).padStart(2, '0')}:${String(dayStart.getSeconds()).padStart(2, '0')}`;
+              const sickEndStr = `${dayEnd.getFullYear()}-${String(dayEnd.getMonth() + 1).padStart(2, '0')}-${String(dayEnd.getDate()).padStart(2, '0')}T${String(dayEnd.getHours()).padStart(2, '0')}:${String(dayEnd.getMinutes()).padStart(2, '0')}:${String(dayEnd.getSeconds()).padStart(2, '0')}`;
 
               events.push({
                 id: `actual_${shift.id}`,
@@ -467,8 +466,8 @@ export default function ScheduleDetailPage() {
               const dayEnd = new Date(shiftDate);
               dayEnd.setHours(20, 0, 0, 0);
 
-              const absentStartStr = `${dayStart.getFullYear()}-${String(dayStart.getMonth()+1).padStart(2,'0')}-${String(dayStart.getDate()).padStart(2,'0')}T${String(dayStart.getHours()).padStart(2,'0')}:${String(dayStart.getMinutes()).padStart(2,'0')}:${String(dayStart.getSeconds()).padStart(2,'0')}`;
-              const absentEndStr = `${dayEnd.getFullYear()}-${String(dayEnd.getMonth()+1).padStart(2,'0')}-${String(dayEnd.getDate()).padStart(2,'0')}T${String(dayEnd.getHours()).padStart(2,'0')}:${String(dayEnd.getMinutes()).padStart(2,'0')}:${String(dayEnd.getSeconds()).padStart(2,'0')}`;
+              const absentStartStr = `${dayStart.getFullYear()}-${String(dayStart.getMonth() + 1).padStart(2, '0')}-${String(dayStart.getDate()).padStart(2, '0')}T${String(dayStart.getHours()).padStart(2, '0')}:${String(dayStart.getMinutes()).padStart(2, '0')}:${String(dayStart.getSeconds()).padStart(2, '0')}`;
+              const absentEndStr = `${dayEnd.getFullYear()}-${String(dayEnd.getMonth() + 1).padStart(2, '0')}-${String(dayEnd.getDate()).padStart(2, '0')}T${String(dayEnd.getHours()).padStart(2, '0')}:${String(dayEnd.getMinutes()).padStart(2, '0')}:${String(dayEnd.getSeconds()).padStart(2, '0')}`;
 
               events.push({
                 id: `actual_${shift.id}`,
@@ -590,7 +589,6 @@ export default function ScheduleDetailPage() {
           request={selectedRequest}
           onSuccess={() => {
             setIsConvertModalOpen(false);
-            setIsReviewModalOpen(false);
             setSelectedRequest(null);
             // Újratöltjük az adatokat
             window.location.reload();
@@ -678,11 +676,10 @@ export default function ScheduleDetailPage() {
               </button>
 
               <span
-                className={`text-xs px-3 py-1 rounded-full ${
-                  schedule.isPublished
-                    ? "bg-green-100 text-green-800"
-                    : "bg-gray-100 text-gray-800"
-                }`}
+                className={`text-xs px-3 py-1 rounded-full ${schedule.isPublished
+                  ? "bg-green-100 text-green-800"
+                  : "bg-gray-100 text-gray-800"
+                  }`}
               >
                 {schedule.isPublished ? t.published : t.draft}
               </span>
@@ -695,7 +692,7 @@ export default function ScheduleDetailPage() {
           {/* DayPilot Scheduler */}
           <div className="bg-white rounded-lg shadow">
             <DayPilotScheduler
-              key={`scheduler-${schedulerConfig.resources.length}-${schedulerConfig.events.length}`}
+              key={`scheduler-${schedulerConfig.resources?.length || 0}-${schedulerConfig.events?.length || 0}`}
               {...schedulerConfig}
             />
           </div>

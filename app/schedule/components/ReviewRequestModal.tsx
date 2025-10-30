@@ -4,7 +4,7 @@ import { useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import { HiX, HiCheck, HiXMark } from "react-icons/hi2";
+import { HiCheck, HiXMark } from "react-icons/hi2";
 
 interface ReviewRequestModalProps {
   isOpen: boolean;

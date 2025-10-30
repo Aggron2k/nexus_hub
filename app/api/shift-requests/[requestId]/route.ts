@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/libs/prismadb";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/app/libs/auth";
 
 interface IParams {
   requestId: string;
@@ -59,7 +59,10 @@ export async function PUT(
 
     // Ellenőrizzük a határidőt
     const now = new Date();
-    if (now > existingRequest.weekSchedule.requestDeadline) {
+    if (
+      existingRequest.weekSchedule.requestDeadline &&
+      now > existingRequest.weekSchedule.requestDeadline
+    ) {
       return new NextResponse("A kérés módosítási határideje lejárt", {
         status: 400,
       });
@@ -94,13 +97,13 @@ export async function PUT(
         preferredStartTime: preferredStartTime
           ? new Date(preferredStartTime)
           : type === "SPECIFIC_TIME"
-          ? existingRequest.preferredStartTime
-          : null,
+            ? existingRequest.preferredStartTime
+            : null,
         preferredEndTime: preferredEndTime
           ? new Date(preferredEndTime)
           : type === "SPECIFIC_TIME"
-          ? existingRequest.preferredEndTime
-          : null,
+            ? existingRequest.preferredEndTime
+            : null,
         notes: notes !== undefined ? notes : existingRequest.notes,
       },
       include: {
@@ -170,7 +173,10 @@ export async function DELETE(
 
     // Ellenőrizzük a határidőt
     const now = new Date();
-    if (now > existingRequest.weekSchedule.requestDeadline) {
+    if (
+      existingRequest.weekSchedule.requestDeadline &&
+      now > existingRequest.weekSchedule.requestDeadline
+    ) {
       return new NextResponse("A kérés törlési határideje lejárt", {
         status: 400,
       });

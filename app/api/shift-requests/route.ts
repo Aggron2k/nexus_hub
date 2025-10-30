@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/libs/prismadb";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/app/libs/auth";
 
 // POST - Új műszak kérés létrehozása (Employee által)
 export async function POST(request: NextRequest) {
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     if (weekSchedule.requestDeadline && now > weekSchedule.requestDeadline) {
       return new NextResponse(
         "A kérés benyújtási határideje lejárt. Határidő: " +
-          weekSchedule.requestDeadline.toLocaleString("hu-HU"),
+        weekSchedule.requestDeadline.toLocaleString("hu-HU"),
         { status: 400 }
       );
     }
