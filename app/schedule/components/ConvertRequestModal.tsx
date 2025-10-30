@@ -94,6 +94,12 @@ export default function ConvertRequestModal({
       const endDateTime = new Date(requestDate);
       endDateTime.setHours(parseInt(endHours), parseInt(endMinutes), 0);
 
+      console.log("🚀 Converting request to shift:");
+      console.log("  formData.startTime:", formData.startTime);
+      console.log("  formData.endTime:", formData.endTime);
+      console.log("  startDateTime:", startDateTime.toISOString());
+      console.log("  endDateTime:", endDateTime.toISOString());
+
       if (startDateTime >= endDateTime) {
         toast.error("A befejező időnek később kell lennie, mint a kezdő idő");
         setIsLoading(false);

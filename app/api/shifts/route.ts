@@ -145,7 +145,8 @@ export async function GET(request: Request) {
                         displayNames: true,
                         color: true
                     }
-                }
+                },
+                actualWorkHours: true // Include actual work hours
             },
             orderBy: {
                 startTime: 'asc'

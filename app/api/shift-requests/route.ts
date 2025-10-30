@@ -269,6 +269,11 @@ export async function GET(request: NextRequest) {
             name: true,
             email: true,
             image: true,
+            userPositions: {
+              include: {
+                position: true,
+              },
+            },
           },
         },
         position: true,

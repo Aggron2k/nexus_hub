@@ -209,15 +209,43 @@ export async function PATCH(request: Request, { params }: RouteParams) {
             // 5. Számoljuk ki az actualHoursWorked-t
             const actualHoursWorked = (actualEnd.getTime() - actualStart.getTime()) / (1000 * 60 * 60);
 
-            // Frissítjük a shift-et actual hours adatokkal
-            const updatedShift = await prisma.shift.update({
+            // Ellenőrizzük van-e már ActualWorkHours rekord
+            const existingActualHours = await prisma.actualWorkHours.findUnique({
+                where: { shiftId: shiftId }
+            });
+
+            if (existingActualHours) {
+                // Frissítjük a meglévő rekordot
+                await prisma.actualWorkHours.update({
+                    where: { shiftId: shiftId },
+                    data: {
+                        actualStartTime: actualStart,
+                        actualEndTime: actualEnd,
+                        status: actualStatus,
+                        actualHoursWorked: actualHoursWorked,
+                        recordedById: currentUser.id,
+                        recordedAt: new Date()
+                    }
+                });
+            } else {
+                // Új rekord létrehozása
+                await prisma.actualWorkHours.create({
+                    data: {
+                        shiftId: shiftId,
+                        userId: existingShift.userId,
+                        actualStartTime: actualStart,
+                        actualEndTime: actualEnd,
+                        status: actualStatus,
+                        actualHoursWorked: actualHoursWorked,
+                        recordedById: currentUser.id,
+                        recordedAt: new Date()
+                    }
+                });
+            }
+
+            // Visszaadjuk a frissített shift-et az actualWorkHours-szal együtt
+            const updatedShift = await prisma.shift.findUnique({
                 where: { id: shiftId },
-                data: {
-                    actualStartTime: actualStart,
-                    actualEndTime: actualEnd,
-                    actualStatus: actualStatus,
-                    actualHoursWorked: actualHoursWorked
-                },
                 include: {
                     user: {
                         select: {
@@ -234,21 +262,51 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                             displayNames: true,
                             color: true
                         }
-                    }
+                    },
+                    actualWorkHours: true
                 }
             });
 
             return NextResponse.json(updatedShift);
         } else {
             // SICK vagy ABSENT - nincs szükség időpontokra
-            const updatedShift = await prisma.shift.update({
+            // Ellenőrizzük van-e már ActualWorkHours rekord
+            const existingActualHours = await prisma.actualWorkHours.findUnique({
+                where: { shiftId: shiftId }
+            });
+
+            if (existingActualHours) {
+                // Frissítjük a meglévő rekordot
+                await prisma.actualWorkHours.update({
+                    where: { shiftId: shiftId },
+                    data: {
+                        actualStartTime: null,
+                        actualEndTime: null,
+                        status: actualStatus,
+                        actualHoursWorked: null,
+                        recordedById: currentUser.id,
+                        recordedAt: new Date()
+                    }
+                });
+            } else {
+                // Új rekord létrehozása
+                await prisma.actualWorkHours.create({
+                    data: {
+                        shiftId: shiftId,
+                        userId: existingShift.userId,
+                        actualStartTime: null,
+                        actualEndTime: null,
+                        status: actualStatus,
+                        actualHoursWorked: null,
+                        recordedById: currentUser.id,
+                        recordedAt: new Date()
+                    }
+                });
+            }
+
+            // Visszaadjuk a frissített shift-et az actualWorkHours-szal együtt
+            const updatedShift = await prisma.shift.findUnique({
                 where: { id: shiftId },
-                data: {
-                    actualStartTime: null,
-                    actualEndTime: null,
-                    actualStatus: actualStatus,
-                    actualHoursWorked: null
-                },
                 include: {
                     user: {
                         select: {
@@ -265,7 +323,8 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                             displayNames: true,
                             color: true
                         }
-                    }
+                    },
+                    actualWorkHours: true
                 }
             });
 

@@ -7,7 +7,6 @@ import { HiCalendar, HiArrowLeft, HiPlus } from "react-icons/hi2";
 import Link from "next/link";
 import { DayPilot, DayPilotScheduler } from "@daypilot/daypilot-lite-react";
 import AddShiftModal from "../components/AddShiftModal";
-import ReviewRequestModal from "../components/ReviewRequestModal";
 import ConvertRequestModal from "../components/ConvertRequestModal";
 import ActualHoursModal from "../components/ActualHoursModal";
 import axios from "axios";
@@ -25,8 +24,8 @@ export default function ScheduleDetailPage() {
   const [editingShift, setEditingShift] = useState<any>(null);
   const shiftsRef = useRef<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const currentUserRef = useRef<any>(null); // useRef a callback-ekhez
   const [shiftRequests, setShiftRequests] = useState<any[]>([]);
-  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [isActualHoursModalOpen, setIsActualHoursModalOpen] = useState(false);
@@ -54,11 +53,102 @@ export default function ScheduleDetailPage() {
 
   const t = translations[language];
 
+  // Felhasználó lekérése (KORÁBBAN kell betölteni!)
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await axios.get('/api/users/me');
+        setCurrentUser(response.data);
+        currentUserRef.current = response.data; // Ref-be is mentjük
+        console.log("👤 Current user loaded:", response.data.role);
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      }
+    };
+    fetchCurrentUser();
+  }, []);
+
+  // Event click handler - KÜLÖN definiálva, hogy lássa a currentUser-t
+  const handleEventClick = (args: any) => {
+    const eventType = args.e.data.tags?.type;
+    console.log("Event clicked!", args.e.id(), "Type:", eventType);
+
+    if (eventType === 'request') {
+      // ShiftRequest-re kattintottak → direkt Convert Modal
+      const requestData = args.e.data.tags.data;
+      console.log("Request clicked:", requestData);
+      setSelectedRequest(requestData);
+      setIsConvertModalOpen(true); // Direkt a Convert Modal-t nyitjuk
+    } else if (eventType === 'shift') {
+      // Shift-re kattintottak
+      const shiftData = args.e.data.tags.data;
+
+      // Megkeressük a shift-et a shiftsRef-ben az event ID alapján
+      const clickedShift = shiftsRef.current.find(shift => shift.id === args.e.id());
+
+      if (clickedShift) {
+        // Ellenőrizzük hogy véget ért-e a műszak
+        const now = new Date();
+        const shiftEnd = new Date(clickedShift.endTime);
+        const hasEnded = now > shiftEnd;
+
+        console.log("🕐 Shift clicked!");
+        console.log("  Current time:", now.toISOString());
+        console.log("  Shift end time:", shiftEnd.toISOString());
+        console.log("  Has ended:", hasEnded);
+        console.log("  Current user (from ref):", currentUserRef.current?.role);
+        console.log("  Shift already has actualWorkHours:", clickedShift.actualWorkHours?.status);
+
+        // Ha van currentUser és GM/CEO és a műszak véget ért -> ActualHoursModal
+        // Különben -> Edit modal
+        if (currentUserRef.current && ['GeneralManager', 'CEO'].includes(currentUserRef.current.role) && hasEnded) {
+          console.log("  ✅ Opening ActualHoursModal");
+          setSelectedShiftForActualHours(clickedShift);
+          setIsActualHoursModalOpen(true);
+        } else {
+          console.log("  ✅ Opening Edit Modal");
+          // Edit modal (eredeti viselkedés)
+          const editData = {
+            id: clickedShift.id,
+            userId: clickedShift.userId,
+            positionId: clickedShift.positionId,
+            startTime: clickedShift.startTime,
+            endTime: clickedShift.endTime,
+            notes: clickedShift.notes || "",
+          };
+
+          setEditingShift(editData);
+          setIsAddShiftModalOpen(true);
+        }
+      } else {
+        console.log("Shift not found in shifts array!");
+      }
+    } else if (eventType === 'actual') {
+      // Actual hours-ra kattintottak → újra megnyitjuk az ActualHoursModal módosításra
+      const shiftData = args.e.data.tags.data;
+      const clickedShift = shiftsRef.current.find(shift => shift.id === shiftData.id);
+
+      console.log("⏱️ Actual hours clicked!");
+      console.log("  Current user (from ref):", currentUserRef.current?.role);
+
+      // Csak GM/CEO módosíthatja
+      if (currentUserRef.current && ['GeneralManager', 'CEO'].includes(currentUserRef.current.role)) {
+        if (clickedShift) {
+          console.log("  ✅ Opening ActualHoursModal for editing");
+          setSelectedShiftForActualHours(clickedShift);
+          setIsActualHoursModalOpen(true);
+        }
+      } else {
+        console.log("  ❌ User is not authorized to edit actual hours");
+      }
+    }
+  };
+
   // DayPilot konfiguráció
   const [schedulerConfig, setSchedulerConfig] = useState({
     timeHeaders: [
       { groupBy: "Day", format: "dddd M/d" },
-      { groupBy: "Hour" }
+      { groupBy: "Hour", format: "H" } // 24 órás formátum (0-23), "HH" = kétjegyű (00-23)
     ],
     scale: "Hour",
     days: dateParam ? 1 : 7, // Ha van date param, csak 1 nap
@@ -66,6 +156,8 @@ export default function ScheduleDetailPage() {
     timeRangeSelectedHandling: "Disabled", // Letiltjuk az üres területre kattintást
     eventDeleteHandling: "Disabled",
     eventResizeHandling: "Update", // Engedélyezzük az események átméretezését
+    hourWidth: 50, // Óra oszlop szélesség (alapértelmezett 40, növeljük 50-re a jobb olvashatóságért)
+    cellWidthSpec: "Auto", // Automatikus szélesség az óráknak
     onEventResized: async (args: any) => {
       console.log("Event resized!", args.e.id());
       console.log("New start:", args.newStart.toString());
@@ -136,53 +228,7 @@ export default function ScheduleDetailPage() {
         }
       }
     },
-    onEventClick: (args: any) => {
-      const eventType = args.e.data.tags?.type;
-      console.log("Event clicked!", args.e.id(), "Type:", eventType);
-
-      if (eventType === 'request') {
-        // ShiftRequest-re kattintottak
-        const requestData = args.e.data.tags.data;
-        console.log("Request clicked:", requestData);
-        setSelectedRequest(requestData);
-        setIsReviewModalOpen(true);
-      } else if (eventType === 'shift') {
-        // Shift-re kattintottak
-        const shiftData = args.e.data.tags.data;
-
-        // Megkeressük a shift-et a shiftsRef-ben az event ID alapján
-        const clickedShift = shiftsRef.current.find(shift => shift.id === args.e.id());
-
-        if (clickedShift) {
-          // Ellenőrizzük hogy véget ért-e a műszak
-          const now = new Date();
-          const shiftEnd = new Date(clickedShift.endTime);
-          const hasEnded = now > shiftEnd;
-
-          // Ha van currentUser és GM/CEO és a műszak véget ért -> ActualHoursModal
-          // Különben -> Edit modal
-          if (currentUser && ['GeneralManager', 'CEO'].includes(currentUser.role) && hasEnded) {
-            setSelectedShiftForActualHours(clickedShift);
-            setIsActualHoursModalOpen(true);
-          } else {
-            // Edit modal (eredeti viselkedés)
-            const editData = {
-              id: clickedShift.id,
-              userId: clickedShift.userId,
-              positionId: clickedShift.positionId,
-              startTime: clickedShift.startTime,
-              endTime: clickedShift.endTime,
-              notes: clickedShift.notes || "",
-            };
-
-            setEditingShift(editData);
-            setIsAddShiftModalOpen(true);
-          }
-        } else {
-          console.log("Shift not found in shifts array!");
-        }
-      }
-    },
+    onEventClick: handleEventClick, // Használjuk a külön definiált handlert
     resources: [
       { name: "Resource 1", id: "R1" },
       { name: "Resource 2", id: "R2" },
@@ -190,19 +236,6 @@ export default function ScheduleDetailPage() {
     ],
     events: []
   });
-
-  // Felhasználó lekérése
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const response = await axios.get('/api/users/me');
-        setCurrentUser(response.data);
-      } catch (error) {
-        console.error('Error fetching current user:', error);
-      }
-    };
-    fetchCurrentUser();
-  }, []);
 
   // Beosztás és műszakok lekérése
   useEffect(() => {
@@ -215,55 +248,73 @@ export default function ScheduleDetailPage() {
         }
         const scheduleData = await scheduleResponse.json();
         setSchedule(scheduleData);
+        console.log("📅 Schedule loaded:", scheduleData);
 
         // ShiftRequests lekérése
+        let requestsData: any[] = [];
         const requestsResponse = await fetch(`/api/shift-requests?weekScheduleId=${scheduleId}`);
         if (requestsResponse.ok) {
-          const requestsData = await requestsResponse.json();
+          requestsData = await requestsResponse.json();
           setShiftRequests(requestsData);
+          console.log("📋 ShiftRequests loaded:", requestsData.length, "requests");
         }
 
         // Műszakok lekérése
+        let shiftsData: any[] = [];
         const shiftsResponse = await fetch(`/api/shifts?scheduleId=${scheduleId}`);
         if (shiftsResponse.ok) {
-          const shiftsData = await shiftsResponse.json();
+          shiftsData = await shiftsResponse.json();
           setShifts(shiftsData);
           shiftsRef.current = shiftsData; // Frissítjük a ref-et is
+          console.log("👷 Shifts loaded:", shiftsData.length, "shifts");
+        }
 
-          // Resources (felhasználók) és Events (műszakok + kérések) létrehozása
-          const uniqueUsers = new Map();
-          const events: any[] = [];
+        // Resources (felhasználók) és Events (műszakok + kérések) létrehozása
+        const uniqueUsers = new Map();
+        const events: any[] = [];
 
-          // Gyűjtsük össze az összes usert (shifts + requests alapján)
-          shiftsData.forEach((shift: any) => {
-            if (!uniqueUsers.has(shift.userId)) {
-              uniqueUsers.set(shift.userId, {
-                name: shift.user.name,
-                id: shift.userId
-              });
-            }
-          });
+        // Gyűjtsük össze az összes usert (shifts + requests alapján)
+        shiftsData.forEach((shift: any) => {
+          if (!uniqueUsers.has(shift.userId)) {
+            uniqueUsers.set(shift.userId, {
+              name: shift.user.name,
+              id: shift.userId
+            });
+          }
+        });
 
-          requestsData.forEach((request: any) => {
-            if (!uniqueUsers.has(request.userId)) {
-              uniqueUsers.set(request.userId, {
-                name: request.user?.name || 'Unknown',
-                id: request.userId
-              });
-            }
-          });
+        requestsData.forEach((request: any) => {
+          if (!uniqueUsers.has(request.userId)) {
+            uniqueUsers.set(request.userId, {
+              name: request.user?.name || 'Unknown',
+              id: request.userId
+            });
+          }
+        });
 
-          // ShiftRequest events létrehozása (Row 1)
-          requestsData.forEach((request: any) => {
+        console.log("👥 Unique users found:", uniqueUsers.size);
+
+        // ShiftRequest events létrehozása (Row 1)
+        requestsData.forEach((request: any) => {
+            const requestDate = new Date(request.date);
+
             if (dateParam) {
-              const requestDate = new Date(request.date).toISOString().split('T')[0];
-              if (requestDate !== dateParam) {
+              // A request.date mező dátum része (YYYY-MM-DD) local time-ban
+              const year = requestDate.getFullYear();
+              const month = String(requestDate.getMonth() + 1).padStart(2, '0');
+              const day = String(requestDate.getDate()).padStart(2, '0');
+              const requestDateStr = `${year}-${month}-${day}`;
+
+              console.log(`🔍 Filtering: request date=${requestDateStr}, dateParam=${dateParam}`);
+
+              if (requestDateStr !== dateParam) {
+                console.log(`   ❌ Skipped (date mismatch)`);
                 return;
               }
+              console.log(`   ✅ Included`);
             }
 
             let startTime, endTime, text;
-            const requestDate = new Date(request.date);
 
             if (request.type === "SPECIFIC_TIME" && request.preferredStartTime) {
               startTime = new Date(request.preferredStartTime);
@@ -273,20 +324,17 @@ export default function ScheduleDetailPage() {
               text = `Request: ${startTimeStr} - ${endTimeStr}`;
             } else if (request.type === "AVAILABLE_ALL_DAY") {
               startTime = new Date(requestDate);
-              startTime.setHours(0, 0, 0);
+              startTime.setHours(8, 0, 0, 0);
               endTime = new Date(requestDate);
-              endTime.setHours(23, 59, 59);
+              endTime.setHours(20, 0, 0, 0);
               text = language === 'hu' ? "Elérhető egész nap" : "Available All Day";
             } else { // TIME_OFF
               startTime = new Date(requestDate);
-              startTime.setHours(0, 0, 0);
+              startTime.setHours(8, 0, 0, 0);
               endTime = new Date(requestDate);
-              endTime.setHours(23, 59, 59);
+              endTime.setHours(20, 0, 0, 0);
               text = language === 'hu' ? "Szabadság" : "Time Off";
             }
-
-            const localStart = new Date(startTime.getTime() - (startTime.getTimezoneOffset() * 60000));
-            const localEnd = new Date(endTime.getTime() - (endTime.getTimezoneOffset() * 60000));
 
             // Színkódolás
             let backColor = '#E5E7EB'; // Light Gray (PENDING)
@@ -298,11 +346,18 @@ export default function ScheduleDetailPage() {
               backColor = '#FEE2E2'; // Light Red
             }
 
+            // DayPilot LOCAL TIME formátum (YYYY-MM-DDTHH:mm:ss, Z nélkül)
+            const startStr = `${startTime.getFullYear()}-${String(startTime.getMonth()+1).padStart(2,'0')}-${String(startTime.getDate()).padStart(2,'0')}T${String(startTime.getHours()).padStart(2,'0')}:${String(startTime.getMinutes()).padStart(2,'0')}:${String(startTime.getSeconds()).padStart(2,'0')}`;
+            const endStr = `${endTime.getFullYear()}-${String(endTime.getMonth()+1).padStart(2,'0')}-${String(endTime.getDate()).padStart(2,'0')}T${String(endTime.getHours()).padStart(2,'0')}:${String(endTime.getMinutes()).padStart(2,'0')}:${String(endTime.getSeconds()).padStart(2,'0')}`;
+
+            console.log(`📋 Creating request event: ${request.type} for ${request.user?.name} on ${requestDate.toISOString().split('T')[0]}`);
+            console.log(`   Start: ${startStr}, End: ${endStr}`);
+
             events.push({
               id: `request_${request.id}`,
-              start: localStart.toISOString(),
-              end: localEnd.toISOString(),
-              resource: `${request.userId}_requests`,
+              start: startStr,
+              end: endStr,
+              resource: request.userId, // Egyszerűsített - direkt userId
               text: text,
               backColor: backColor,
               borderColor: request.status === "APPROVED" ? '#10B981' : 'darker',
@@ -310,134 +365,154 @@ export default function ScheduleDetailPage() {
             });
           });
 
-          // Shift events létrehozása (Row 2)
-          shiftsData.forEach((shift: any) => {
-            if (dateParam) {
-              const shiftDate = new Date(shift.date).toISOString().split('T')[0];
-              if (shiftDate !== dateParam) {
-                return;
-              }
+        // Shift events létrehozása (Row 2)
+        shiftsData.forEach((shift: any) => {
+          const shiftDate = new Date(shift.date);
+
+          if (dateParam) {
+            const year = shiftDate.getFullYear();
+            const month = String(shiftDate.getMonth() + 1).padStart(2, '0');
+            const day = String(shiftDate.getDate()).padStart(2, '0');
+            const shiftDateStr = `${year}-${month}-${day}`;
+
+            if (shiftDateStr !== dateParam) {
+              return;
             }
+          }
 
-            const positionName = (shift.position.displayNames as any)?.[language] || shift.position.name;
-            const startTime = new Date(shift.startTime);
-            const endTime = new Date(shift.endTime);
-            const startTimeStr = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const endTimeStr = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const positionName = (shift.position.displayNames as any)?.[language] || shift.position.name;
+          const startTime = new Date(shift.startTime);
+          const endTime = new Date(shift.endTime);
+          const startTimeStr = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const endTimeStr = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            const localStart = new Date(startTime.getTime() - (startTime.getTimezoneOffset() * 60000));
-            const localEnd = new Date(endTime.getTime() - (endTime.getTimezoneOffset() * 60000));
+          // DayPilot LOCAL TIME formátum (YYYY-MM-DDTHH:mm:ss, Z nélkül)
+          const startStr = `${startTime.getFullYear()}-${String(startTime.getMonth()+1).padStart(2,'0')}-${String(startTime.getDate()).padStart(2,'0')}T${String(startTime.getHours()).padStart(2,'0')}:${String(startTime.getMinutes()).padStart(2,'0')}:${String(startTime.getSeconds()).padStart(2,'0')}`;
+          const endStr = `${endTime.getFullYear()}-${String(endTime.getMonth()+1).padStart(2,'0')}-${String(endTime.getDate()).padStart(2,'0')}T${String(endTime.getHours()).padStart(2,'0')}:${String(endTime.getMinutes()).padStart(2,'0')}:${String(endTime.getSeconds()).padStart(2,'0')}`;
 
-            events.push({
-              id: shift.id,
-              start: localStart.toISOString(),
-              end: localEnd.toISOString(),
-              resource: `${shift.userId}_shifts`,
-              text: `${positionName}: ${startTimeStr} - ${endTimeStr}`,
-              backColor: shift.position.color || '#3B82F6',
-              borderColor: 'darker',
-              tags: { type: 'shift', data: shift }
-            });
+          console.log(`👷 Creating shift event: ${positionName} for ${shift.user?.name} - ${startTimeStr} to ${endTimeStr}`);
+          console.log(`   Start: ${startStr}, End: ${endStr}`);
 
-            // Actual Hours events létrehozása (Row 3)
-            if (shift.actualStatus) {
-              let actualBackColor = '#4B5563'; // Dark Gray (PRESENT)
-              let actualText = '';
-
-              if (shift.actualStatus === 'PRESENT' && shift.actualStartTime && shift.actualEndTime) {
-                const actualStart = new Date(shift.actualStartTime);
-                const actualEnd = new Date(shift.actualEndTime);
-                const actualStartStr = actualStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const actualEndStr = actualEnd.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-                actualText = `Actual: ${actualStartStr} - ${actualEndStr}`;
-                actualBackColor = '#4B5563'; // Dark Gray
-
-                const localActualStart = new Date(actualStart.getTime() - (actualStart.getTimezoneOffset() * 60000));
-                const localActualEnd = new Date(actualEnd.getTime() - (actualEnd.getTimezoneOffset() * 60000));
-
-                events.push({
-                  id: `actual_${shift.id}`,
-                  start: localActualStart.toISOString(),
-                  end: localActualEnd.toISOString(),
-                  resource: `${shift.userId}_actual`,
-                  text: actualText,
-                  backColor: actualBackColor,
-                  borderColor: 'darker',
-                  tags: { type: 'actual', data: shift }
-                });
-              } else if (shift.actualStatus === 'SICK') {
-                // SICK - full day yellow block
-                actualText = language === 'hu' ? 'Beteg' : 'Sick';
-                actualBackColor = '#FCD34D'; // Yellow
-
-                const shiftDate = new Date(shift.date);
-                const dayStart = new Date(shiftDate);
-                dayStart.setHours(0, 0, 0, 0);
-                const dayEnd = new Date(shiftDate);
-                dayEnd.setHours(23, 59, 59, 999);
-
-                const localDayStart = new Date(dayStart.getTime() - (dayStart.getTimezoneOffset() * 60000));
-                const localDayEnd = new Date(dayEnd.getTime() - (dayEnd.getTimezoneOffset() * 60000));
-
-                events.push({
-                  id: `actual_${shift.id}`,
-                  start: localDayStart.toISOString(),
-                  end: localDayEnd.toISOString(),
-                  resource: `${shift.userId}_actual`,
-                  text: actualText,
-                  backColor: actualBackColor,
-                  borderColor: 'darker',
-                  tags: { type: 'actual', data: shift }
-                });
-              } else if (shift.actualStatus === 'ABSENT') {
-                // ABSENT - full day red block
-                actualText = language === 'hu' ? 'Hiányzott' : 'Absent';
-                actualBackColor = '#EF4444'; // Red
-
-                const shiftDate = new Date(shift.date);
-                const dayStart = new Date(shiftDate);
-                dayStart.setHours(0, 0, 0, 0);
-                const dayEnd = new Date(shiftDate);
-                dayEnd.setHours(23, 59, 59, 999);
-
-                const localDayStart = new Date(dayStart.getTime() - (dayStart.getTimezoneOffset() * 60000));
-                const localDayEnd = new Date(dayEnd.getTime() - (dayEnd.getTimezoneOffset() * 60000));
-
-                events.push({
-                  id: `actual_${shift.id}`,
-                  start: localDayStart.toISOString(),
-                  end: localDayEnd.toISOString(),
-                  resource: `${shift.userId}_actual`,
-                  text: actualText,
-                  backColor: actualBackColor,
-                  borderColor: 'darker',
-                  tags: { type: 'actual', data: shift }
-                });
-              }
-            }
+          events.push({
+            id: shift.id,
+            start: startStr,
+            end: endStr,
+            resource: shift.userId, // Egyszerűsített - direkt userId
+            text: `${positionName}: ${startTimeStr} - ${endTimeStr}`,
+            backColor: shift.position.color || '#3B82F6',
+            borderColor: 'darker',
+            tags: { type: 'shift', data: shift }
           });
 
-          // Resources létrehozása 3-soros nézettel (split)
-          const resources = Array.from(uniqueUsers.values()).map(user => ({
-            name: user.name,
-            id: user.id,
-            expanded: true,
-            children: [
-              { name: language === 'hu' ? 'Kérések' : 'Requests', id: `${user.id}_requests` },
-              { name: language === 'hu' ? 'Műszakok' : 'Shifts', id: `${user.id}_shifts` },
-              { name: language === 'hu' ? 'Tényleges' : 'Actual', id: `${user.id}_actual` }
-            ]
-          }));
+          // Actual Hours events létrehozása - shift.actualWorkHours objektumból
+          if (shift.actualWorkHours) {
+            const actualHours = shift.actualWorkHours;
+            let actualBackColor = '#4B5563'; // Dark Gray (PRESENT)
+            let actualText = '';
 
-          setSchedulerConfig(prev => ({
-            ...prev,
-            startDate: dateParam ? new Date(dateParam) : new Date(scheduleData.weekStart),
-            days: dateParam ? 1 : 7,
-            resources: resources.length > 0 ? resources : [{ name: "No data yet", id: "empty" }],
-            events: events
-          }));
-        }
+            if (actualHours.status === 'PRESENT' && actualHours.actualStartTime && actualHours.actualEndTime) {
+              const actualStart = new Date(actualHours.actualStartTime);
+              const actualEnd = new Date(actualHours.actualEndTime);
+              const actualStartStr = actualStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              const actualEndStr = actualEnd.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+              actualText = `Actual: ${actualStartStr} - ${actualEndStr}`;
+              actualBackColor = '#4B5563'; // Dark Gray
+
+              const actualStartStr2 = `${actualStart.getFullYear()}-${String(actualStart.getMonth()+1).padStart(2,'0')}-${String(actualStart.getDate()).padStart(2,'0')}T${String(actualStart.getHours()).padStart(2,'0')}:${String(actualStart.getMinutes()).padStart(2,'0')}:${String(actualStart.getSeconds()).padStart(2,'0')}`;
+              const actualEndStr2 = `${actualEnd.getFullYear()}-${String(actualEnd.getMonth()+1).padStart(2,'0')}-${String(actualEnd.getDate()).padStart(2,'0')}T${String(actualEnd.getHours()).padStart(2,'0')}:${String(actualEnd.getMinutes()).padStart(2,'0')}:${String(actualEnd.getSeconds()).padStart(2,'0')}`;
+
+              events.push({
+                id: `actual_${shift.id}`,
+                start: actualStartStr2,
+                end: actualEndStr2,
+                resource: shift.userId,
+                text: actualText,
+                backColor: actualBackColor,
+                borderColor: 'darker',
+                tags: { type: 'actual', data: shift }
+              });
+            } else if (actualHours.status === 'SICK') {
+              // SICK - 8 AM to 8 PM block
+              actualText = language === 'hu' ? 'Beteg' : 'Sick';
+              actualBackColor = '#FCD34D'; // Yellow
+
+              const shiftDate = new Date(shift.date);
+              const dayStart = new Date(shiftDate);
+              dayStart.setHours(8, 0, 0, 0);
+              const dayEnd = new Date(shiftDate);
+              dayEnd.setHours(20, 0, 0, 0);
+
+              const sickStartStr = `${dayStart.getFullYear()}-${String(dayStart.getMonth()+1).padStart(2,'0')}-${String(dayStart.getDate()).padStart(2,'0')}T${String(dayStart.getHours()).padStart(2,'0')}:${String(dayStart.getMinutes()).padStart(2,'0')}:${String(dayStart.getSeconds()).padStart(2,'0')}`;
+              const sickEndStr = `${dayEnd.getFullYear()}-${String(dayEnd.getMonth()+1).padStart(2,'0')}-${String(dayEnd.getDate()).padStart(2,'0')}T${String(dayEnd.getHours()).padStart(2,'0')}:${String(dayEnd.getMinutes()).padStart(2,'0')}:${String(dayEnd.getSeconds()).padStart(2,'0')}`;
+
+              events.push({
+                id: `actual_${shift.id}`,
+                start: sickStartStr,
+                end: sickEndStr,
+                resource: shift.userId,
+                text: actualText,
+                backColor: actualBackColor,
+                borderColor: 'darker',
+                tags: { type: 'actual', data: shift }
+              });
+            } else if (actualHours.status === 'ABSENT') {
+              // ABSENT - 8 AM to 8 PM block
+              actualText = language === 'hu' ? 'Hiányzott' : 'Absent';
+              actualBackColor = '#EF4444'; // Red
+
+              const shiftDate = new Date(shift.date);
+              const dayStart = new Date(shiftDate);
+              dayStart.setHours(8, 0, 0, 0);
+              const dayEnd = new Date(shiftDate);
+              dayEnd.setHours(20, 0, 0, 0);
+
+              const absentStartStr = `${dayStart.getFullYear()}-${String(dayStart.getMonth()+1).padStart(2,'0')}-${String(dayStart.getDate()).padStart(2,'0')}T${String(dayStart.getHours()).padStart(2,'0')}:${String(dayStart.getMinutes()).padStart(2,'0')}:${String(dayStart.getSeconds()).padStart(2,'0')}`;
+              const absentEndStr = `${dayEnd.getFullYear()}-${String(dayEnd.getMonth()+1).padStart(2,'0')}-${String(dayEnd.getDate()).padStart(2,'0')}T${String(dayEnd.getHours()).padStart(2,'0')}:${String(dayEnd.getMinutes()).padStart(2,'0')}:${String(dayEnd.getSeconds()).padStart(2,'0')}`;
+
+              events.push({
+                id: `actual_${shift.id}`,
+                start: absentStartStr,
+                end: absentEndStr,
+                resource: shift.userId,
+                text: actualText,
+                backColor: actualBackColor,
+                borderColor: 'darker',
+                tags: { type: 'actual', data: shift }
+              });
+            }
+          }
+        });
+
+        // Resources létrehozása - EGYSZERŰSÍTETT (csak 1 sor per user, children nélkül)
+        const resources = Array.from(uniqueUsers.values()).map(user => ({
+          name: user.name,
+          id: user.id
+        }));
+
+        console.log("📊 Resources created:", resources.length);
+        console.log("📊 Resources:", resources);
+        console.log("🎯 Events created:", events.length);
+        console.log("🎯 Events:", events);
+
+        const newConfig = {
+          ...schedulerConfig,
+          startDate: dateParam || scheduleData.weekStart,
+          days: dateParam ? 1 : 7,
+          resources: resources.length > 0 ? resources : [{ name: "No data yet", id: "empty" }],
+          events: events
+        };
+
+        console.log("⚙️ New scheduler config:");
+        console.log("  - startDate:", newConfig.startDate);
+        console.log("  - days:", newConfig.days);
+        console.log("  - resources.length:", newConfig.resources.length);
+        console.log("  - events.length:", newConfig.events.length);
+
+        setSchedulerConfig(newConfig);
+
+        console.log("✅ Scheduler config updated!");
+
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -504,26 +579,7 @@ export default function ScheduleDetailPage() {
         editShift={editingShift}
       />
 
-      {/* Review Request Modal */}
-      <ReviewRequestModal
-        isOpen={isReviewModalOpen}
-        onClose={() => {
-          setIsReviewModalOpen(false);
-          setSelectedRequest(null);
-        }}
-        request={selectedRequest}
-        onSuccess={() => {
-          // Újratöltjük az adatokat
-          window.location.reload();
-        }}
-        onApprove={(request) => {
-          // Approve gomb -> ConvertRequestModal megnyitása
-          setSelectedRequest(request);
-          setIsConvertModalOpen(true);
-        }}
-      />
-
-      {/* Convert Request Modal */}
+      {/* Convert Request Modal - direkt megnyílik request click-re */}
       {selectedRequest && (
         <ConvertRequestModal
           isOpen={isConvertModalOpen}
@@ -639,6 +695,7 @@ export default function ScheduleDetailPage() {
           {/* DayPilot Scheduler */}
           <div className="bg-white rounded-lg shadow">
             <DayPilotScheduler
+              key={`scheduler-${schedulerConfig.resources.length}-${schedulerConfig.events.length}`}
               {...schedulerConfig}
             />
           </div>

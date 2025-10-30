@@ -22,7 +22,7 @@ export default function ActualHoursModal({
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    actualStatus: shift?.actualStatus || "PRESENT",
+    actualStatus: shift?.actualWorkHours?.status || "PRESENT",
     actualStartTime: "",
     actualEndTime: "",
   });
@@ -30,16 +30,23 @@ export default function ActualHoursModal({
   useEffect(() => {
     if (shift && isOpen) {
       // Pre-fill with existing actual hours if available
-      if (shift.actualStartTime && shift.actualEndTime) {
-        const startTime = new Date(shift.actualStartTime);
-        const endTime = new Date(shift.actualEndTime);
+      if (shift.actualWorkHours && shift.actualWorkHours.actualStartTime && shift.actualWorkHours.actualEndTime) {
+        const startTime = new Date(shift.actualWorkHours.actualStartTime);
+        const endTime = new Date(shift.actualWorkHours.actualEndTime);
         setFormData({
-          actualStatus: shift.actualStatus || "PRESENT",
+          actualStatus: shift.actualWorkHours.status || "PRESENT",
           actualStartTime: startTime.toTimeString().slice(0, 5),
           actualEndTime: endTime.toTimeString().slice(0, 5),
         });
+      } else if (shift.actualWorkHours && shift.actualWorkHours.status) {
+        // Már van actualWorkHours de csak status (SICK/ABSENT)
+        setFormData({
+          actualStatus: shift.actualWorkHours.status,
+          actualStartTime: "",
+          actualEndTime: "",
+        });
       } else {
-        // Pre-fill with planned times
+        // Nincs még actualWorkHours - Pre-fill with planned times
         const startTime = new Date(shift.startTime);
         const endTime = new Date(shift.endTime);
         setFormData({

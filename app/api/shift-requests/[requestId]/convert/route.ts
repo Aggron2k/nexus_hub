@@ -96,9 +96,10 @@ export async function POST(
       return new NextResponse("Kérés nem található", { status: 404 });
     }
 
-    // Csak APPROVED státuszú kérést lehet konvertálni
-    if (existingRequest.status !== "APPROVED") {
-      return new NextResponse("Csak jóváhagyott kérést lehet műszakká alakítani", {
+    // Csak PENDING vagy APPROVED státuszú kérést lehet konvertálni
+    // (REJECTED vagy CONVERTED_TO_SHIFT nem)
+    if (existingRequest.status !== "PENDING" && existingRequest.status !== "APPROVED") {
+      return new NextResponse("Ezt a kérést már nem lehet műszakká alakítani (már elutasítva vagy konvertálva)", {
         status: 400,
       });
     }
