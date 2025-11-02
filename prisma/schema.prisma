@@ -359,9 +359,9 @@ model Shift {
   userId String @db.ObjectId
   user User @relation("UserShifts", fields: [userId], references: [id], onDelete: Cascade)
 
-  // Melyik pozícióban dolgozik ezen a műszakban
-  positionId String @db.ObjectId
-  position Position @relation("ShiftPosition", fields: [positionId], references: [id])
+  // Melyik pozícióban dolgozik ezen a műszakban (nullable - kitölthető később)
+  positionId String? @db.ObjectId
+  position Position? @relation("ShiftPosition", fields: [positionId], references: [id])
 
   // Kapcsolat a műszak kéréshez (ha kérésből lett létrehozva)
   shiftRequestId String? @db.ObjectId
@@ -369,11 +369,11 @@ model Shift {
 
   // Dátum és idő
   date DateTime // Melyik nap
-  startTime DateTime // Mikor kezd
-  endTime DateTime // Mikor végez
+  startTime DateTime? // Mikor kezd (nullable - kitölthető később)
+  endTime DateTime? // Mikor végez (nullable - kitölthető később)
 
   // Számított mező - hány órát dolgozik
-  hoursWorked Float? // pl. 8.5 óra
+  hoursWorked Float? // pl. 8.5 óra (null ha nincs startTime/endTime)
 
   // Megjegyzések
   notes String?

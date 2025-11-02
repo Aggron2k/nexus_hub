@@ -14,9 +14,10 @@ interface AddShiftModalProps {
   editShift?: {
     id: string;
     userId: string;
-    positionId: string;
-    startTime: string;
-    endTime: string;
+    positionId: string | null; // Nullable for placeholder shifts
+    startTime: string | null; // Nullable for placeholder shifts
+    endTime: string | null; // Nullable for placeholder shifts
+    date?: string; // A shift dátuma (ha van)
     notes?: string;
   } | null;
 }
@@ -29,6 +30,8 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
   editShift,
 }) => {
   const isEditMode = !!editShift;
+  // Check if it's a placeholder shift (no startTime/endTime)
+  const isPlaceholder = isEditMode && editShift && !editShift.startTime && !editShift.endTime;
   const router = useRouter();
   const { language } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
@@ -48,7 +51,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
   // Fordítások
   const translations = {
     en: {
-      title: isEditMode ? "Edit Shift" : "Add Shift",
+      title: isPlaceholder ? "Fill in Shift Details" : (isEditMode ? "Edit Shift" : "Add Shift"),
       selectUser: "Select Employee",
       selectUserPlaceholder: "Choose an employee",
       selectPosition: "Select Position",
@@ -72,7 +75,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
       }
     },
     hu: {
-      title: isEditMode ? "Műszak szerkesztése" : "Műszak hozzáadása",
+      title: isPlaceholder ? "Műszak részleteinek kitöltése" : (isEditMode ? "Műszak szerkesztése" : "Műszak hozzáadása"),
       selectUser: "Válassz alkalmazottat",
       selectUserPlaceholder: "Válassz egy alkalmazottat",
       selectPosition: "Válassz pozíciót",
@@ -107,20 +110,27 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
       // Edit módban előre kitöltjük a mezőket
       if (editShift) {
         setSelectedUserId(editShift.userId);
-        setSelectedPositionId(editShift.positionId);
+        setSelectedPositionId(editShift.positionId || "");
 
-        // Időpontok formázása HH:MM formátumra
-        const startDate = new Date(editShift.startTime);
-        const endDate = new Date(editShift.endTime);
+        // Időpontok formázása HH:MM formátumra (ha léteznek)
+        if (editShift.startTime && editShift.endTime) {
+          const startDate = new Date(editShift.startTime);
+          const endDate = new Date(editShift.endTime);
 
-        const formatTime = (date: Date) => {
-          const hours = date.getHours().toString().padStart(2, '0');
-          const minutes = date.getMinutes().toString().padStart(2, '0');
-          return `${hours}:${minutes}`;
-        };
+          const formatTime = (date: Date) => {
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+          };
 
-        setStartTime(formatTime(startDate));
-        setEndTime(formatTime(endDate));
+          setStartTime(formatTime(startDate));
+          setEndTime(formatTime(endDate));
+        } else {
+          // Placeholder shift - use default times
+          setStartTime("08:00");
+          setEndTime("16:00");
+        }
+
         setNotes(editShift.notes || "");
       }
     }
@@ -279,7 +289,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
             <div>
               <h2 className="text-xl font-bold text-gray-900">{t.title}</h2>
               <p className="text-sm text-gray-600">
-                {new Date(selectedDate).toLocaleDateString(language === 'hu' ? 'hu-HU' : 'en-US', {
+                {new Date(selectedDate + 'T00:00:00').toLocaleDateString(language === 'hu' ? 'hu-HU' : 'en-US', {
                   weekday: 'long',
                   month: 'long',
                   day: 'numeric'
@@ -300,8 +310,8 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
                 // Reset position when user changes
                 setSelectedPositionId("");
               }}
-              disabled={isLoading}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-nexus-tertiary focus:border-transparent disabled:opacity-50"
+              disabled={isLoading || isEditMode}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-nexus-tertiary focus:border-transparent disabled:opacity-50 disabled:bg-gray-100"
               required
             >
               <option value="">{t.selectUserPlaceholder}</option>

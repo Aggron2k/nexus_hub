@@ -38,9 +38,21 @@ export async function PUT(request: Request, { params }: RouteParams) {
             notes
         } = body;
 
-        // Validáció
-        if (!weekScheduleId || !userId || !positionId || !date || !startTime || !endTime) {
-            return new NextResponse("Missing required fields", { status: 400 });
+        // Validáció - weekScheduleId, userId, és date kötelező
+        if (!weekScheduleId || !userId || !date) {
+            return new NextResponse("Missing required fields (weekScheduleId, userId, date)", { status: 400 });
+        }
+
+        // positionId, startTime, endTime most opcionális (nullable placeholder shiftek miatt)
+        // Ha startTime és endTime meg van adva, akkor validáljuk
+        if (startTime && endTime) {
+            // Időpont validáció
+            const newStartTime = new Date(startTime);
+            const newEndTime = new Date(endTime);
+
+            if (newStartTime >= newEndTime) {
+                return new NextResponse("startTime must be before endTime", { status: 400 });
+            }
         }
 
         // Ellenőrizzük, hogy létezik-e a műszak
@@ -52,38 +64,44 @@ export async function PUT(request: Request, { params }: RouteParams) {
             return new NextResponse("Shift not found", { status: 404 });
         }
 
-        // Ellenőrizzük hogy van-e overlap más műszakokkal (kivéve az aktuálisat)
-        const otherShifts = await prisma.shift.findMany({
-            where: {
-                userId: userId,
-                date: new Date(date),
-                id: { not: shiftId } // Kizárjuk az aktuális műszakot
-            },
-            select: {
-                id: true,
-                startTime: true,
-                endTime: true,
-                position: {
-                    select: {
-                        name: true,
-                        displayNames: true
+        // Overlap ellenőrzés - CSAK ha startTime és endTime meg van adva
+        if (startTime && endTime) {
+            const otherShifts = await prisma.shift.findMany({
+                where: {
+                    userId: userId,
+                    date: new Date(date),
+                    id: { not: shiftId }, // Kizárjuk az aktuális műszakot
+                    startTime: { not: null }, // Csak kitöltött műszakokat ellenőrizzük
+                    endTime: { not: null }
+                },
+                select: {
+                    id: true,
+                    startTime: true,
+                    endTime: true,
+                    position: {
+                        select: {
+                            name: true,
+                            displayNames: true
+                        }
                     }
                 }
-            }
-        });
+            });
 
-        const newStartTime = new Date(startTime);
-        const newEndTime = new Date(endTime);
+            const newStartTime = new Date(startTime);
+            const newEndTime = new Date(endTime);
 
-        // Ellenőrizzük hogy van-e overlap
-        for (const otherShift of otherShifts) {
-            if (hasTimeOverlap(newStartTime, newEndTime, otherShift.startTime, otherShift.endTime)) {
-                const existingStart = otherShift.startTime.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
-                const existingEnd = otherShift.endTime.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
-                return new NextResponse(
-                    `A felhasználónak már van műszakja ezen az időpontban: ${existingStart} - ${existingEnd}`,
-                    { status: 409 }
-                );
+            // Ellenőrizzük hogy van-e overlap
+            for (const otherShift of otherShifts) {
+                if (otherShift.startTime && otherShift.endTime) {
+                    if (hasTimeOverlap(newStartTime, newEndTime, otherShift.startTime, otherShift.endTime)) {
+                        const existingStart = otherShift.startTime.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
+                        const existingEnd = otherShift.endTime.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
+                        return new NextResponse(
+                            `A felhasználónak már van műszakja ezen az időpontban: ${existingStart} - ${existingEnd}`,
+                            { status: 409 }
+                        );
+                    }
+                }
             }
         }
 
@@ -93,10 +111,10 @@ export async function PUT(request: Request, { params }: RouteParams) {
             data: {
                 weekScheduleId,
                 userId,
-                positionId,
+                positionId: positionId || null, // Nullable
                 date: new Date(date),
-                startTime: new Date(startTime),
-                endTime: new Date(endTime),
+                startTime: startTime ? new Date(startTime) : null, // Nullable
+                endTime: endTime ? new Date(endTime) : null, // Nullable
                 hoursWorked: hoursWorked || null,
                 notes: notes || null
             },
@@ -169,6 +187,14 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         }
 
         // Validációk
+        // 0. A műszaknak már ki kell legyen töltve (nem lehet placeholder)
+        if (!existingShift.startTime || !existingShift.endTime) {
+            return new NextResponse(
+                "Tényleges munkaórák csak kitöltött műszakokhoz rögzíthetők (placeholder műszakhoz nem)",
+                { status: 400 }
+            );
+        }
+
         // 1. Nem lehet actual hours-t rögzíteni a műszak vége előtt
         const now = new Date();
         if (now < existingShift.endTime) {

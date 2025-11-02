@@ -82,43 +82,63 @@ export default function ScheduleDetailPage() {
     } else if (eventType === 'shift') {
       // Shift-re kattintottak
       const shiftData = args.e.data.tags.data;
+      const isPlaceholder = args.e.data.tags.isPlaceholder; // Check if it's a placeholder shift
 
       // Megkeressük a shift-et a shiftsRef-ben az event ID alapján
       const clickedShift = shiftsRef.current.find(shift => shift.id === args.e.id());
 
       if (clickedShift) {
-        // Ellenőrizzük hogy véget ért-e a műszak
-        const now = new Date();
-        const shiftEnd = new Date(clickedShift.endTime);
-        const hasEnded = now > shiftEnd;
-
         console.log("🕐 Shift clicked!");
-        console.log("  Current time:", now.toISOString());
-        console.log("  Shift end time:", shiftEnd.toISOString());
-        console.log("  Has ended:", hasEnded);
+        console.log("  Is placeholder:", isPlaceholder);
         console.log("  Current user (from ref):", currentUserRef.current?.role);
-        console.log("  Shift already has actualWorkHours:", clickedShift.actualWorkHours?.status);
 
-        // Ha van currentUser és GM/CEO és a műszak véget ért -> ActualHoursModal
-        // Különben -> Edit modal
-        if (currentUserRef.current && ['GeneralManager', 'CEO'].includes(currentUserRef.current.role) && hasEnded) {
-          console.log("  ✅ Opening ActualHoursModal");
-          setSelectedShiftForActualHours(clickedShift);
-          setIsActualHoursModalOpen(true);
-        } else {
-          console.log("  ✅ Opening Edit Modal");
-          // Edit modal (eredeti viselkedés)
+        // Ha PLACEHOLDER shift -> mindig Edit Modal nyílik (kitöltéshez)
+        if (isPlaceholder) {
+          console.log("  ✅ Placeholder shift -> Opening Edit Modal to fill in details");
           const editData = {
             id: clickedShift.id,
             userId: clickedShift.userId,
-            positionId: clickedShift.positionId,
-            startTime: clickedShift.startTime,
-            endTime: clickedShift.endTime,
+            positionId: clickedShift.positionId, // null
+            startTime: clickedShift.startTime, // null
+            endTime: clickedShift.endTime, // null
+            date: clickedShift.date, // FONTOS: A shift dátuma (melyik napra szól)
             notes: clickedShift.notes || "",
           };
 
           setEditingShift(editData);
           setIsAddShiftModalOpen(true);
+        } else {
+          // Normál shift - ellenőrizzük hogy véget ért-e a műszak
+          const now = new Date();
+          const shiftEnd = new Date(clickedShift.endTime);
+          const hasEnded = now > shiftEnd;
+
+          console.log("  Current time:", now.toISOString());
+          console.log("  Shift end time:", shiftEnd.toISOString());
+          console.log("  Has ended:", hasEnded);
+          console.log("  Shift already has actualWorkHours:", clickedShift.actualWorkHours?.status);
+
+          // Ha van currentUser és GM/CEO és a műszak véget ért -> ActualHoursModal
+          // Különben -> Edit modal
+          if (currentUserRef.current && ['GeneralManager', 'CEO'].includes(currentUserRef.current.role) && hasEnded) {
+            console.log("  ✅ Opening ActualHoursModal");
+            setSelectedShiftForActualHours(clickedShift);
+            setIsActualHoursModalOpen(true);
+          } else {
+            console.log("  ✅ Opening Edit Modal");
+            // Edit modal (eredeti viselkedés)
+            const editData = {
+              id: clickedShift.id,
+              userId: clickedShift.userId,
+              positionId: clickedShift.positionId,
+              startTime: clickedShift.startTime,
+              endTime: clickedShift.endTime,
+              notes: clickedShift.notes || "",
+            };
+
+            setEditingShift(editData);
+            setIsAddShiftModalOpen(true);
+          }
         }
       } else {
         console.log("Shift not found in shifts array!");
@@ -379,6 +399,12 @@ export default function ScheduleDetailPage() {
             }
           }
 
+          // Ha nincs még kitöltve az időpont (placeholder shift) -> ne jelenítsük meg
+          if (!shift.startTime || !shift.endTime) {
+            return; // Skip placeholder shifts - ne jelenjenek meg a naptárban
+          }
+
+          // Normál shift (van startTime és endTime)
           const positionName = (shift.position.displayNames as any)?.[language] || shift.position.name;
           const startTime = new Date(shift.startTime);
           const endTime = new Date(shift.endTime);
@@ -540,6 +566,14 @@ export default function ScheduleDetailPage() {
     );
   }
 
+  // Helper: Date objektumot lokális YYYY-MM-DD stringre konvertál (UTC nélkül)
+  const formatDateToLocalString = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Aktuális nap formázása
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString(language === 'hu' ? 'hu-HU' : 'en-US', {
@@ -574,7 +608,7 @@ export default function ScheduleDetailPage() {
           setEditingShift(null);
         }}
         scheduleId={scheduleId}
-        selectedDate={editingShift ? new Date(editingShift.startTime).toISOString().split('T')[0] : (dateParam || new Date(schedule?.weekStart || new Date()).toISOString().split('T')[0])}
+        selectedDate={editingShift ? (editingShift.date ? formatDateToLocalString(new Date(editingShift.date)) : (editingShift.startTime ? formatDateToLocalString(new Date(editingShift.startTime)) : (dateParam || formatDateToLocalString(new Date(schedule?.weekStart || new Date()))))) : (dateParam || formatDateToLocalString(new Date(schedule?.weekStart || new Date())))}
         editShift={editingShift}
       />
 

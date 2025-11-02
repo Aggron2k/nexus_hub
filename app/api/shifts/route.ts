@@ -40,7 +40,9 @@ export async function POST(request: Request) {
         const existingShifts = await prisma.shift.findMany({
             where: {
                 userId: userId,
-                date: new Date(date)
+                date: new Date(date),
+                startTime: { not: null }, // Csak kitöltött műszakokat ellenőrizzük
+                endTime: { not: null }
             },
             select: {
                 id: true,
@@ -60,13 +62,16 @@ export async function POST(request: Request) {
 
         // Ellenőrizzük hogy van-e overlap
         for (const existingShift of existingShifts) {
-            if (hasTimeOverlap(newStartTime, newEndTime, existingShift.startTime, existingShift.endTime)) {
-                const existingStart = existingShift.startTime.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
-                const existingEnd = existingShift.endTime.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
-                return new NextResponse(
-                    `A felhasználónak már van műszakja ezen az időpontban: ${existingStart} - ${existingEnd}`,
-                    { status: 409 }
-                );
+            // TypeScript check - csak akkor ellenőrizzük ha tényleg kitöltött
+            if (existingShift.startTime && existingShift.endTime) {
+                if (hasTimeOverlap(newStartTime, newEndTime, existingShift.startTime, existingShift.endTime)) {
+                    const existingStart = existingShift.startTime.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
+                    const existingEnd = existingShift.endTime.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
+                    return new NextResponse(
+                        `A felhasználónak már van műszakja ezen az időpontban: ${existingStart} - ${existingEnd}`,
+                        { status: 409 }
+                    );
+                }
             }
         }
 

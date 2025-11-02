@@ -36,15 +36,64 @@ export async function POST(request: Request) {
             return new NextResponse("Schedule already exists for this week", { status: 409 });
         }
 
-        // Létrehozzuk az új beosztást
-        const newSchedule = await prisma.weekSchedule.create({
-            data: {
-                weekStart: new Date(weekStart),
-                weekEnd: new Date(weekEnd),
-                createdById: currentUser.id,
-                isPublished: false
+        // Lekérjük az összes ACTIVE alkalmazottat
+        const activeEmployees = await prisma.user.findMany({
+            where: {
+                employmentStatus: "ACTIVE"
+            },
+            select: {
+                id: true,
+                name: true
             }
         });
+
+        // Létrehozzuk az új beosztást ÉS automatikusan generáljuk a shift placeholder-eket
+        const newSchedule = await prisma.$transaction(async (tx) => {
+            // 1. Létrehozzuk a week schedule-t
+            const schedule = await tx.weekSchedule.create({
+                data: {
+                    weekStart: new Date(weekStart),
+                    weekEnd: new Date(weekEnd),
+                    createdById: currentUser.id,
+                    isPublished: false,
+                    requestDeadline: body.requestDeadline ? new Date(body.requestDeadline) : null
+                }
+            });
+
+            // 2. Generáljuk a shift placeholder-eket minden alkalmazottnak 7 napra
+            const shiftsToCreate = [];
+            const weekStartDate = new Date(weekStart);
+
+            for (const employee of activeEmployees) {
+                for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+                    const shiftDate = new Date(weekStartDate);
+                    shiftDate.setDate(weekStartDate.getDate() + dayOffset);
+                    shiftDate.setHours(0, 0, 0, 0); // Reset time to midnight
+
+                    shiftsToCreate.push({
+                        weekScheduleId: schedule.id,
+                        userId: employee.id,
+                        date: shiftDate,
+                        positionId: null, // Kitölthető később
+                        startTime: null, // Kitölthető később
+                        endTime: null, // Kitölthető később
+                        hoursWorked: null,
+                        notes: null
+                    });
+                }
+            }
+
+            // 3. Bulk insert - minden shift egyszerre
+            if (shiftsToCreate.length > 0) {
+                await tx.shift.createMany({
+                    data: shiftsToCreate
+                });
+            }
+
+            return schedule;
+        });
+
+        console.log(`✅ Created week schedule with ${activeEmployees.length * 7} placeholder shifts`);
 
         return NextResponse.json(newSchedule);
     } catch (error) {

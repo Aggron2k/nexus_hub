@@ -121,35 +121,40 @@ export async function POST(
       );
     }
 
-    // Ellenőrizzük az átfedéseket (csak ugyanazon user-re)
+    // Ellenőrizzük az átfedéseket (csak ugyanazon user-re, és csak kitöltött műszakoknál)
     const existingShifts = await prisma.shift.findMany({
       where: {
         userId: existingRequest.userId,
         date: existingRequest.date,
+        startTime: { not: null }, // Csak kitöltött műszakokat ellenőrizzük
+        endTime: { not: null }
       },
     });
 
     for (const existingShift of existingShifts) {
-      if (
-        hasTimeOverlap(
-          shiftStartTime,
-          shiftEndTime,
-          existingShift.startTime,
-          existingShift.endTime
-        )
-      ) {
-        const existingStart = existingShift.startTime.toLocaleTimeString(
-          "hu-HU",
-          { hour: "2-digit", minute: "2-digit" }
-        );
-        const existingEnd = existingShift.endTime.toLocaleTimeString("hu-HU", {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-        return new NextResponse(
-          `A felhasználónak már van műszakja ezen az időpontban: ${existingStart} - ${existingEnd}`,
-          { status: 409 }
-        );
+      // TypeScript check - csak akkor ellenőrizzük ha tényleg kitöltött
+      if (existingShift.startTime && existingShift.endTime) {
+        if (
+          hasTimeOverlap(
+            shiftStartTime,
+            shiftEndTime,
+            existingShift.startTime,
+            existingShift.endTime
+          )
+        ) {
+          const existingStart = existingShift.startTime.toLocaleTimeString(
+            "hu-HU",
+            { hour: "2-digit", minute: "2-digit" }
+          );
+          const existingEnd = existingShift.endTime.toLocaleTimeString("hu-HU", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+          return new NextResponse(
+            `A felhasználónak már van műszakja ezen az időpontban: ${existingStart} - ${existingEnd}`,
+            { status: 409 }
+          );
+        }
       }
     }
 

@@ -7,6 +7,7 @@ import { HiClock, HiCalendar, HiTrash } from "react-icons/hi2";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import HourSummaryWidget from "@/app/components/HourSummaryWidget";
 
 export default function WeekRequestsPage() {
   const params = useParams();
@@ -191,13 +192,20 @@ export default function WeekRequestsPage() {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
-          {requests.length === 0 ? (
-            <div className="bg-white rounded-lg p-8 text-center text-gray-500">
-              <HiClock className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-              <p>{t.noRequests}</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
+          <div className="space-y-6">
+            {/* Hour Summary Widget */}
+            {weekSchedule && (
+              <HourSummaryWidget weekScheduleId={weekSchedule.id} />
+            )}
+
+            {/* Requests List */}
+            {requests.length === 0 ? (
+              <div className="bg-white rounded-lg p-8 text-center text-gray-500">
+                <HiClock className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+                <p>{t.noRequests}</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
               {requests.map((request) => (
                 <div
                   key={request.id}
@@ -271,8 +279,9 @@ export default function WeekRequestsPage() {
                   </div>
                 </div>
               ))}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
