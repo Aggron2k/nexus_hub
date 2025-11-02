@@ -743,16 +743,18 @@ export default function ScheduleDetailPage() {
 
             <div className="flex items-center gap-3">
               {/* Add Shift Button */}
-              <button
-                onClick={() => {
-                  setEditingShift(null);
-                  setIsAddShiftModalOpen(true);
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-nexus-tertiary text-white rounded-md hover:bg-nexus-primary transition"
-              >
-                <HiPlus className="h-5 w-5" />
-                {language === 'hu' ? 'Műszak hozzáadása' : 'Add Shift'}
-              </button>
+              {currentUser && ['GeneralManager', 'CEO'].includes(currentUser.role) && (
+                <button
+                  onClick={() => {
+                    setEditingShift(null);
+                    setIsAddShiftModalOpen(true);
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-nexus-tertiary text-white rounded-md hover:bg-nexus-primary transition"
+                >
+                  <HiPlus className="h-5 w-5" />
+                  {language === 'hu' ? 'Műszak hozzáadása' : 'Add Shift'}
+                </button>
+              )}
 
               <span
                 className={`text-xs px-3 py-1 rounded-full ${schedule.isPublished
