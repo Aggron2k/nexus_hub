@@ -173,10 +173,55 @@ export default function ScheduleDetailPage() {
     scale: "Hour",
     days: dateParam ? 1 : 7, // Ha van date param, csak 1 nap
     startDate: dateParam ? new DayPilot.Date(dateParam) : new DayPilot.Date(),
-    timeRangeSelectedHandling: "Disabled", // Letiltjuk az üres területre kattintást
+    timeRangeSelectedHandling: "Enabled", // Engedélyezzük a drag-and-select funkciót
     eventDeleteHandling: "Disabled",
     eventResizeHandling: "Update", // Engedélyezzük az események átméretezését
     cellWidth: 50, // Óra oszlop szélesség (alapértelmezett 40, növeljük 50-re a jobb olvashatóságért)
+    onTimeRangeSelected: async (args: any) => {
+      // Amikor a felhasználó kiválaszt egy időtartamot drag-and-select-tel
+      console.log("⏰ Time range selected!");
+      console.log("  Resource (userId):", args.resource);
+      console.log("  Start:", args.start.toString());
+      console.log("  End:", args.end.toString());
+
+      // Formázza az időpontokat
+      const startDate = new Date(args.start.toString());
+      const endDate = new Date(args.end.toString());
+
+      const startTimeStr = `${String(startDate.getHours()).padStart(2, '0')}:${String(startDate.getMinutes()).padStart(2, '0')}`;
+      const endTimeStr = `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`;
+
+      // Dátum formázása (YYYY-MM-DD) - inline implementáció
+      const year = startDate.getFullYear();
+      const month = String(startDate.getMonth() + 1).padStart(2, '0');
+      const day = String(startDate.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+
+      console.log("  Opening Add Shift Modal with pre-filled data:");
+      console.log("    User ID:", args.resource);
+      console.log("    Date:", dateStr);
+      console.log("    Time:", startTimeStr, "-", endTimeStr);
+
+      // Megnyitjuk az Add Shift modal-t előre kitöltött adatokkal
+      // Az editShift-et használjuk hogy "fake edit" módban nyissuk meg
+      setEditingShift({
+        id: "", // Üres ID = új shift létrehozása
+        userId: args.resource, // A kiválasztott user ID-ja
+        positionId: null,
+        startTime: null, // null marad, de a modal intelligensen kezeli
+        endTime: null,
+        date: startDate.toISOString(),
+        notes: "",
+        // Extra információk a modal számára
+        _prefilledStartTime: startTimeStr,
+        _prefilledEndTime: endTimeStr,
+      } as any);
+
+      setIsAddShiftModalOpen(true);
+
+      // Töröljük a kijelölést (ne maradjon kék négyzet)
+      args.control.clearSelection();
+    },
     onEventResized: async (args: any) => {
       console.log("Event resized!", args.e.id());
       console.log("New start:", args.newStart.toString());

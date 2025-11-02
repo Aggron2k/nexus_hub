@@ -19,6 +19,8 @@ interface AddShiftModalProps {
     endTime: string | null; // Nullable for placeholder shifts
     date?: string; // A shift dátuma (ha van)
     notes?: string;
+    _prefilledStartTime?: string; // Előre kitöltött kezdési idő (HH:MM formátum) - drag-and-select esetén
+    _prefilledEndTime?: string; // Előre kitöltött befejezési idő (HH:MM formátum) - drag-and-select esetén
   } | null;
 }
 
@@ -125,6 +127,10 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
 
           setStartTime(formatTime(startDate));
           setEndTime(formatTime(endDate));
+        } else if (editShift._prefilledStartTime && editShift._prefilledEndTime) {
+          // Drag-and-select esetén előre kitöltött időpontok
+          setStartTime(editShift._prefilledStartTime);
+          setEndTime(editShift._prefilledEndTime);
         } else {
           // Placeholder shift - use default times
           setStartTime("08:00");
@@ -200,8 +206,10 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
       const endDateTime = new Date(`${selectedDate}T${endTime}:00`);
       const hoursWorked = calculateHours();
 
-      const url = isEditMode ? `/api/shifts/${editShift!.id}` : '/api/shifts';
-      const method = isEditMode ? 'PUT' : 'POST';
+      // Ha editShift.id üres, akkor új shift-et hozunk létre (drag-and-select)
+      const isActualEdit = isEditMode && editShift!.id !== "";
+      const url = isActualEdit ? `/api/shifts/${editShift!.id}` : '/api/shifts';
+      const method = isActualEdit ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
         method,
@@ -229,7 +237,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
       }
 
       if (!response.ok) {
-        throw new Error(isEditMode ? 'Failed to update shift' : 'Failed to add shift');
+        throw new Error(isActualEdit ? 'Failed to update shift' : 'Failed to add shift');
       }
 
       // Bezárjuk a modalt és frissítjük az oldalt
