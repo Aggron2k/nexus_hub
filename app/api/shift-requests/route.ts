@@ -233,24 +233,14 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const weekScheduleId = searchParams.get("weekScheduleId");
-    const userId = searchParams.get("userId");
     const status = searchParams.get("status");
 
     // Alap where feltétel
-    let where: any = {};
-
-    // Ha nem GM/CEO, csak saját kéréseket láthat
-    if (
-      currentUser.role !== "GeneralManager" &&
-      currentUser.role !== "CEO"
-    ) {
-      where.userId = currentUser.id;
-    } else {
-      // GM/CEO esetén ha van userId paraméter, azt szűrjük
-      if (userId) {
-        where.userId = userId;
-      }
-    }
+    // "My Requests" = mindenki csak a saját kéréseit látja (CEO/GM is)
+    // Mások kéréseit a schedule naptárban reviewolják
+    const where: any = {
+      userId: currentUser.id,
+    };
 
     if (weekScheduleId) {
       where.weekScheduleId = weekScheduleId;

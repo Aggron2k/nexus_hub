@@ -129,10 +129,31 @@ export async function GET(request: Request) {
             return new NextResponse("Schedule ID required", { status: 400 });
         }
 
+        // Employee-k csak publikált beosztások műszakjait láthatják
+        const isEmployee = currentUser.role === 'Employee';
+
+        // Először ellenőrizzük hogy a beosztás publikált-e (ha Employee)
+        if (isEmployee) {
+            const schedule = await prisma.weekSchedule.findUnique({
+                where: { id: scheduleId },
+                select: { isPublished: true }
+            });
+
+            // Ha nem publikált vagy nem létezik, akkor üres tömböt adunk vissza
+            if (!schedule?.isPublished) {
+                return NextResponse.json([]);
+            }
+        }
+
         // Lekérjük a műszakokat
         const shifts = await prisma.shift.findMany({
             where: {
-                weekScheduleId: scheduleId
+                weekScheduleId: scheduleId,
+                // Employee-k csak a kitöltött műszakokat látják (minden dolgozóét)
+                ...(isEmployee ? {
+                    startTime: { not: null },
+                    endTime: { not: null }
+                } : {})
             },
             include: {
                 user: {

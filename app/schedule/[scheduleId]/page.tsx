@@ -30,6 +30,7 @@ export default function ScheduleDetailPage() {
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [isActualHoursModalOpen, setIsActualHoursModalOpen] = useState(false);
   const [selectedShiftForActualHours, setSelectedShiftForActualHours] = useState<any>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   // Fordítások
   const translations = {
@@ -39,7 +40,13 @@ export default function ScheduleDetailPage() {
       loading: "Loading schedule...",
       notFound: "Schedule not found",
       draft: "Draft",
-      published: "Published"
+      published: "Published",
+      publish: "Publish",
+      unpublish: "Unpublish",
+      publishConfirm: "Are you sure you want to publish this schedule? All employees will be able to see it and ActualWorkHours entries will be created.",
+      unpublishConfirm: "Are you sure you want to unpublish this schedule? Employees will no longer see it.",
+      publishing: "Publishing...",
+      unpublishing: "Unpublishing..."
     },
     hu: {
       back: "Vissza a beosztásokhoz",
@@ -47,7 +54,13 @@ export default function ScheduleDetailPage() {
       loading: "Beosztás betöltése...",
       notFound: "Beosztás nem található",
       draft: "Piszkozat",
-      published: "Publikált"
+      published: "Publikált",
+      publish: "Publikálás",
+      unpublish: "Visszavonás",
+      publishConfirm: "Biztosan publikálod ezt a beosztást? Minden dolgozó látni fogja, és ActualWorkHours bejegyzések készülnek.",
+      unpublishConfirm: "Biztosan visszavonod a publikálást? A dolgozók nem fogják látni.",
+      publishing: "Publikálás...",
+      unpublishing: "Visszavonás..."
     }
   };
 
@@ -67,6 +80,43 @@ export default function ScheduleDetailPage() {
     };
     fetchCurrentUser();
   }, []);
+
+  // Publish/Unpublish handler
+  const handlePublish = async () => {
+    if (!schedule) return;
+
+    const confirmMessage = schedule.isPublished ? t.unpublishConfirm : t.publishConfirm;
+    if (!confirm(confirmMessage)) return;
+
+    setIsPublishing(true);
+
+    try {
+      const response = await fetch(`/api/schedule/${scheduleId}/publish`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isPublished: !schedule.isPublished
+        }),
+      });
+
+      if (response.ok) {
+        console.log(`✅ Schedule ${schedule.isPublished ? 'unpublished' : 'published'} successfully`);
+        // Frissítjük az oldalt hogy látszódjon a változás
+        window.location.reload();
+      } else {
+        const errorMessage = await response.text();
+        console.error('Failed to publish/unpublish schedule:', errorMessage);
+        alert(language === 'hu' ? 'Nem sikerült a művelet' : 'Failed to publish/unpublish');
+      }
+    } catch (error) {
+      console.error('Error publishing/unpublishing schedule:', error);
+      alert(language === 'hu' ? 'Hiba történt a művelet során' : 'Error occurred');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
 
   // Event click handler - KÜLÖN definiálva, hogy lássa a currentUser-t
   const handleEventClick = (args: any) => {
@@ -753,6 +803,24 @@ export default function ScheduleDetailPage() {
                 >
                   <HiPlus className="h-5 w-5" />
                   {language === 'hu' ? 'Műszak hozzáadása' : 'Add Shift'}
+                </button>
+              )}
+
+              {/* Publish/Unpublish Button - Only for GM/CEO */}
+              {currentUser && ['GeneralManager', 'CEO'].includes(currentUser.role) && (
+                <button
+                  onClick={handlePublish}
+                  disabled={isPublishing}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-md transition ${
+                    schedule.isPublished
+                      ? "bg-gray-500 text-white hover:bg-gray-600"
+                      : "bg-green-600 text-white hover:bg-green-700"
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  {isPublishing
+                    ? (schedule.isPublished ? t.unpublishing : t.publishing)
+                    : (schedule.isPublished ? t.unpublish : t.publish)
+                  }
                 </button>
               )}
 

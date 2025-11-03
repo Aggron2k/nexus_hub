@@ -110,8 +110,14 @@ export async function GET(request: Request) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
-        // Lekérjük az összes beosztást
+        // Employee-k csak a publikált beosztásokat láthatják
+        const isEmployee = currentUser.role === 'Employee';
+
+        // Lekérjük a beosztásokat (Employee-knél csak a publikáltakat)
         const schedules = await prisma.weekSchedule.findMany({
+            where: isEmployee ? {
+                isPublished: true
+            } : undefined,
             orderBy: {
                 weekStart: 'desc'
             },
