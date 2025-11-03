@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/app/context/LanguageContext";
+import { HiClipboardDocumentList, HiExclamationTriangle } from "react-icons/hi2";
 import axios from "axios";
 
 interface TodoStats {
@@ -20,35 +21,33 @@ const TodoStats = () => {
         completed: 0,
         overdue: 0
     });
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const { language } = useLanguage();
 
     const translations = {
         en: {
-            totalTodos: "Total Todos",
+            title: "My Tasks",
+            total: "Total",
             pending: "Pending",
             inProgress: "In Progress",
             completed: "Completed",
-            overdue: "Overdue"
+            overdue: "Overdue",
+            overdueWarning: "overdue tasks!",
+            noOverdue: "All tasks on track"
         },
         hu: {
-            totalTodos: "Összes feladat",
+            title: "Feladataim",
+            total: "Összes",
             pending: "Várakozik",
             inProgress: "Folyamatban",
             completed: "Befejezve",
-            overdue: "Lejárt"
+            overdue: "Lejárt",
+            overdueWarning: "lejárt feladat!",
+            noOverdue: "Minden feladat időben van"
         }
     };
 
     const t = translations[language];
-
-    const statCards = [
-        { label: t.totalTodos, value: stats.total, color: 'bg-blue-100 text-blue-800' },
-        { label: t.pending, value: stats.pending, color: 'bg-gray-100 text-gray-800' },
-        { label: t.inProgress, value: stats.inProgress, color: 'bg-yellow-100 text-yellow-800' },
-        { label: t.completed, value: stats.completed, color: 'bg-green-100 text-green-800' },
-        { label: t.overdue, value: stats.overdue, color: 'bg-red-100 text-red-800' }
-    ];
 
     useEffect(() => {
         fetchStats();
@@ -82,29 +81,79 @@ const TodoStats = () => {
 
     if (loading) {
         return (
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-                {[...Array(5)].map((_, i) => (
-                    <div key={i} className="bg-white p-4 rounded-lg border animate-pulse">
-                        <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                        <div className="h-8 bg-gray-200 rounded"></div>
+            <div className="bg-white rounded-lg shadow p-6">
+                <div className="animate-pulse">
+                    <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+                    <div className="grid grid-cols-4 gap-4">
+                        {[...Array(4)].map((_, i) => (
+                            <div key={i} className="text-center">
+                                <div className="h-8 bg-gray-200 rounded mb-2"></div>
+                                <div className="h-4 bg-gray-200 rounded"></div>
+                            </div>
+                        ))}
                     </div>
-                ))}
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-            {statCards.map((card, index) => (
-                <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
-                    <div className="text-sm font-medium text-gray-600 mb-1">
-                        {card.label}
+        <div className="bg-white rounded-lg shadow p-6">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                    <div className="p-2 bg-nexus-primary rounded-lg">
+                        <HiClipboardDocumentList className="h-5 w-5 text-nexus-tertiary" />
                     </div>
-                    <div className={`text-2xl font-bold px-2 py-1 rounded ${card.color} w-fit`}>
-                        {card.value}
-                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900">{t.title}</h3>
                 </div>
-            ))}
+                <span className="text-sm text-gray-500">
+                    {stats.total} {t.total}
+                </span>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                {/* Pending */}
+                <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="text-3xl font-bold text-gray-800 mb-1">{stats.pending}</div>
+                    <div className="text-xs font-medium text-gray-600 uppercase">{t.pending}</div>
+                </div>
+
+                {/* In Progress */}
+                <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <div className="text-3xl font-bold text-yellow-800 mb-1">{stats.inProgress}</div>
+                    <div className="text-xs font-medium text-yellow-700 uppercase">{t.inProgress}</div>
+                </div>
+
+                {/* Completed */}
+                <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+                    <div className="text-3xl font-bold text-green-800 mb-1">{stats.completed}</div>
+                    <div className="text-xs font-medium text-green-700 uppercase">{t.completed}</div>
+                </div>
+
+                {/* Overdue */}
+                <div className="text-center p-4 bg-red-50 rounded-lg border border-red-200">
+                    <div className="text-3xl font-bold text-red-800 mb-1">{stats.overdue}</div>
+                    <div className="text-xs font-medium text-red-700 uppercase">{t.overdue}</div>
+                </div>
+            </div>
+
+            {/* Overdue Warning */}
+            {stats.overdue > 0 ? (
+                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <HiExclamationTriangle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                    <span className="text-sm font-medium text-red-800">
+                        {stats.overdue} {t.overdueWarning}
+                    </span>
+                </div>
+            ) : stats.total > 0 ? (
+                <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <span className="text-sm font-medium text-green-800">
+                        ✓ {t.noOverdue}
+                    </span>
+                </div>
+            ) : null}
         </div>
     );
 };

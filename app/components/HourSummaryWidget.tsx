@@ -7,6 +7,8 @@ import { HiClock, HiCheckCircle, HiExclamationCircle } from "react-icons/hi2";
 interface HourSummaryProps {
   weekScheduleId: string;
   userId?: string; // Optional - default to current user
+  weekStart?: string; // Optional - week start date
+  weekEnd?: string; // Optional - week end date
 }
 
 interface SummaryData {
@@ -32,10 +34,24 @@ interface SummaryData {
   warnings: string[];
 }
 
-export default function HourSummaryWidget({ weekScheduleId, userId }: HourSummaryProps) {
+export default function HourSummaryWidget({ weekScheduleId, userId, weekStart, weekEnd }: HourSummaryProps) {
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Format week date range
+  const formatWeekRange = () => {
+    if (!weekStart || !weekEnd) return null;
+
+    const start = new Date(weekStart);
+    const end = new Date(weekEnd);
+
+    const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+    const startStr = start.toLocaleDateString('en-US', options);
+    const endStr = end.toLocaleDateString('en-US', options);
+
+    return `${startStr} - ${endStr}`;
+  };
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -94,13 +110,20 @@ export default function HourSummaryWidget({ weekScheduleId, userId }: HourSummar
   // Progress bar calculation
   const progressPercentage = Math.min(100, (summary.requested.hours / summary.weeklyRequirement) * 100);
 
+  const weekRange = formatWeekRange();
+
   return (
     <div className="bg-white rounded-lg shadow">
       <div className="p-6">
         {/* Header */}
-        <div className="flex items-center gap-2 mb-4">
-          <HiClock className="h-5 w-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Work Hour Summary</h3>
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-1">
+            <HiClock className="h-5 w-5 text-blue-600" />
+            <h3 className="text-lg font-semibold text-gray-900">Work Hour Summary</h3>
+          </div>
+          {weekRange && (
+            <p className="text-sm text-gray-500 ml-7">{weekRange}</p>
+          )}
         </div>
 
         {/* Weekly Requirement */}

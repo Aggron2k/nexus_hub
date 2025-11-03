@@ -1,12 +1,36 @@
 // app/api/users/me/route.ts
 import { NextResponse } from "next/server";
-import getCurrentUser from "@/app/actions/getCurrentUser";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/libs/auth";
+import prisma from "@/app/libs/prismadb";
 
 export async function GET() {
     try {
-        const currentUser = await getCurrentUser();
+        const session = await getServerSession(authOptions);
 
-        if (!currentUser) {
+        if (!session?.user?.email) {
+            return new NextResponse("Unauthorized", { status: 401 });
+        }
+
+        // Lekérjük a user-t a userPositions-szel együtt
+        const currentUser = await prisma.user.findUnique({
+            where: {
+                email: session.user.email as string
+            },
+            include: {
+                userPositions: {
+                    include: {
+                        position: true
+                    },
+                    orderBy: [
+                        { isPrimary: 'desc' },
+                        { assignedAt: 'desc' }
+                    ]
+                }
+            }
+        });
+
+        if (!currentUser || currentUser.deletedAt) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
