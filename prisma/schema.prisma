@@ -55,6 +55,11 @@ enum ActualWorkStatus {
   ABSENT           // Hiányzott (igazolatlan)
 }
 
+enum TimeOffType {
+  VACATION         // Rendes szabadság
+  SICK_LEAVE       // Betegszabadság
+}
+
 // Új Position model - dinamikus pozíciók
 model Position {
   id String @id @default(auto()) @map("_id") @db.ObjectId
@@ -167,6 +172,11 @@ model User {
   // Megjegyzések
   notes String?
 
+  // SZABADSÁG KEZELÉS
+  annualVacationDays Int @default(25) // Éves szabadság keret
+  usedVacationDays Float @default(0) // Felhasznált szabadság napok
+  vacationYear Int @default(2025) // Aktuális év
+
   // SOFT DELETE támogatás
   deletedAt DateTime? // Ha kitöltött, a user törölve van
   deletedBy String? @db.ObjectId // Ki törölte (CEO/GeneralManager ID)
@@ -190,6 +200,7 @@ model User {
   createdSchedules WeekSchedule[] @relation("ScheduleCreatedBy")
   shiftRequests ShiftRequest[] @relation("UserShiftRequests")
   actualWorkHours ActualWorkHours[] @relation("UserActualWorkHours")
+  timeOffRequests TimeOffRequest[] @relation("UserTimeOffRequests")
 
   @@index([employeeId]) // Egyedi index csak nem-null értékekre
 }
@@ -434,6 +445,10 @@ model ShiftRequest {
   // Ha jóváhagyva és műszakká alakítva
   convertedShifts Shift[]
 
+  // TIME-OFF specifikus mezők
+  vacationDays Int? // Hány nap szabadságot vesz igénybe (csak TIME_OFF esetén)
+  deductedFromBalance Boolean @default(false) // Le lett-e vonva az egyenlegből
+
   @@index([weekScheduleId])
   @@index([userId])
   @@index([positionId])
@@ -474,4 +489,53 @@ model ActualWorkHours {
 
   @@index([userId])
   @@index([status])
+}
+
+// SZABADSÁG (TIME-OFF) KEZELÉS
+
+// Szabadság/betegszabadság kérés
+model TimeOffRequest {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Ki kéri
+  userId String @db.ObjectId
+  user User @relation("UserTimeOffRequests", fields: [userId], references: [id], onDelete: Cascade)
+
+  // Típus: VACATION vagy SICK_LEAVE
+  type TimeOffType
+
+  // Időpontok
+  startDate DateTime // Kezdő nap
+  endDate DateTime // Vége nap
+  daysCount Int // Hány nap szabadságot vesz igénybe (számított: endDate - startDate + 1)
+
+  // Státusz
+  status ShiftRequestStatus @default(PENDING) // Újrahasználjuk: PENDING, APPROVED, REJECTED
+
+  // Megjegyzések
+  notes String?
+  rejectionReason String? // Ha elutasítva, miért
+
+  // Ki hagyta jóvá/utasította el
+  reviewedById String? @db.ObjectId
+  reviewedAt DateTime?
+
+  // Betegszabadság esetén dokumentum feltöltés
+  sickLeaveDocumentUrl String? // URL a feltöltött dokumentumhoz (csak SICK_LEAVE esetén)
+  documentUploadedAt DateTime?
+
+  // ShiftRequest kapcsolat (ha TIME_OFF típusú ShiftRequest-ből jött)
+  shiftRequestId String? @db.ObjectId
+
+  // Egyenleg levonva?
+  deductedFromBalance Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([startDate])
+  @@index([endDate])
 }

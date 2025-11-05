@@ -128,7 +128,6 @@ const WeekList: React.FC<WeekListProps> = ({ weekSchedules, currentUser }) => {
           {/* Header */}
           <div className="flex items-center justify-between mb-4 pt-4">
             <div className="text-2xl font-bold text-neutral-800 flex items-center gap-2">
-              <HiClock className="h-6 w-6 text-nexus-tertiary" />
               {t.title}
             </div>
           </div>

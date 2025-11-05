@@ -103,8 +103,9 @@ const useRoutes = () => {
         },
         {
             label: translations[language].timeOff,
-            href: '#',
+            href: '/time-off',
             icon: BiTrip,
+            active: pathname === '/time-off' || pathname?.startsWith('/time-off/'),
         },
         {
             label: translations[language].payroll,

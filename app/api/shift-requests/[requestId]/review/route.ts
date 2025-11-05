@@ -77,27 +77,68 @@ export async function PATCH(
 
     if (action === "approve") {
       // Jóváhagyás
-      const updatedRequest = await prisma.shiftRequest.update({
-        where: { id: requestId },
-        data: {
-          status: "APPROVED",
-          reviewedById: currentUser.id,
-          reviewedAt: new Date(),
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          position: true,
-          weekSchedule: true,
-        },
-      });
+      // Ha TIME_OFF típusú kérés, levonjuk a szabadság napokat
+      if (existingRequest.type === "TIME_OFF" && !existingRequest.deductedFromBalance) {
+        const daysToDeduct = existingRequest.vacationDays || 1;
 
-      return NextResponse.json(updatedRequest);
+        // Transaction-ben frissítjük mindkettőt
+        const [updatedRequest, updatedUser] = await prisma.$transaction([
+          prisma.shiftRequest.update({
+            where: { id: requestId },
+            data: {
+              status: "APPROVED",
+              reviewedById: currentUser.id,
+              reviewedAt: new Date(),
+              deductedFromBalance: true,
+              vacationDays: daysToDeduct,
+            },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+              position: true,
+              weekSchedule: true,
+            },
+          }),
+          prisma.user.update({
+            where: { id: existingRequest.userId },
+            data: {
+              usedVacationDays: {
+                increment: daysToDeduct,
+              },
+            },
+          }),
+        ]);
+
+        return NextResponse.json(updatedRequest);
+      } else {
+        // Nem TIME_OFF típusú kérés, normál jóváhagyás
+        const updatedRequest = await prisma.shiftRequest.update({
+          where: { id: requestId },
+          data: {
+            status: "APPROVED",
+            reviewedById: currentUser.id,
+            reviewedAt: new Date(),
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+            position: true,
+            weekSchedule: true,
+          },
+        });
+
+        return NextResponse.json(updatedRequest);
+      }
     } else {
       // Elutasítás
       const updatedRequest = await prisma.shiftRequest.update({

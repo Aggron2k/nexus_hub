@@ -7,6 +7,7 @@ import WelcomeCard from "./components/WelcomeCard";
 import HourSummaryWidget from "../components/HourSummaryWidget";
 import TodoStats from "../todos/components/TodoStats";
 import UserPositionsCard from "./components/UserPositionsCard";
+import VacationBalanceCard from "../time-off/components/VacationBalanceCard";
 
 export default function DashboardPage() {
     const { language } = useLanguage();
@@ -72,6 +73,11 @@ export default function DashboardPage() {
                         </div>
                     )}
 
+                    {/* Vacation Balance Card - 1 oszlop */}
+                    <div className="lg:col-span-2 xl:col-span-1">
+                        <VacationBalanceCard />
+                    </div>
+
                     {/* Todo Stats - 2 oszlop */}
                     <div className="lg:col-span-2">
                         <TodoStats />
@@ -82,15 +88,7 @@ export default function DashboardPage() {
                         <UserPositionsCard user={currentUser} />
                     </div>
 
-                    {/* Placeholder widgetek - később bővíthetők */}
-                    {/*
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <p className="text-gray-500">Upcoming Shifts</p>
-                    </div>
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <p className="text-gray-500">Recent Messages</p>
-                    </div>
-                    */}
+                    
                 </div>
             </div>
         </div>
