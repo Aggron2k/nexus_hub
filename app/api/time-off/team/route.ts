@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
           name: employee.name || "Unknown",
           email: employee.email,
           role: employee.role,
-          position: employee.userPositions[0]?.position?.displayNames?.en ||
+          position: (employee.userPositions[0]?.position?.displayNames as any)?.en ||
                     employee.userPositions[0]?.position?.name ||
                     "No Position",
           annualVacationDays: totalAnnual,

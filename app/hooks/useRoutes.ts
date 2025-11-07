@@ -109,8 +109,9 @@ const useRoutes = () => {
         },
         {
             label: translations[language].payroll,
-            href: '#',
+            href: '/payroll',
             icon: HiCash,
+            active: pathname === '/payroll' || pathname?.startsWith('/payroll/'),
         },
         {
             label: translations[language].language,

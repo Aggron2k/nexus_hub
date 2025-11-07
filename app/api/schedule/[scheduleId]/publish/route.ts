@@ -59,13 +59,6 @@ export async function PATCH(
                             data: {
                                 shiftId: shift.id,
                                 userId: shift.userId,
-                                status: null, // Alapértelmezett: nincs még rögzítve
-                                actualStartTime: null,
-                                actualEndTime: null,
-                                actualHoursWorked: null,
-                                notes: null,
-                                recordedById: null,
-                                recordedAt: null
                             }
                         });
                         createdCount++;

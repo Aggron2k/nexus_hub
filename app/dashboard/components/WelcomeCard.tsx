@@ -90,7 +90,7 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({ user }) => {
         <div className="bg-white rounded-lg shadow p-6">
             {/* Header */}
             <div className="flex items-center gap-4 mb-6">
-                <Avatar user={user} size="lg" />
+                <Avatar user={user} />
                 <div className="flex-1">
                     <h2 className="text-2xl font-bold text-gray-900">{t.welcome}</h2>
                     <p className="text-xl font-semibold text-nexus-tertiary">{user.name}</p>
