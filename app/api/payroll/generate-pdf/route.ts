@@ -244,5 +244,6 @@ function generatePayslipPDF(
     doc.text('This is an automatically generated payslip.', 105, 257, { align: 'center' });
     doc.text(`Generálva / Generated: ${new Date().toLocaleDateString('hu-HU')}`, 105, 264, { align: 'center' });
 
-    return doc.output('arraybuffer');
+    const arrayBuffer = doc.output('arraybuffer');
+    return new Uint8Array(arrayBuffer);
 }
