@@ -98,6 +98,9 @@ const WeekList: React.FC<WeekListProps> = ({ weekSchedules, currentUser }) => {
     return weekEnd >= now || hasRequests;
   });
 
+  // Mobil nézeten csak akkor látszódjon, amikor /my-requests az útvonal (nem /my-requests/[weekId])
+  const isMyRequestsPage = pathname === "/my-requests";
+
   return (
     <>
       {/* Shift Request Modal */}
@@ -121,7 +124,7 @@ const WeekList: React.FC<WeekListProps> = ({ weekSchedules, currentUser }) => {
       <aside
         className={clsx(
           `fixed inset-y-0 pb-20 lg:pb-0 lg:left-20 lg:w-80 lg:block overflow-y-auto border-r border-gray-200 bg-white`,
-          "block w-full left-0"
+          isMyRequestsPage ? "block w-full left-0" : "hidden lg:block"
         )}
       >
         <div className="px-5">

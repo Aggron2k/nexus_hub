@@ -8,6 +8,8 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import HourSummaryWidget from "@/app/components/HourSummaryWidget";
+import MyRequestsMobileHeader from "../components/MyRequestsMobileHeader";
+import ShiftRequestModal from "../components/ShiftRequestModal";
 
 export default function WeekRequestsPage() {
   const params = useParams();
@@ -18,6 +20,7 @@ export default function WeekRequestsPage() {
   const [requests, setRequests] = useState<any[]>([]);
   const [weekSchedule, setWeekSchedule] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const translations = {
     en: {
@@ -162,50 +165,82 @@ export default function WeekRequestsPage() {
     return `${start} - ${end}`;
   };
 
+  const isDeadlinePassed = (deadline: Date | null) => {
+    if (!deadline) return false;
+    return new Date() > new Date(deadline);
+  };
+
   if (isLoading) {
     return (
-      <div className="hidden lg:block lg:pl-80 h-full">
-        <div className="h-full flex items-center justify-center bg-nexus-bg">
-          <div className="text-gray-500">{t.loading}</div>
+      <>
+        {/* Mobile Loading */}
+        <div className="block lg:hidden h-full">
+          <div className="h-full flex items-center justify-center bg-nexus-bg">
+            <div className="text-gray-500">{t.loading}</div>
+          </div>
         </div>
-      </div>
+
+        {/* Desktop Loading */}
+        <div className="hidden lg:block lg:pl-80 h-full">
+          <div className="h-full flex items-center justify-center bg-nexus-bg">
+            <div className="text-gray-500">{t.loading}</div>
+          </div>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="hidden lg:block lg:pl-80 h-full">
-      <div className="h-full flex flex-col bg-nexus-bg">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-nexus-primary rounded-lg">
-              <HiClock className="h-6 w-6 text-nexus-tertiary" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">{t.title}</h1>
-              <p className="text-sm text-gray-600">
-                {t.week} {formatWeek()}
-              </p>
-            </div>
-          </div>
-        </div>
+    <>
+      {/* Shift Request Modal */}
+      {weekSchedule && (
+        <ShiftRequestModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          weekScheduleId={weekSchedule.id}
+          weekStart={new Date(weekSchedule.weekStart)}
+          weekEnd={new Date(weekSchedule.weekEnd)}
+          requestDeadline={
+            weekSchedule.requestDeadline
+              ? new Date(weekSchedule.requestDeadline)
+              : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+          }
+          onSuccess={() => {
+            fetchData();
+            router.refresh();
+          }}
+        />
+      )}
+
+      {/* Mobile View */}
+      <div className="block lg:hidden h-full bg-nexus-bg overflow-y-auto pb-20">
+        <MyRequestsMobileHeader
+          onBack={() => router.push('/my-requests')}
+          title={`${t.week} ${formatWeek()}`}
+          showNewRequestButton={true}
+          onNewRequest={() => setIsModalOpen(true)}
+          isDeadlinePassed={isDeadlinePassed(weekSchedule?.requestDeadline)}
+        />
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="space-y-6">
-            {/* Hour Summary Widget */}
-            {weekSchedule && (
-              <HourSummaryWidget weekScheduleId={weekSchedule.id} />
-            )}
+        <div className="p-4 space-y-4">
+          {/* Hour Summary Widget */}
+          {weekSchedule && (
+            <HourSummaryWidget
+              weekScheduleId={weekSchedule.id}
+              weekStart={weekSchedule.weekStart}
+              weekEnd={weekSchedule.weekEnd}
+            />
+          )}
 
-            {/* Requests List */}
-            {requests.length === 0 ? (
-              <div className="bg-white rounded-lg p-8 text-center text-gray-500">
-                <HiClock className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-                <p>{t.noRequests}</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
+          {/* Requests List */}
+          {requests.length === 0 ? (
+            <div className="bg-white rounded-lg p-8 text-center text-gray-500">
+              <HiClock className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+              <p>{t.noRequests}</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
               {requests.map((request) => (
                 <div
                   key={request.id}
@@ -279,11 +314,128 @@ export default function WeekRequestsPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Desktop View */}
+      <div className="hidden lg:block lg:pl-80 h-full">
+        <div className="h-full flex flex-col bg-nexus-bg">
+          {/* Header */}
+          <div className="bg-white border-b border-gray-200 px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-nexus-primary rounded-lg">
+                <HiClock className="h-6 w-6 text-nexus-tertiary" />
               </div>
-            )}
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{t.title}</h1>
+                <p className="text-sm text-gray-600">
+                  {t.week} {formatWeek()}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="space-y-6">
+              {/* Hour Summary Widget */}
+              {weekSchedule && (
+                <HourSummaryWidget
+                  weekScheduleId={weekSchedule.id}
+                  weekStart={weekSchedule.weekStart}
+                  weekEnd={weekSchedule.weekEnd}
+                />
+              )}
+
+              {/* Requests List */}
+              {requests.length === 0 ? (
+                <div className="bg-white rounded-lg p-8 text-center text-gray-500">
+                  <HiClock className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+                  <p>{t.noRequests}</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {requests.map((request) => (
+                    <div
+                      key={request.id}
+                      className="bg-white rounded-lg p-4 shadow-sm border border-gray-200"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            {getTypeIcon(request.type)}
+                            <div>
+                              <h3 className="font-medium text-gray-900">
+                                {formatDate(request.date)}
+                              </h3>
+                              {request.position ? (
+                                <p className="text-sm text-green-600">
+                                  {t.position}: {request.position.displayNames?.hu || request.position.name}
+                                </p>
+                              ) : (
+                                <p className="text-sm text-gray-500">
+                                  {t.position}: {t.notAssigned}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 mb-2">
+                            <span
+                              className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
+                                request.status
+                              )}`}
+                            >
+                              {t.status[request.status as keyof typeof t.status]}
+                            </span>
+                            <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
+                              {t.type[request.type as keyof typeof t.type]}
+                            </span>
+                          </div>
+
+                          {request.type === "SPECIFIC_TIME" && request.preferredStartTime && (
+                            <p className="text-sm text-gray-600">
+                              {new Date(request.preferredStartTime).toLocaleTimeString("hu-HU", { hour: "2-digit", minute: "2-digit" })}
+                              {" - "}
+                              {new Date(request.preferredEndTime).toLocaleTimeString("hu-HU", { hour: "2-digit", minute: "2-digit" })}
+                            </p>
+                          )}
+
+                          {request.notes && (
+                            <p className="text-sm text-gray-600 mt-2 italic">
+                              {request.notes}
+                            </p>
+                          )}
+
+                          {request.status === "REJECTED" && request.rejectionReason && (
+                            <p className="text-sm text-red-600 mt-2">
+                              {t.rejectionReason}: {request.rejectionReason}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {request.status === "PENDING" && (
+                            <button
+                              onClick={() => handleDeleteRequest(request.id)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-md"
+                              title="Kérés törlése"
+                            >
+                              <HiTrash className="h-5 w-5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
