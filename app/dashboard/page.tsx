@@ -8,6 +8,8 @@ import HourSummaryWidget from "../components/HourSummaryWidget";
 import TodoStats from "../todos/components/TodoStats";
 import UserPositionsCard from "./components/UserPositionsCard";
 import VacationBalanceCard from "../time-off/components/VacationBalanceCard";
+import PayrollSummaryWidget from "../payroll/components/PayrollSummaryWidget";
+import DashboardMobileHeader from "./components/DashboardMobileHeader";
 
 export default function DashboardPage() {
     const { language } = useLanguage();
@@ -44,53 +46,102 @@ export default function DashboardPage() {
 
     if (isLoading) {
         return (
-            <div className="hidden lg:block lg:pl-80 h-full">
-                <div className="h-full flex items-center justify-center bg-nexus-bg">
-                    <p className="text-gray-500">{language === 'hu' ? 'Betöltés...' : 'Loading...'}</p>
+            <>
+                {/* Mobile Loading */}
+                <div className="block lg:hidden h-full">
+                    <div className="h-full flex items-center justify-center bg-nexus-bg">
+                        <p className="text-gray-500">{language === 'hu' ? 'Betöltés...' : 'Loading...'}</p>
+                    </div>
                 </div>
-            </div>
+
+                {/* Desktop Loading */}
+                <div className="hidden lg:block lg:pl-80 h-full">
+                    <div className="h-full flex items-center justify-center bg-nexus-bg">
+                        <p className="text-gray-500">{language === 'hu' ? 'Betöltés...' : 'Loading...'}</p>
+                    </div>
+                </div>
+            </>
         );
     }
 
     return (
-        <div className="hidden lg:block lg:pl-80 h-full">
-            <div className="h-full bg-nexus-bg p-6 overflow-y-auto">
-                {/* Grid Layout - 2-3 oszlopos responsive */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {/* Welcome Card - 2 oszlop */}
-                    <div className="lg:col-span-2">
-                        <WelcomeCard user={currentUser} />
-                    </div>
+        <>
+            {/* Mobile View */}
+            <div className="block lg:hidden h-full bg-nexus-bg overflow-y-auto pb-20">
+                {/* Mobile Header - Logo + Time */}
+                <DashboardMobileHeader />
 
-                    {/* Hour Summary Widget - 1 oszlop */}
+                {/* Widgets - 1 oszlopban egymás alatt */}
+                <div className="px-4 space-y-4">
+                    {/* Welcome Card */}
+                    <WelcomeCard user={currentUser} />
+
+                    {/* Hour Summary Widget */}
                     {latestSchedule && (
-                        <div className="lg:col-span-2 xl:col-span-1">
-                            <HourSummaryWidget
-                                weekScheduleId={latestSchedule.id}
-                                weekStart={latestSchedule.weekStart}
-                                weekEnd={latestSchedule.weekEnd}
-                            />
-                        </div>
+                        <HourSummaryWidget
+                            weekScheduleId={latestSchedule.id}
+                            weekStart={latestSchedule.weekStart}
+                            weekEnd={latestSchedule.weekEnd}
+                        />
                     )}
 
-                    {/* Vacation Balance Card - 1 oszlop */}
-                    <div className="lg:col-span-2 xl:col-span-1">
-                        <VacationBalanceCard />
-                    </div>
+                    {/* Vacation Balance Card */}
+                    <VacationBalanceCard />
 
-                    {/* Todo Stats - 2 oszlop */}
-                    <div className="lg:col-span-2">
-                        <TodoStats />
-                    </div>
+                    {/* Payroll Summary Widget */}
+                    <PayrollSummaryWidget />
 
-                    {/* User Positions - 1 oszlop */}
-                    <div className="lg:col-span-2 xl:col-span-1">
-                        <UserPositionsCard user={currentUser} />
-                    </div>
+                    {/* Todo Stats */}
+                    <TodoStats />
 
-                    
+                    {/* User Positions */}
+                    <UserPositionsCard user={currentUser} />
                 </div>
             </div>
-        </div>
+
+            {/* Desktop View */}
+            <div className="hidden lg:block lg:pl-80 h-full">
+                <div className="h-full bg-nexus-bg p-6 overflow-y-auto">
+                    {/* Grid Layout - 2-3 oszlopos responsive */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {/* Welcome Card - 2 oszlop */}
+                        <div className="lg:col-span-2">
+                            <WelcomeCard user={currentUser} />
+                        </div>
+
+                        {/* Hour Summary Widget - 1 oszlop */}
+                        {latestSchedule && (
+                            <div className="lg:col-span-2 xl:col-span-1">
+                                <HourSummaryWidget
+                                    weekScheduleId={latestSchedule.id}
+                                    weekStart={latestSchedule.weekStart}
+                                    weekEnd={latestSchedule.weekEnd}
+                                />
+                            </div>
+                        )}
+
+                        {/* Vacation Balance Card - 1 oszlop */}
+                        <div className="lg:col-span-2 xl:col-span-1">
+                            <VacationBalanceCard />
+                        </div>
+
+                        {/* Payroll Summary Widget - 1 oszlop (VacationBalance mellé) */}
+                        <div className="lg:col-span-2 xl:col-span-1">
+                            <PayrollSummaryWidget />
+                        </div>
+
+                        {/* Todo Stats - 2 oszlop */}
+                        <div className="lg:col-span-2">
+                            <TodoStats />
+                        </div>
+
+                        {/* User Positions - 1 oszlop */}
+                        <div className="lg:col-span-2 xl:col-span-1">
+                            <UserPositionsCard user={currentUser} />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </>
     );
 }

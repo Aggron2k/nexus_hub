@@ -1,8 +1,7 @@
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { HiChat } from "react-icons/hi";
-import { HiArrowLeftOnRectangle, HiUsers, HiCalendarDays, HiClock, HiDocument, HiClipboardDocumentList } from "react-icons/hi2";
-import { HiCash } from "react-icons/hi";
+import { HiChat, HiCash } from "react-icons/hi";
+import { HiArrowLeftOnRectangle, HiUsers, HiCalendarDays, HiDocument, HiClipboardDocumentList } from "react-icons/hi2";
 import { FaTasks } from "react-icons/fa";
 import { BiTrip } from "react-icons/bi";
 import { MdSpaceDashboard } from "react-icons/md";
@@ -28,7 +27,6 @@ const useRoutes = () => {
             calendar: "Calendar",
             myRequests: "My Requests",
             tasks: "Tasks",
-            clockInOut: "Clock In/Out",
             documents: "Documents",
             timeOff: "Time Off",
             payroll: "Payroll",
@@ -43,7 +41,6 @@ const useRoutes = () => {
             calendar: "Naptár",
             myRequests: "Kéréseim",
             tasks: "Feladatok",
-            clockInOut: "Be/Kilépés",
             documents: "Iratok",
             timeOff: "Szabadság",
             payroll: "Bérezés",
@@ -89,11 +86,6 @@ const useRoutes = () => {
             href: '/todos',
             icon: FaTasks,
             active: pathname === '/todos',
-        },
-        {
-            label: translations[language].clockInOut,
-            href: '#',
-            icon: HiClock,
         },
         {
             label: translations[language].documents,

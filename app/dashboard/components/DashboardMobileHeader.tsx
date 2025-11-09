@@ -2,15 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/app/context/LanguageContext";
-import { User } from "@prisma/client";
-import { HiHome, HiClock } from "react-icons/hi2";
+import { HiClock } from "react-icons/hi2";
 import Image from "next/image";
 
-interface DashboardSidebarProps {
-    currentUser: User | null;
-}
-
-const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ currentUser }) => {
+const DashboardMobileHeader: React.FC = () => {
     const { language } = useLanguage();
     const [currentTime, setCurrentTime] = useState<Date | null>(null);
     const [isMounted, setIsMounted] = useState(false);
@@ -29,11 +24,9 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ currentUser }) => {
 
     const translations = {
         en: {
-            title: "Dashboard",
             today: "Today",
         },
         hu: {
-            title: "Irányítópult",
             today: "Ma",
         }
     };
@@ -62,24 +55,15 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ currentUser }) => {
     };
 
     return (
-        <aside className="hidden lg:fixed inset-y-0 pb-20 lg:pb-0 lg:left-20 lg:w-80 lg:block overflow-y-auto border-r border-gray-200 bg-white">
-            <div className="px-5">
-                {/* Logo */}
-                <div className="flex items-center justify-center py-6">
-                    <Image alt="logo" height="80" width="160" className='mx-auto w-auto' src="/images/logo_big.png" />
-                </div>
+        <div className="bg-white border-b border-gray-200 pb-4 mb-4">
+            {/* Logo */}
+            <div className="flex items-center justify-center py-4">
+                <Image alt="logo" height="60" width="120" className='w-auto' src="/images/logo_big.png" />
+            </div>
 
-                {/* Header */}
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-2">
-                        <div className="text-2xl font-bold text-neutral-800">
-                            {t.title}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Date & Time Widget */}
-                <div className="mb-4 p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+            {/* Date & Time Widget */}
+            <div className="px-4">
+                <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
                     <div className="flex items-center gap-2 mb-3">
                         <HiClock className="h-5 w-5 text-nexus-tertiary" />
                         <h3 className="text-sm font-semibold text-gray-700">{t.today}</h3>
@@ -98,8 +82,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ currentUser }) => {
                     </div>
                 </div>
             </div>
-        </aside>
+        </div>
     );
 };
 
-export default DashboardSidebar;
+export default DashboardMobileHeader;
