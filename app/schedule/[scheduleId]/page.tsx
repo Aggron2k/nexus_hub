@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { HiCalendar, HiArrowLeft, HiPlus } from "react-icons/hi2";
@@ -9,11 +9,14 @@ import { DayPilot, DayPilotScheduler } from "@daypilot/daypilot-lite-react";
 import AddShiftModal from "../components/AddShiftModal";
 import ConvertRequestModal from "../components/ConvertRequestModal";
 import ActualHoursModal from "../components/ActualHoursModal";
+import ScheduleMobileHeader from "../components/ScheduleMobileHeader";
+import ScheduleMobileDayView from "../components/ScheduleMobileDayView";
 import axios from "axios";
 
 export default function ScheduleDetailPage() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const scheduleId = params?.scheduleId as string;
   const dateParam = searchParams?.get('date');
   const { language } = useLanguage();
@@ -115,6 +118,31 @@ export default function ScheduleDetailPage() {
       alert(language === 'hu' ? 'Hiba történt a művelet során' : 'Error occurred');
     } finally {
       setIsPublishing(false);
+    }
+  };
+
+  // Delete shift handler (for mobile)
+  const handleDeleteShift = async (shiftId: string) => {
+    if (!confirm(language === 'hu' ? 'Biztosan törlöd ezt a műszakot?' : 'Are you sure you want to delete this shift?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/shifts/${shiftId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        console.log('✅ Shift deleted successfully');
+        window.location.reload();
+      } else {
+        const errorMessage = await response.text();
+        console.error('Failed to delete shift:', errorMessage);
+        alert(language === 'hu' ? 'Nem sikerült törölni a műszakot' : 'Failed to delete shift');
+      }
+    } catch (error) {
+      console.error('Error deleting shift:', error);
+      alert(language === 'hu' ? 'Hiba történt a törlés során' : 'Error occurred while deleting');
     }
   };
 
@@ -704,6 +732,8 @@ export default function ScheduleDetailPage() {
         }}
         scheduleId={scheduleId}
         selectedDate={editingShift ? (editingShift.date ? formatDateToLocalString(new Date(editingShift.date)) : (editingShift.startTime ? formatDateToLocalString(new Date(editingShift.startTime)) : (dateParam || formatDateToLocalString(new Date(schedule?.weekStart || new Date()))))) : (dateParam || formatDateToLocalString(new Date(schedule?.weekStart || new Date())))}
+        weekStart={schedule?.weekStart ? new Date(schedule.weekStart) : undefined}
+        weekEnd={schedule?.weekEnd ? new Date(schedule.weekEnd) : undefined}
         editShift={editingShift}
       />
 
@@ -743,107 +773,149 @@ export default function ScheduleDetailPage() {
         />
       )}
 
-      <div className="lg:pl-80 h-full flex flex-col">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
-          <Link
-            href="/schedule"
-            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-3"
-          >
-            <HiArrowLeft className="h-4 w-4" />
-            {t.back}
-          </Link>
+      {/* Mobile View */}
+      <div className="block lg:hidden h-full bg-white overflow-y-auto pb-20">
+        <ScheduleMobileHeader
+          onBack={() => router.push('/schedule')}
+          title={t.week}
+          showAddButton={currentUser && ['GeneralManager', 'CEO'].includes(currentUser.role)}
+          showPublishButton={currentUser && ['GeneralManager', 'CEO'].includes(currentUser.role)}
+          onAdd={() => {
+            setEditingShift(null);
+            setIsAddShiftModalOpen(true);
+          }}
+          onPublish={handlePublish}
+          isPublished={schedule?.isPublished || false}
+          canManage={currentUser && ['GeneralManager', 'CEO'].includes(currentUser.role)}
+        />
+        <ScheduleMobileDayView
+          scheduleData={{ shifts }}
+          weekStart={schedule?.weekStart ? new Date(schedule.weekStart) : new Date()}
+          weekEnd={schedule?.weekEnd ? new Date(schedule.weekEnd) : new Date()}
+          canManage={currentUser && ['GeneralManager', 'CEO'].includes(currentUser.role)}
+          onEditShift={(shiftId) => {
+            const clickedShift = shiftsRef.current.find(shift => shift.id === shiftId);
+            if (clickedShift) {
+              const editData = {
+                id: clickedShift.id,
+                userId: clickedShift.userId,
+                positionId: clickedShift.positionId,
+                startTime: clickedShift.startTime,
+                endTime: clickedShift.endTime,
+                notes: clickedShift.notes || "",
+              };
+              setEditingShift(editData);
+              setIsAddShiftModalOpen(true);
+            }
+          }}
+          onDeleteShift={handleDeleteShift}
+        />
+      </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-nexus-primary rounded-lg">
-                <HiCalendar className="h-6 w-6 text-nexus-tertiary" />
+      {/* Desktop View */}
+      <div className="hidden lg:block lg:pl-80 h-full">
+        <div className="h-full flex flex-col">
+          {/* Header */}
+          <div className="bg-white border-b border-gray-200 px-6 py-4">
+            <Link
+              href="/schedule"
+              className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-3"
+            >
+              <HiArrowLeft className="h-4 w-4" />
+              {t.back}
+            </Link>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-nexus-primary rounded-lg">
+                  <HiCalendar className="h-6 w-6 text-nexus-tertiary" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    {dateParam ? formatDate(new Date(dateParam)) : t.week}
+                  </h1>
+                  {!dateParam && (
+                    <>
+                      <p className="text-sm text-gray-600">
+                        {formatWeek(schedule.weekStart, schedule.weekEnd)}
+                      </p>
+                      {schedule.requestDeadline && (
+                        <p className="text-xs mt-1">
+                          {new Date() > new Date(schedule.requestDeadline) ? (
+                            <span className="text-red-600">
+                              {language === 'hu' ? 'Kérési határidő lejárt' : 'Request deadline passed'}: {new Date(schedule.requestDeadline).toLocaleDateString(language === 'hu' ? 'hu-HU' : 'en-US')}
+                            </span>
+                          ) : (
+                            <span className="text-green-600">
+                              {language === 'hu' ? 'Kérések nyitva' : 'Requests open'}: {new Date(schedule.requestDeadline).toLocaleDateString(language === 'hu' ? 'hu-HU' : 'en-US')}
+                            </span>
+                          )}
+                        </p>
+                      )}
+                      {!schedule.requestDeadline && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          {language === 'hu' ? 'Nincs kérési határidő' : 'No request deadline'}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {dateParam ? formatDate(new Date(dateParam)) : t.week}
-                </h1>
-                {!dateParam && (
-                  <>
-                    <p className="text-sm text-gray-600">
-                      {formatWeek(schedule.weekStart, schedule.weekEnd)}
-                    </p>
-                    {schedule.requestDeadline && (
-                      <p className="text-xs mt-1">
-                        {new Date() > new Date(schedule.requestDeadline) ? (
-                          <span className="text-red-600">
-                            {language === 'hu' ? 'Kérési határidő lejárt' : 'Request deadline passed'}: {new Date(schedule.requestDeadline).toLocaleDateString(language === 'hu' ? 'hu-HU' : 'en-US')}
-                          </span>
-                        ) : (
-                          <span className="text-green-600">
-                            {language === 'hu' ? 'Kérések nyitva' : 'Requests open'}: {new Date(schedule.requestDeadline).toLocaleDateString(language === 'hu' ? 'hu-HU' : 'en-US')}
-                          </span>
-                        )}
-                      </p>
-                    )}
-                    {!schedule.requestDeadline && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        {language === 'hu' ? 'Nincs kérési határidő' : 'No request deadline'}
-                      </p>
-                    )}
-                  </>
+
+              <div className="flex items-center gap-3">
+                {/* Add Shift Button */}
+                {currentUser && ['GeneralManager', 'CEO'].includes(currentUser.role) && (
+                  <button
+                    onClick={() => {
+                      setEditingShift(null);
+                      setIsAddShiftModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-nexus-tertiary text-white rounded-md hover:bg-nexus-primary transition"
+                  >
+                    <HiPlus className="h-5 w-5" />
+                    {language === 'hu' ? 'Műszak hozzáadása' : 'Add Shift'}
+                  </button>
                 )}
+
+                {/* Publish/Unpublish Button - Only for GM/CEO */}
+                {currentUser && ['GeneralManager', 'CEO'].includes(currentUser.role) && (
+                  <button
+                    onClick={handlePublish}
+                    disabled={isPublishing}
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-md transition ${
+                      schedule.isPublished
+                        ? "bg-gray-500 text-white hover:bg-gray-600"
+                        : "bg-green-600 text-white hover:bg-green-700"
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    {isPublishing
+                      ? (schedule.isPublished ? t.unpublishing : t.publishing)
+                      : (schedule.isPublished ? t.unpublish : t.publish)
+                    }
+                  </button>
+                )}
+
+                <span
+                  className={`text-xs px-3 py-1 rounded-full ${schedule.isPublished
+                    ? "bg-green-100 text-green-800"
+                    : "bg-gray-100 text-gray-800"
+                    }`}
+                >
+                  {schedule.isPublished ? t.published : t.draft}
+                </span>
               </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {/* Add Shift Button */}
-              {currentUser && ['GeneralManager', 'CEO'].includes(currentUser.role) && (
-                <button
-                  onClick={() => {
-                    setEditingShift(null);
-                    setIsAddShiftModalOpen(true);
-                  }}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-nexus-tertiary text-white rounded-md hover:bg-nexus-primary transition"
-                >
-                  <HiPlus className="h-5 w-5" />
-                  {language === 'hu' ? 'Műszak hozzáadása' : 'Add Shift'}
-                </button>
-              )}
-
-              {/* Publish/Unpublish Button - Only for GM/CEO */}
-              {currentUser && ['GeneralManager', 'CEO'].includes(currentUser.role) && (
-                <button
-                  onClick={handlePublish}
-                  disabled={isPublishing}
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-md transition ${
-                    schedule.isPublished
-                      ? "bg-gray-500 text-white hover:bg-gray-600"
-                      : "bg-green-600 text-white hover:bg-green-700"
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {isPublishing
-                    ? (schedule.isPublished ? t.unpublishing : t.publishing)
-                    : (schedule.isPublished ? t.unpublish : t.publish)
-                  }
-                </button>
-              )}
-
-              <span
-                className={`text-xs px-3 py-1 rounded-full ${schedule.isPublished
-                  ? "bg-green-100 text-green-800"
-                  : "bg-gray-100 text-gray-800"
-                  }`}
-              >
-                {schedule.isPublished ? t.published : t.draft}
-              </span>
             </div>
           </div>
-        </div>
 
-        {/* Content Area */}
-        <div className="flex-1 p-6 bg-nexus-bg overflow-auto">
-          {/* DayPilot Scheduler */}
-          <div className="bg-white rounded-lg shadow">
-            <DayPilotScheduler
-              key={`scheduler-${schedulerConfig.resources?.length || 0}-${schedulerConfig.events?.length || 0}`}
-              {...schedulerConfig}
-            />
+          {/* Content Area */}
+          <div className="flex-1 p-6 bg-nexus-bg overflow-auto">
+            {/* DayPilot Scheduler */}
+            <div className="bg-white rounded-lg shadow">
+              <DayPilotScheduler
+                key={`scheduler-${schedulerConfig.resources?.length || 0}-${schedulerConfig.events?.length || 0}`}
+                {...schedulerConfig}
+              />
+            </div>
           </div>
         </div>
       </div>

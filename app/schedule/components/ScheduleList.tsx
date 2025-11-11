@@ -2,7 +2,7 @@
 
 import { User } from "@prisma/client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { HiCalendar, HiPlus } from "react-icons/hi2";
 import clsx from "clsx";
@@ -15,6 +15,7 @@ interface ScheduleListProps {
 
 const ScheduleList: React.FC<ScheduleListProps> = ({ currentUser, canManage }) => {
   const router = useRouter();
+  const pathname = usePathname();
   const { language } = useLanguage();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [schedules, setSchedules] = useState<any[]>([]);
@@ -112,6 +113,9 @@ const ScheduleList: React.FC<ScheduleListProps> = ({ currentUser, canManage }) =
     return `${start} - ${end}`;
   };
 
+  // Pathname-based visibility for mobile
+  const isSchedulePage = pathname === "/schedule";
+
   return (
     <>
       {/* New Schedule Modal */}
@@ -124,7 +128,7 @@ const ScheduleList: React.FC<ScheduleListProps> = ({ currentUser, canManage }) =
       <aside
         className={clsx(
           `fixed inset-y-0 pb-20 lg:pb-0 lg:left-20 lg:w-80 lg:block overflow-y-auto border-r border-gray-200 bg-white`,
-          "block w-full left-0"
+          isSchedulePage ? "block w-full left-0" : "hidden lg:block"
         )}
       >
         <div className="px-5">

@@ -11,6 +11,8 @@ interface AddShiftModalProps {
   onClose: () => void;
   scheduleId: string;
   selectedDate: string; // YYYY-MM-DD formátum
+  weekStart?: Date; // A hét első napja (opcionális - mobil nézethez)
+  weekEnd?: Date; // A hét utolsó napja (opcionális - mobil nézethez)
   editShift?: {
     id: string;
     userId: string;
@@ -29,6 +31,8 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
   onClose,
   scheduleId,
   selectedDate,
+  weekStart,
+  weekEnd,
   editShift,
 }) => {
   const isEditMode = !!editShift;
@@ -42,6 +46,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
   // Form state
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedPositionId, setSelectedPositionId] = useState("");
+  const [selectedDateState, setSelectedDateState] = useState(selectedDate); // Lokális dátum state
   const [startTime, setStartTime] = useState("08:00");
   const [endTime, setEndTime] = useState("16:00");
   const [notes, setNotes] = useState("");
@@ -58,6 +63,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
       selectUserPlaceholder: "Choose an employee",
       selectPosition: "Select Position",
       selectPositionPlaceholder: "Choose a position",
+      selectDate: "Day",
       startTime: "Start Time",
       endTime: "End Time",
       notes: "Notes (optional)",
@@ -82,6 +88,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
       selectUserPlaceholder: "Válassz egy alkalmazottat",
       selectPosition: "Válassz pozíciót",
       selectPositionPlaceholder: "Válassz egy pozíciót",
+      selectDate: "Nap",
       startTime: "Kezdés időpontja",
       endTime: "Befejezés időpontja",
       notes: "Megjegyzések (opcionális)",
@@ -104,10 +111,40 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
 
   const t = translations[language];
 
+  // Helper: Dátum formázása YYYY-MM-DD formátumra
+  const formatDateToLocalString = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Helper: Hét napjainak generálása
+  const generateWeekDays = (start: Date, end: Date) => {
+    const days = [];
+    const current = new Date(start);
+
+    while (current <= end) {
+      const dateString = formatDateToLocalString(current);
+      const displayName = current.toLocaleDateString(
+        language === 'hu' ? 'hu-HU' : 'en-US',
+        { weekday: 'long', month: 'short', day: 'numeric' }
+      );
+
+      days.push({ dateString, displayName });
+      current.setDate(current.getDate() + 1);
+    }
+
+    return days;
+  };
+
   // Felhasználók lekérése és előre kitöltés edit módban
   useEffect(() => {
     if (isOpen) {
       fetchUsers();
+
+      // selectedDate prop változásakor frissítjük a selectedDateState-t
+      setSelectedDateState(selectedDate);
 
       // Edit módban előre kitöltjük a mezőket
       if (editShift) {
@@ -140,7 +177,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
         setNotes(editShift.notes || "");
       }
     }
-  }, [isOpen, editShift]);
+  }, [isOpen, editShift, selectedDate]);
 
   const fetchUsers = async () => {
     try {
@@ -201,9 +238,9 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
     setIsLoading(true);
 
     try {
-      // DateTime objektumok létrehozása
-      const startDateTime = new Date(`${selectedDate}T${startTime}:00`);
-      const endDateTime = new Date(`${selectedDate}T${endTime}:00`);
+      // DateTime objektumok létrehozása - selectedDateState-t használjuk
+      const startDateTime = new Date(`${selectedDateState}T${startTime}:00`);
+      const endDateTime = new Date(`${selectedDateState}T${endTime}:00`);
       const hoursWorked = calculateHours();
 
       // Ha editShift.id üres, akkor új shift-et hozunk létre (drag-and-select)
@@ -220,7 +257,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
           weekScheduleId: scheduleId,
           userId: selectedUserId,
           positionId: selectedPositionId,
-          date: new Date(selectedDate).toISOString(),
+          date: new Date(selectedDateState).toISOString(),
           startTime: startDateTime.toISOString(),
           endTime: endDateTime.toISOString(),
           hoursWorked,
@@ -297,7 +334,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
             <div>
               <h2 className="text-xl font-bold text-gray-900">{t.title}</h2>
               <p className="text-sm text-gray-600">
-                {new Date(selectedDate + 'T00:00:00').toLocaleDateString(language === 'hu' ? 'hu-HU' : 'en-US', {
+                {new Date(selectedDateState + 'T00:00:00').toLocaleDateString(language === 'hu' ? 'hu-HU' : 'en-US', {
                   weekday: 'long',
                   month: 'long',
                   day: 'numeric'
@@ -351,6 +388,28 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
               ))}
             </select>
           </div>
+
+          {/* Date Select - Only if weekStart and weekEnd are provided */}
+          {weekStart && weekEnd && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t.selectDate}
+              </label>
+              <select
+                value={selectedDateState}
+                onChange={(e) => setSelectedDateState(e.target.value)}
+                disabled={isLoading || isEditMode}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-nexus-tertiary focus:border-transparent disabled:opacity-50 disabled:bg-gray-100"
+                required
+              >
+                {generateWeekDays(weekStart, weekEnd).map((day) => (
+                  <option key={day.dateString} value={day.dateString}>
+                    {day.displayName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Time Inputs */}
           <div className="grid grid-cols-2 gap-4">
