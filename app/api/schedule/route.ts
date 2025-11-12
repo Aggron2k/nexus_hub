@@ -7,8 +7,8 @@ export async function POST(request: Request) {
     try {
         const currentUser = await getCurrentUser();
 
-        // Csak Manager+ hozhat létre beosztást
-        if (!currentUser || !['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role)) {
+        // Csak GeneralManager és CEO hozhat létre beosztást
+        if (!currentUser || !['GeneralManager', 'CEO'].includes(currentUser.role)) {
             return new NextResponse("Unauthorized", { status: 403 });
         }
 

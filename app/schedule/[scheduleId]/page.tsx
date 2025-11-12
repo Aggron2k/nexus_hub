@@ -170,8 +170,14 @@ export default function ScheduleDetailPage() {
         console.log("  Is placeholder:", isPlaceholder);
         console.log("  Current user (from ref):", currentUserRef.current?.role);
 
-        // Ha PLACEHOLDER shift -> mindig Edit Modal nyílik (kitöltéshez)
+        // Ha PLACEHOLDER shift -> csak GM/CEO töltheti ki
         if (isPlaceholder) {
+          // Csak GeneralManager és CEO szerkeszthet shift-et
+          if (!currentUserRef.current || !['GeneralManager', 'CEO'].includes(currentUserRef.current.role)) {
+            console.log("  ❌ Placeholder shift click denied - not GM/CEO");
+            return;
+          }
+
           console.log("  ✅ Placeholder shift -> Opening Edit Modal to fill in details");
           const editData = {
             id: clickedShift.id,
@@ -203,6 +209,12 @@ export default function ScheduleDetailPage() {
             setSelectedShiftForActualHours(clickedShift);
             setIsActualHoursModalOpen(true);
           } else {
+            // Csak GeneralManager és CEO szerkeszthet shift-et
+            if (!currentUserRef.current || !['GeneralManager', 'CEO'].includes(currentUserRef.current.role)) {
+              console.log("  ❌ Shift edit denied - not GM/CEO");
+              return;
+            }
+
             console.log("  ✅ Opening Edit Modal");
             // Edit modal (eredeti viselkedés)
             const editData = {
@@ -256,6 +268,13 @@ export default function ScheduleDetailPage() {
     eventResizeHandling: "Update", // Engedélyezzük az események átméretezését
     cellWidth: 50, // Óra oszlop szélesség (alapértelmezett 40, növeljük 50-re a jobb olvashatóságért)
     onTimeRangeSelected: async (args: any) => {
+      // Csak GeneralManager és CEO drag-elhet új shift-et
+      if (!currentUserRef.current || !['GeneralManager', 'CEO'].includes(currentUserRef.current.role)) {
+        console.log("❌ Time range selected denied - not GM/CEO");
+        args.control.clearSelection();
+        return;
+      }
+
       // Amikor a felhasználó kiválaszt egy időtartamot drag-and-select-tel
       console.log("⏰ Time range selected!");
       console.log("  Resource (userId):", args.resource);
@@ -301,6 +320,13 @@ export default function ScheduleDetailPage() {
       args.control.clearSelection();
     },
     onEventResized: async (args: any) => {
+      // Csak GeneralManager és CEO méretezhet át shift-et
+      if (!currentUserRef.current || !['GeneralManager', 'CEO'].includes(currentUserRef.current.role)) {
+        console.log("❌ Event resize denied - not GM/CEO");
+        args.preventDefault();
+        return;
+      }
+
       console.log("Event resized!", args.e.id());
       console.log("New start:", args.newStart.toString());
       console.log("New end:", args.newEnd.toString());
@@ -392,9 +418,9 @@ export default function ScheduleDetailPage() {
         setSchedule(scheduleData);
         console.log("📅 Schedule loaded:", scheduleData);
 
-        // ShiftRequests lekérése
+        // ShiftRequests lekérése (GM/CEO sees all, Employee sees only their own)
         let requestsData: any[] = [];
-        const requestsResponse = await fetch(`/api/shift-requests?weekScheduleId=${scheduleId}`);
+        const requestsResponse = await fetch(`/api/schedule/${scheduleId}/shift-requests`);
         if (requestsResponse.ok) {
           requestsData = await requestsResponse.json();
           setShiftRequests(requestsData);
@@ -789,7 +815,7 @@ export default function ScheduleDetailPage() {
           canManage={currentUser && ['GeneralManager', 'CEO'].includes(currentUser.role)}
         />
         <ScheduleMobileDayView
-          scheduleData={{ shifts }}
+          scheduleData={{ shifts, shiftRequests }}
           weekStart={schedule?.weekStart ? new Date(schedule.weekStart) : new Date()}
           weekEnd={schedule?.weekEnd ? new Date(schedule.weekEnd) : new Date()}
           canManage={currentUser && ['GeneralManager', 'CEO'].includes(currentUser.role)}
@@ -809,6 +835,11 @@ export default function ScheduleDetailPage() {
             }
           }}
           onDeleteShift={handleDeleteShift}
+          onConvertRequest={(request) => {
+            console.log("Mobile: Convert request clicked", request);
+            setSelectedRequest(request);
+            setIsConvertModalOpen(true);
+          }}
         />
       </div>
 

@@ -14,6 +14,7 @@ interface ScheduleMobileDayViewProps {
     canManage: boolean;
     onEditShift: (shiftId: string) => void;
     onDeleteShift: (shiftId: string) => void;
+    onConvertRequest?: (request: any) => void;
 }
 
 const ScheduleMobileDayView: React.FC<ScheduleMobileDayViewProps> = ({
@@ -23,6 +24,7 @@ const ScheduleMobileDayView: React.FC<ScheduleMobileDayViewProps> = ({
     canManage,
     onEditShift,
     onDeleteShift,
+    onConvertRequest,
 }) => {
     const { language } = useLanguage();
     const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
@@ -34,6 +36,14 @@ const ScheduleMobileDayView: React.FC<ScheduleMobileDayViewProps> = ({
             pending: "Pending",
             rejected: "Rejected",
             requested: "Requested",
+            converted: "Converted",
+            shiftRequests: "Shift Requests",
+            noRequests: "No shift requests",
+            anyTime: "Any time",
+            timeOff: "Time Off",
+            specificTime: "Specific time",
+            availableAllDay: "Available All Day",
+            convert: "Convert",
         },
         hu: {
             noShifts: "Nincs beosztva műszak",
@@ -41,6 +51,14 @@ const ScheduleMobileDayView: React.FC<ScheduleMobileDayViewProps> = ({
             pending: "Függőben",
             rejected: "Elutasítva",
             requested: "Kérelmezve",
+            converted: "Átalakítva",
+            shiftRequests: "Műszak kérelmek",
+            noRequests: "Nincs műszak kérelem",
+            anyTime: "Bármikor",
+            timeOff: "Szabadság",
+            specificTime: "Konkrét időpont",
+            availableAllDay: "Elérhető egész nap",
+            convert: "Átalakítás",
         },
     };
 
@@ -69,6 +87,15 @@ const ScheduleMobileDayView: React.FC<ScheduleMobileDayViewProps> = ({
         });
     };
 
+    const getRequestsForDay = (date: Date) => {
+        if (!scheduleData?.shiftRequests) return [];
+
+        return scheduleData.shiftRequests.filter((request: any) => {
+            const requestDate = new Date(request.date);
+            return isSameDay(requestDate, date);
+        });
+    };
+
     const getStatusBadgeColor = (status: string) => {
         switch (status) {
             case "APPROVED":
@@ -90,6 +117,8 @@ const ScheduleMobileDayView: React.FC<ScheduleMobileDayViewProps> = ({
                 return t.pending;
             case "REJECTED":
                 return t.rejected;
+            case "CONVERTED_TO_SHIFT":
+                return t.converted;
             default:
                 return status;
         }
@@ -97,6 +126,45 @@ const ScheduleMobileDayView: React.FC<ScheduleMobileDayViewProps> = ({
 
     const formatTime = (date: string) => {
         return format(new Date(date), "HH:mm");
+    };
+
+    const getRequestTypeText = (type: string) => {
+        switch (type) {
+            case "TIME_OFF":
+                return t.timeOff;
+            case "SPECIFIC_TIME":
+                return t.specificTime;
+            case "AVAILABLE_ALL_DAY":
+                return t.availableAllDay;
+            default:
+                return type;
+        }
+    };
+
+    const getRequestCardStyle = (type: string) => {
+        switch (type) {
+            case "TIME_OFF":
+                return "bg-yellow-50 border-yellow-200";
+            case "AVAILABLE_ALL_DAY":
+                return "bg-blue-50 border-blue-200";
+            case "SPECIFIC_TIME":
+                return "bg-blue-50 border-blue-200";
+            default:
+                return "bg-gray-50 border-gray-200";
+        }
+    };
+
+    const getRequestAvatarStyle = (type: string) => {
+        switch (type) {
+            case "TIME_OFF":
+                return "bg-yellow-300 text-yellow-700";
+            case "AVAILABLE_ALL_DAY":
+                return "bg-blue-300 text-blue-700";
+            case "SPECIFIC_TIME":
+                return "bg-blue-300 text-blue-700";
+            default:
+                return "bg-gray-300 text-gray-700";
+        }
     };
 
     // Generate array of 7 days for the week
@@ -108,7 +176,9 @@ const ScheduleMobileDayView: React.FC<ScheduleMobileDayViewProps> = ({
                 const dayKey = format(day, "yyyy-MM-dd");
                 const isExpanded = expandedDays.has(dayKey);
                 const shiftsForDay = getShiftsForDay(day);
+                const requestsForDay = getRequestsForDay(day);
                 const hasShifts = shiftsForDay.length > 0;
+                const hasRequests = requestsForDay.length > 0;
 
                 return (
                     <div key={dayKey} className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -229,6 +299,82 @@ const ScheduleMobileDayView: React.FC<ScheduleMobileDayViewProps> = ({
                                             )}
                                         </div>
                                     ))
+                                )}
+
+                                {/* Shift Requests Section - Separate from shifts */}
+                                {hasRequests && (
+                                    <div className="mt-4 pt-4 border-t border-gray-300">
+                                        <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                                            {t.shiftRequests}
+                                        </h4>
+                                        <div className="space-y-3">
+                                            {requestsForDay.map((request: any) => (
+                                                <div
+                                                    key={request.id}
+                                                    className={`rounded-lg p-3 space-y-2 border ${getRequestCardStyle(request.type)}`}
+                                                >
+                                                    {/* Employee Info */}
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="relative h-8 w-8 rounded-full overflow-hidden">
+                                                                {request.user?.image ? (
+                                                                    <Image
+                                                                        src={request.user.image}
+                                                                        alt={request.user.name || "Employee"}
+                                                                        fill
+                                                                        className="object-cover"
+                                                                    />
+                                                                ) : (
+                                                                    <div className={`h-full w-full flex items-center justify-center text-xs font-semibold ${getRequestAvatarStyle(request.type)}`}>
+                                                                        {request.user?.name?.charAt(0) || "?"}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div>
+                                                                <div className="font-medium text-gray-900">
+                                                                    {request.user?.name || "Unknown"}
+                                                                </div>
+                                                                <div className="text-xs text-gray-600">
+                                                                    {getRequestTypeText(request.type)}
+                                                                    {request.preferredStartTime && request.preferredEndTime && (
+                                                                        <span className="ml-1">
+                                                                            ({formatTime(request.preferredStartTime)} - {formatTime(request.preferredEndTime)})
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Status Badge */}
+                                                        <span
+                                                            className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeColor(
+                                                                request.status
+                                                            )}`}
+                                                        >
+                                                            {getStatusText(request.status)}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Notes */}
+                                                    {request.notes && (
+                                                        <div className="text-xs text-gray-600 bg-white p-2 rounded border border-gray-200">
+                                                            {request.notes}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Convert Button - Manager Only, Pending Only */}
+                                                    {canManage && request.status === "PENDING" && onConvertRequest && (
+                                                        <button
+                                                            onClick={() => onConvertRequest(request)}
+                                                            className="w-full mt-2 px-3 py-2 bg-nexus-tertiary text-white rounded-md hover:bg-nexus-secondary transition text-sm font-medium"
+                                                        >
+                                                            {t.convert}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
                                 )}
                             </div>
                         )}

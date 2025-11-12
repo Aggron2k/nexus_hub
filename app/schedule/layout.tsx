@@ -15,8 +15,8 @@ export default async function ScheduleLayout({
     redirect('/login');
   }
 
-  // Csak Manager+ hozhat létre beosztást
-  const canManage = ['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role);
+  // Csak GeneralManager és CEO hozhat létre beosztást
+  const canManage = ['GeneralManager', 'CEO'].includes(currentUser.role);
 
   return (
     <Sidebar>

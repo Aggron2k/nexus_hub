@@ -20,8 +20,8 @@ export async function PUT(request: Request, { params }: RouteParams) {
     try {
         const currentUser = await getCurrentUser();
 
-        // Csak Manager+ módosíthat műszakot
-        if (!currentUser || !['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role)) {
+        // Csak GeneralManager és CEO módosíthat műszakot
+        if (!currentUser || !['GeneralManager', 'CEO'].includes(currentUser.role)) {
             return new NextResponse("Unauthorized", { status: 403 });
         }
 
@@ -150,8 +150,8 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     try {
         const currentUser = await getCurrentUser();
 
-        // Csak Manager+ rögzíthet tényleges munkaórákat
-        if (!currentUser || !['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role)) {
+        // Csak GeneralManager és CEO rögzíthet tényleges munkaórákat
+        if (!currentUser || !['GeneralManager', 'CEO'].includes(currentUser.role)) {
             return new NextResponse("Unauthorized", { status: 403 });
         }
 
@@ -366,8 +366,8 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     try {
         const currentUser = await getCurrentUser();
 
-        // Csak Manager+ törölhet műszakot
-        if (!currentUser || !['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role)) {
+        // Csak GeneralManager és CEO törölhet műszakot
+        if (!currentUser || !['GeneralManager', 'CEO'].includes(currentUser.role)) {
             return new NextResponse("Unauthorized", { status: 403 });
         }
 
