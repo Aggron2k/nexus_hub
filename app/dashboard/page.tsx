@@ -102,42 +102,30 @@ export default function DashboardPage() {
             {/* Desktop View */}
             <div className="hidden lg:block lg:pl-80 h-full">
                 <div className="h-full bg-nexus-bg p-6 overflow-y-auto">
-                    {/* Grid Layout - 2-3 oszlopos responsive */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                        {/* Welcome Card - 2 oszlop */}
-                        <div className="lg:col-span-2">
+                    <div className="space-y-6">
+                        
+                        {/* Első sor: Welcome Card + User Positions (2 egyenlő oszlop) */}
+                        <div className="grid grid-cols-2 gap-6">
                             <WelcomeCard user={currentUser} />
+                            <UserPositionsCard user={currentUser} />
                         </div>
 
-                        {/* Hour Summary Widget - 1 oszlop */}
-                        {latestSchedule && (
-                            <div className="lg:col-span-2 xl:col-span-1">
+                        {/* Második sor: Vacation Balance + Payroll Summary + Hour Summary (3 egyenlő oszlop) */}
+                        <div className="grid grid-cols-3 gap-6">
+                            <VacationBalanceCard />
+                            <PayrollSummaryWidget />
+                            {latestSchedule && (
                                 <HourSummaryWidget
                                     weekScheduleId={latestSchedule.id}
                                     weekStart={latestSchedule.weekStart}
                                     weekEnd={latestSchedule.weekEnd}
                                 />
-                            </div>
-                        )}
-
-                        {/* Vacation Balance Card - 1 oszlop */}
-                        <div className="lg:col-span-2 xl:col-span-1">
-                            <VacationBalanceCard />
+                            )}
                         </div>
 
-                        {/* Payroll Summary Widget - 1 oszlop (VacationBalance mellé) */}
-                        <div className="lg:col-span-2 xl:col-span-1">
-                            <PayrollSummaryWidget />
-                        </div>
-
-                        {/* Todo Stats - 2 oszlop */}
-                        <div className="lg:col-span-2">
+                        {/* Harmadik sor: Todo Stats (teljes szélesség) */}
+                        <div>
                             <TodoStats />
-                        </div>
-
-                        {/* User Positions - 1 oszlop */}
-                        <div className="lg:col-span-2 xl:col-span-1">
-                            <UserPositionsCard user={currentUser} />
                         </div>
                     </div>
                 </div>

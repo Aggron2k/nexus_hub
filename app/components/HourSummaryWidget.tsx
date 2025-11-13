@@ -118,7 +118,9 @@ export default function HourSummaryWidget({ weekScheduleId, userId, weekStart, w
         {/* Header */}
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1">
-            <HiClock className="h-5 w-5 text-blue-600" />
+            <div className="p-2 bg-nexus-primary rounded-lg">
+              <HiClock className="h-6 w-6 text-nexus-tertiary" />
+            </div>
             <h3 className="text-lg font-semibold text-gray-900">Work Hour Summary</h3>
           </div>
           {weekRange && (

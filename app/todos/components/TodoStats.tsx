@@ -113,7 +113,7 @@ const TodoStats = () => {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Pending */}
                 <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="text-3xl font-bold text-gray-800 mb-1">{stats.pending}</div>
@@ -138,22 +138,6 @@ const TodoStats = () => {
                     <div className="text-xs font-medium text-red-700 uppercase">{t.overdue}</div>
                 </div>
             </div>
-
-            {/* Overdue Warning */}
-            {stats.overdue > 0 ? (
-                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <HiExclamationTriangle className="h-5 w-5 text-red-600 flex-shrink-0" />
-                    <span className="text-sm font-medium text-red-800">
-                        {stats.overdue} {t.overdueWarning}
-                    </span>
-                </div>
-            ) : stats.total > 0 ? (
-                <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <span className="text-sm font-medium text-green-800">
-                        ✓ {t.noOverdue}
-                    </span>
-                </div>
-            ) : null}
         </div>
     );
 };

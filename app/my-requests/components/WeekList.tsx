@@ -92,11 +92,13 @@ const WeekList: React.FC<WeekListProps> = ({ weekSchedules, currentUser }) => {
 
   // Szűrés: csak jövőbeli hetek vagy ahol már van kérés
   const now = new Date();
-  const relevantSchedules = weekSchedules.filter(schedule => {
-    const weekEnd = new Date(schedule.weekEnd);
-    const hasRequests = schedule.shiftRequests && schedule.shiftRequests.length > 0;
-    return weekEnd >= now || hasRequests;
-  });
+  const relevantSchedules = weekSchedules
+    .filter(schedule => {
+      const weekEnd = new Date(schedule.weekEnd);
+      const hasRequests = schedule.shiftRequests && schedule.shiftRequests.length > 0;
+      return weekEnd >= now || hasRequests;
+    })
+    .reverse(); // Fordított sorrend: legújabb elől
 
   // Mobil nézeten csak akkor látszódjon, amikor /my-requests az útvonal (nem /my-requests/[weekId])
   const isMyRequestsPage = pathname === "/my-requests";

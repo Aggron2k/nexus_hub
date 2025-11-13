@@ -85,7 +85,7 @@ const PayrollSummaryWidget: React.FC = () => {
     }
 
     return (
-        <div className="mb-4 p-4 bg-gradient-to-br from-nexus-primary to-nexus-secondary rounded-lg shadow-md">
+        <div className="p-4 p-4 bg-gradient-to-br from-nexus-primary to-nexus-secondary rounded-lg shadow-md">
             <div className="flex items-center gap-2 mb-3">
                 <HiCurrencyDollar className="h-5 w-5 text-white" />
                 <h3 className="text-sm font-semibold text-white">

@@ -77,18 +77,20 @@ const ScheduleList: React.FC<ScheduleListProps> = ({ currentUser, canManage }) =
     });
   };
 
-  // Napok generálása egy héthez
+  // Napok generálása egy héthez (hétfőtől vasárnapig, fordított sorrend)
   const generateWeekDays = (weekStart: Date) => {
     const days = [];
     const start = new Date(weekStart);
 
+    // 7 napot generálunk (hétfőtől vasárnapig)
     for (let i = 0; i < 7; i++) {
       const day = new Date(start);
       day.setDate(start.getDate() + i);
       days.push(day);
     }
 
-    return days;
+    // Fordított sorrend: Vasárnap -> Szombat -> Péntek -> ... -> Hétfő
+    return days.reverse();
   };
 
   // Nap formázása
