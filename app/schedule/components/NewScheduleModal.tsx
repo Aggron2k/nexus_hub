@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useLanguage } from "@/app/context/LanguageContext";
 import Modal from "@/app/components/Modal";
 import { HiCalendar } from "react-icons/hi2";
+import toast from "react-hot-toast";
 
 interface NewScheduleModalProps {
   isOpen: boolean;
@@ -97,12 +98,12 @@ const NewScheduleModal: React.FC<NewScheduleModalProps> = ({
     e.preventDefault();
 
     if (!weekStart) {
-      alert(t.selectMonday);
+      toast.error(t.selectMonday);
       return;
     }
 
     if (!isMonday(weekStart)) {
-      alert(t.selectMonday);
+      toast.error(t.selectMonday);
       return;
     }
 
@@ -144,7 +145,7 @@ const NewScheduleModal: React.FC<NewScheduleModalProps> = ({
       router.refresh();
     } catch (error) {
       console.error('Error creating schedule:', error);
-      alert(t.error);
+      toast.error(t.error);
     } finally {
       setIsLoading(false);
     }

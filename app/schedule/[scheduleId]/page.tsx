@@ -12,6 +12,7 @@ import ActualHoursModal from "../components/ActualHoursModal";
 import ScheduleMobileHeader from "../components/ScheduleMobileHeader";
 import ScheduleMobileDayView from "../components/ScheduleMobileDayView";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 export default function ScheduleDetailPage() {
   const params = useParams();
@@ -111,11 +112,11 @@ export default function ScheduleDetailPage() {
       } else {
         const errorMessage = await response.text();
         console.error('Failed to publish/unpublish schedule:', errorMessage);
-        alert(language === 'hu' ? 'Nem sikerült a művelet' : 'Failed to publish/unpublish');
+        toast.error(language === 'hu' ? 'Nem sikerült a művelet' : 'Failed to publish/unpublish');
       }
     } catch (error) {
       console.error('Error publishing/unpublishing schedule:', error);
-      alert(language === 'hu' ? 'Hiba történt a művelet során' : 'Error occurred');
+      toast.error(language === 'hu' ? 'Hiba történt a művelet során' : 'Error occurred');
     } finally {
       setIsPublishing(false);
     }
@@ -138,11 +139,11 @@ export default function ScheduleDetailPage() {
       } else {
         const errorMessage = await response.text();
         console.error('Failed to delete shift:', errorMessage);
-        alert(language === 'hu' ? 'Nem sikerült törölni a műszakot' : 'Failed to delete shift');
+        toast.error(language === 'hu' ? 'Nem sikerült törölni a műszakot' : 'Failed to delete shift');
       }
     } catch (error) {
       console.error('Error deleting shift:', error);
-      alert(language === 'hu' ? 'Hiba történt a törlés során' : 'Error occurred while deleting');
+      toast.error(language === 'hu' ? 'Hiba történt a törlés során' : 'Error occurred while deleting');
     }
   };
 
@@ -381,18 +382,18 @@ export default function ScheduleDetailPage() {
             // Overlap conflict
             const errorMessage = await response.text();
             console.error("Shift overlap detected:", errorMessage);
-            alert(errorMessage);
+            toast.error(errorMessage);
             // Visszaállítjuk az eredeti állapotot - refresh az oldalt
             window.location.reload();
           } else {
             console.error("Failed to update shift");
-            alert(language === 'hu' ? 'Nem sikerült frissíteni a műszakot' : 'Failed to update shift');
+            toast.error(language === 'hu' ? 'Nem sikerült frissíteni a műszakot' : 'Failed to update shift');
             // Visszaállítjuk az eredeti állapotot
             args.control.message(language === 'hu' ? 'A frissítés sikertelen volt' : 'Update failed');
           }
         } catch (error) {
           console.error('Error updating shift:', error);
-          alert(language === 'hu' ? 'Hiba történt a műszak frissítése közben' : 'Error updating shift');
+          toast.error(language === 'hu' ? 'Hiba történt a műszak frissítése közben' : 'Error updating shift');
         }
       }
     },

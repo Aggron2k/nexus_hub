@@ -8,6 +8,7 @@ import UserBox from "./UserBox";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { HiMagnifyingGlass, HiUsers, HiUserPlus } from "react-icons/hi2";
 import NewUserModal from "./NewUserModal";
+import toast from "react-hot-toast";
 
 interface UserListProps {
   items: User[];
@@ -124,7 +125,7 @@ const UserList: React.FC<UserListProps> = ({ items, deletedItems = [], currentUs
       router.refresh();
     } catch (error) {
       console.error('Error restoring user:', error);
-      alert(t.restoreError);
+      toast.error(t.restoreError);
     }
   };
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLanguage } from "@/app/context/LanguageContext";
 import Modal from "@/app/components/Modal";
 import { HiClock } from "react-icons/hi2";
+import toast from "react-hot-toast";
 
 interface AddShiftModalProps {
   isOpen: boolean;
@@ -221,17 +222,17 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
 
     // Validáció
     if (!selectedUserId) {
-      alert(t.validation.selectUser);
+      toast.error(t.validation.selectUser);
       return;
     }
 
     if (!selectedPositionId) {
-      alert(t.validation.selectPosition);
+      toast.error(t.validation.selectPosition);
       return;
     }
 
     if (startTime >= endTime) {
-      alert(t.validation.invalidTime);
+      toast.error(t.validation.invalidTime);
       return;
     }
 
@@ -268,7 +269,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
       if (response.status === 409) {
         // Overlap conflict - A felhasználónak már van műszakja ezen az időpontban
         const errorMessage = await response.text();
-        alert(errorMessage);
+        toast.error(errorMessage);
         setIsLoading(false);
         return;
       }
@@ -289,7 +290,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
       setNotes("");
     } catch (error) {
       console.error('Error saving shift:', error);
-      alert(t.error);
+      toast.error(t.error);
     } finally {
       setIsLoading(false);
     }
@@ -316,7 +317,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({
       router.refresh();
     } catch (error) {
       console.error('Error deleting shift:', error);
-      alert(language === 'hu' ? 'Nem sikerült törölni a műszakot' : 'Failed to delete shift');
+      toast.error(language === 'hu' ? 'Nem sikerült törölni a műszakot' : 'Failed to delete shift');
     } finally {
       setIsLoading(false);
     }

@@ -5,6 +5,7 @@ import { useLanguage } from "@/app/context/LanguageContext";
 import axios from "axios";
 import { HiXMark } from "react-icons/hi2";
 import Image from "next/image";
+import toast from "react-hot-toast";
 
 interface Employee {
     userId: string;
@@ -129,13 +130,13 @@ const PayrollDetailsModal: React.FC<PayrollDetailsModalProps> = ({
                 ? `Fizetési bizonylat sikeresen elkészítve és feltöltve a Documents-be!${version > 1 ? ` (v${version})` : ''}`
                 : `Payslip successfully generated and uploaded to Documents!${version > 1 ? ` (v${version})` : ''}`;
 
-            alert(successMessage);
+            toast.success(successMessage);
 
             // Frissítjük az existing PDF count-ot
             setExistingPDFCount(version);
         } catch (error) {
             console.error('Error generating PDF:', error);
-            alert(language === 'hu'
+            toast.error(language === 'hu'
                 ? 'Hiba történt a PDF generálás során.'
                 : 'Error generating PDF.');
         } finally {
