@@ -362,8 +362,8 @@ const ScheduleMobileDayView: React.FC<ScheduleMobileDayViewProps> = ({
                                                         </div>
                                                     )}
 
-                                                    {/* Convert Button - Manager Only, Pending Only */}
-                                                    {canManage && request.status === "PENDING" && onConvertRequest && (
+                                                    {/* Convert Button - Manager Only, Pending Only, NOT TIME_OFF */}
+                                                    {canManage && request.status === "PENDING" && onConvertRequest && request.type !== "TIME_OFF" && (
                                                         <button
                                                             onClick={() => onConvertRequest(request)}
                                                             className="w-full mt-2 px-3 py-2 bg-nexus-tertiary text-white rounded-md hover:bg-nexus-secondary transition text-sm font-medium"

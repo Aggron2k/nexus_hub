@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { HiClock, HiCheck, HiArrowRight, HiXMark } from "react-icons/hi2";
 import ConvertRequestModal from "./ConvertRequestModal";
+import ReviewRequestModal from "./ReviewRequestModal";
 
 interface ShiftRequestReviewPanelProps {
   weekScheduleId: string;
@@ -23,6 +24,7 @@ export default function ShiftRequestReviewPanel({
   const [isLoading, setIsLoading] = useState(true);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [rejectionReason, setRejectionReason] = useState("");
 
@@ -101,6 +103,12 @@ export default function ShiftRequestReviewPanel({
     setIsConvertModalOpen(true);
   };
 
+  const handleReviewClick = (request: any) => {
+    setSelectedRequest(request);
+    setIsReviewModalOpen(true);
+  };
+
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "PENDING":
@@ -144,9 +152,11 @@ export default function ShiftRequestReviewPanel({
   }
 
   // Szűrés: csak PENDING és APPROVED kérések
-
   const pendingRequests = requests.filter((r) => r.status === "PENDING");
-  const approvedRequests = requests.filter((r) => r.status === "APPROVED");
+  // TIME_OFF kérések jóváhagyás után már nem jelennek meg az Approved listában (nincs konvertálás)
+  const approvedRequests = requests.filter(
+    (r) => r.status === "APPROVED" && r.type !== "TIME_OFF"
+  );
 
   if (isLoading) {
     return (
@@ -161,6 +171,19 @@ export default function ShiftRequestReviewPanel({
 
   return (
     <>
+      {/* Review Request Modal */}
+      {isReviewModalOpen && selectedRequest && (
+        <ReviewRequestModal
+          isOpen={isReviewModalOpen}
+          onClose={() => {
+            setIsReviewModalOpen(false);
+            setSelectedRequest(null);
+          }}
+          request={selectedRequest}
+          onSuccess={fetchRequests}
+        />
+      )}
+
       {/* Rejection Modal */}
       {isRejectModalOpen && selectedRequest && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -286,9 +309,9 @@ export default function ShiftRequestReviewPanel({
                     </div>
                     <div className="flex items-center gap-1 ml-2">
                       <button
-                        onClick={() => handleApprove(request.id)}
+                        onClick={() => handleReviewClick(request)}
                         className="p-1.5 text-green-600 hover:bg-green-50 rounded transition-colors"
-                        title="Jóváhagyás"
+                        title="Áttekintés és jóváhagyás"
                       >
                         <HiCheck className="h-5 w-5" />
                       </button>

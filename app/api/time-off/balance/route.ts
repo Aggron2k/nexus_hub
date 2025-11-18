@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
 import prisma from "@/app/libs/prismadb";
 
-// GET /api/time-off/balance - Lekéri a bejelentkezett user szabadság egyenlegét
+// GET /api/time-off/balance - Lekéri a bejelentkezett user (vagy megadott user) szabadság egyenlegét
+// Query params: userId (optional, csak CEO/GM használhatja más user lekérdezésére)
 export async function GET(request: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
@@ -14,9 +15,31 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Lekérjük a userId-t a query stringből (ha van)
+    const searchParams = request.nextUrl.searchParams;
+    const requestedUserId = searchParams.get("userId");
+
+    // Meghatározzuk melyik user adatait kérjük le
+    let targetUserId = currentUser.id;
+
+    // Ha más user adatait kéri, ellenőrizzük a jogosultságot
+    if (requestedUserId && requestedUserId !== currentUser.id) {
+      // Csak CEO és GeneralManager láthat más user adatait
+      const canViewOthers = ["GeneralManager", "CEO"].includes(currentUser.role);
+
+      if (!canViewOthers) {
+        return NextResponse.json(
+          { error: "Forbidden - Csak saját egyenleg megtekintése engedélyezett" },
+          { status: 403 }
+        );
+      }
+
+      targetUserId = requestedUserId;
+    }
+
     // Lekérjük a user adatait szabadság mezőkkel
     const user = await prisma.user.findUnique({
-      where: { id: currentUser.id },
+      where: { id: targetUserId },
       select: {
         id: true,
         name: true,
@@ -37,7 +60,7 @@ export async function GET(request: NextRequest) {
     // Lekérjük a függőben lévő TIME_OFF kéréseket (ShiftRequest)
     const pendingTimeOffRequests = await prisma.shiftRequest.findMany({
       where: {
-        userId: currentUser.id,
+        userId: targetUserId,
         type: "TIME_OFF",
         status: "PENDING",
       },
@@ -56,7 +79,7 @@ export async function GET(request: NextRequest) {
     // Lekérjük a jóváhagyott TimeOffRequest-eket is (VACATION típusú)
     const approvedTimeOffRequests = await prisma.timeOffRequest.findMany({
       where: {
-        userId: currentUser.id,
+        userId: targetUserId,
         type: "VACATION",
         status: "APPROVED",
       },

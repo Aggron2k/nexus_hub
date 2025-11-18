@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
 import prisma from "@/app/libs/prismadb";
+import { EmploymentStatus } from "@prisma/client";
 
 export async function POST(
     request: Request,
@@ -43,7 +44,8 @@ export async function POST(
             },
             data: {
                 deletedAt: null,
-                deletedBy: null
+                deletedBy: null,
+                employmentStatus: EmploymentStatus.ACTIVE  // Automatikusan ACTIVE státuszra állítjuk
             }
         });
 

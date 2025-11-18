@@ -74,7 +74,6 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
         name: '',
         email: '',
         role: Role.Employee,
-        positionId: '',
         image: '',
         employeeId: '',
         phoneNumber: '',
@@ -82,9 +81,12 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
         weeklyWorkHours: 40,
         birthCountry: '',
         birthCity: '',
+        address: '',
+        city: '',
+        postalCode: '',
+        country: '',
         bankName: '',
         accountNumber: '',
-        salary: 0,
         hourlyRate: 0,
         currency: 'HUF',
         notes: ''
@@ -111,7 +113,8 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
             profileTab: "Profile", employmentTab: "Employment", bankTab: "Banking",
             employeeId: "Employee ID", phoneNumber: "Phone", employmentStatus: "Status",
             weeklyWorkHours: "Weekly Hours", birthCountry: "Birth Country", birthCity: "Birth City",
-            bankName: "Bank", accountNumber: "Account", salary: "Salary", hourlyRate: "Hourly Rate",
+            address: "Street Address", city: "City", postalCode: "Postal Code", country: "Country",
+            bankName: "Bank", accountNumber: "Account", hourlyRate: "Hourly Rate",
             currency: "Currency", notes: "Notes", changePassword: "Change Password",
             currentPassword: "Current Password", newPassword: "New Password", confirmPassword: "Confirm Password",
             active: "Active", inactive: "Inactive", suspended: "Suspended", terminated: "Terminated",
@@ -133,7 +136,8 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
             profileTab: "Alapadatok", employmentTab: "Munkavállalói adatok", bankTab: "Banki adatok",
             employeeId: "Munkavállalói azonosító", phoneNumber: "Telefon", employmentStatus: "Állapot",
             weeklyWorkHours: "Heti munkaidő", birthCountry: "Születési ország", birthCity: "Születési város",
-            bankName: "Bank", accountNumber: "Számlaszám", salary: "Fizetés", hourlyRate: "Órabér",
+            address: "Utca és házszám", city: "Város", postalCode: "Irányítószám", country: "Ország",
+            bankName: "Bank", accountNumber: "Számlaszám", hourlyRate: "Órabér",
             currency: "Pénznem", notes: "Megjegyzések", changePassword: "Jelszó módosítása",
             currentPassword: "Jelenlegi jelszó", newPassword: "Új jelszó", confirmPassword: "Új jelszó megerősítése",
             active: "Aktív", inactive: "Inaktív", suspended: "Felfüggesztve", terminated: "Megszüntetett",
@@ -169,7 +173,6 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                         name: userData.name || '',
                         email: userData.email || '',
                         role: userData.role || Role.Employee,
-                        positionId: userData.positionId || '',
                         image: userData.image || '',
                         employeeId: userData.employeeId || '',
                         phoneNumber: userData.phoneNumber || '',
@@ -177,9 +180,12 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                         weeklyWorkHours: userData.weeklyWorkHours || 40,
                         birthCountry: userData.birthCountry || '',
                         birthCity: userData.birthCity || '',
+                        address: userData.address || '',
+                        city: userData.city || '',
+                        postalCode: userData.postalCode || '',
+                        country: userData.country || '',
                         bankName: userData.bankName || '',
                         accountNumber: userData.accountNumber || '',
-                        salary: userData.salary || 0,
                         hourlyRate: userData.hourlyRate || 0,
                         currency: userData.currency || 'HUF',
                         notes: userData.notes || ''
@@ -484,22 +490,26 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                                     {activeTab === 'employment' && (
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             {[
-                                                { key: 'employeeId', label: t.employeeId, type: 'text' },
+                                                { key: 'employeeId', label: t.employeeId, type: 'text', disabled: !canEdit },
                                                 { key: 'phoneNumber', label: t.phoneNumber, type: 'tel' },
-                                                { key: 'employmentStatus', label: t.employmentStatus, type: 'select', options: [{ value: 'ACTIVE', label: t.active }, { value: 'INACTIVE', label: t.inactive }, { value: 'SUSPENDED', label: t.suspended }, { value: 'TERMINATED', label: t.terminated }] },
-                                                { key: 'weeklyWorkHours', label: t.weeklyWorkHours, type: 'number' },
+                                                { key: 'employmentStatus', label: t.employmentStatus, type: 'select', options: [{ value: 'ACTIVE', label: t.active }, { value: 'INACTIVE', label: t.inactive }, { value: 'SUSPENDED', label: t.suspended }, { value: 'TERMINATED', label: t.terminated }], disabled: !canEdit },
+                                                { key: 'weeklyWorkHours', label: t.weeklyWorkHours, type: 'number', disabled: !canEdit },
                                                 { key: 'birthCountry', label: t.birthCountry, type: 'text' },
-                                                { key: 'birthCity', label: t.birthCity, type: 'text' }
-                                            ].map(({ key, label, type, options }) => (
+                                                { key: 'birthCity', label: t.birthCity, type: 'text' },
+                                                { key: 'address', label: t.address, type: 'text' },
+                                                { key: 'city', label: t.city, type: 'text' },
+                                                { key: 'postalCode', label: t.postalCode, type: 'text' },
+                                                { key: 'country', label: t.country, type: 'text' }
+                                            ].map(({ key, label, type, options, disabled }) => (
                                                 <div key={key}>
                                                     <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
                                                     {isEditing ? (
                                                         type === 'select' ? (
-                                                            <select value={editData[key as keyof typeof editData] as string} onChange={(e) => setEditData({ ...editData, [key]: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-nexus-primary focus:border-nexus-primary">
+                                                            <select value={editData[key as keyof typeof editData] as string} onChange={(e) => setEditData({ ...editData, [key]: e.target.value })} disabled={disabled} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-nexus-primary focus:border-nexus-primary disabled:bg-gray-100 disabled:cursor-not-allowed">
                                                                 {options?.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                                                             </select>
                                                         ) : (
-                                                            <input type={type} value={editData[key as keyof typeof editData] as string} onChange={(e) => setEditData({ ...editData, [key]: type === 'number' ? parseInt(e.target.value) || 0 : e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-nexus-primary focus:border-nexus-primary" />
+                                                            <input type={type} value={editData[key as keyof typeof editData] as string} onChange={(e) => setEditData({ ...editData, [key]: type === 'number' ? parseInt(e.target.value) || 0 : e.target.value })} disabled={disabled} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-nexus-primary focus:border-nexus-primary disabled:bg-gray-100 disabled:cursor-not-allowed" />
                                                         )
                                                     ) : (
                                                         <p className="text-gray-900">{key === 'employmentStatus' ? translations[language][selectedUser[key] as keyof typeof translations[typeof language]] || selectedUser[key] : (selectedUser[key as keyof typeof selectedUser] as string) || '-'}</p>
@@ -513,15 +523,14 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                                     {activeTab === 'bank' && (
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             {[
-                                                { key: 'bankName', label: t.bankName, type: 'text' },
-                                                { key: 'accountNumber', label: t.accountNumber, type: 'text' },
-                                                { key: 'salary', label: t.salary, type: 'number' },
-                                                { key: 'hourlyRate', label: t.hourlyRate, type: 'number' }
-                                            ].map(({ key, label, type }) => (
+                                                { key: 'bankName', label: t.bankName, type: 'text', disabled: !canEdit },
+                                                { key: 'accountNumber', label: t.accountNumber, type: 'text', disabled: !canEdit },
+                                                { key: 'hourlyRate', label: t.hourlyRate, type: 'number', disabled: !canEdit }
+                                            ].map(({ key, label, type, disabled }) => (
                                                 <div key={key}>
                                                     <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
                                                     {isEditing ? (
-                                                        <input type={type} value={editData[key as keyof typeof editData] as string} onChange={(e) => setEditData({ ...editData, [key]: type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-nexus-primary focus:border-nexus-primary" />
+                                                        <input type={type} value={editData[key as keyof typeof editData] as string} onChange={(e) => setEditData({ ...editData, [key]: type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value })} disabled={disabled} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-nexus-primary focus:border-nexus-primary disabled:bg-gray-100 disabled:cursor-not-allowed" />
                                                     ) : (
                                                         <p className="text-gray-900">{(selectedUser[key as keyof typeof selectedUser] as string) || '-'}</p>
                                                     )}

@@ -8,6 +8,7 @@ import Link from "next/link";
 import { DayPilot, DayPilotScheduler } from "@daypilot/daypilot-lite-react";
 import AddShiftModal from "../components/AddShiftModal";
 import ConvertRequestModal from "../components/ConvertRequestModal";
+import ReviewRequestModal from "../components/ReviewRequestModal";
 import ActualHoursModal from "../components/ActualHoursModal";
 import ScheduleMobileHeader from "../components/ScheduleMobileHeader";
 import ScheduleMobileDayView from "../components/ScheduleMobileDayView";
@@ -31,6 +32,7 @@ export default function ScheduleDetailPage() {
   const currentUserRef = useRef<any>(null); // useRef a callback-ekhez
   const [shiftRequests, setShiftRequests] = useState<any[]>([]);
   const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [isActualHoursModalOpen, setIsActualHoursModalOpen] = useState(false);
   const [selectedShiftForActualHours, setSelectedShiftForActualHours] = useState<any>(null);
@@ -147,17 +149,32 @@ export default function ScheduleDetailPage() {
     }
   };
 
+  // Approve request handler
+  const approveRequest = async (requestId: string) => {
+    try {
+      await axios.patch(`/api/shift-requests/${requestId}/review`, {
+        action: "approve",
+      });
+      toast.success("Kérés jóváhagyva");
+      window.location.reload();
+    } catch (error) {
+      console.error("Error approving request:", error);
+      toast.error("Hiba a jóváhagyás során");
+    }
+  };
+
+
   // Event click handler - KÜLÖN definiálva, hogy lássa a currentUser-t
   const handleEventClick = (args: any) => {
     const eventType = args.e.data.tags?.type;
     console.log("Event clicked!", args.e.id(), "Type:", eventType);
 
     if (eventType === 'request') {
-      // ShiftRequest-re kattintottak → direkt Convert Modal
+      // ShiftRequest-re kattintottak → Review Modal (szabadság egyenleg megjelenítésével)
       const requestData = args.e.data.tags.data;
       console.log("Request clicked:", requestData);
       setSelectedRequest(requestData);
-      setIsConvertModalOpen(true); // Direkt a Convert Modal-t nyitjuk
+      setIsReviewModalOpen(true); // Review Modal először (szabadság egyenleggel)
     } else if (eventType === 'shift') {
       // Shift-re kattintottak
       const shiftData = args.e.data.tags.data;
@@ -764,7 +781,20 @@ export default function ScheduleDetailPage() {
         editShift={editingShift}
       />
 
-      {/* Convert Request Modal - direkt megnyílik request click-re */}
+      {/* Review Request Modal - szabadság egyenleg megjelenítésével */}
+      {isReviewModalOpen && selectedRequest && (
+        <ReviewRequestModal
+          isOpen={isReviewModalOpen}
+          onClose={() => {
+            setIsReviewModalOpen(false);
+            setSelectedRequest(null);
+          }}
+          request={selectedRequest}
+          onSuccess={() => window.location.reload()}
+        />
+      )}
+
+      {/* Convert Request Modal - SPECIFIC_TIME/AVAILABLE_ALL_DAY konvertálásához */}
       {selectedRequest && (
         <ConvertRequestModal
           isOpen={isConvertModalOpen}
