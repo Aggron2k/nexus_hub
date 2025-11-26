@@ -522,14 +522,35 @@ export default function ScheduleDetailPage() {
             text = language === 'hu' ? "Szabadság" : "Time Off";
           }
 
-          // Színkódolás
+          // Színkódolás és CSS class
           let backColor = '#E5E7EB'; // Light Gray (PENDING)
+          let borderColor = 'darker';
+          let cssClass = '';
+
           if (request.type === "TIME_OFF") {
-            backColor = '#FEF3C7'; // Light Orange/Yellow
+            // TIME_OFF típusú kérések külön színkódolása státusz szerint
+            if (request.status === "APPROVED") {
+              backColor = '#D1FAE5'; // Light Green
+              borderColor = '#10B981'; // Green border (3px vastag)
+              cssClass = 'daypilot-event-approved';
+            } else if (request.status === "REJECTED") {
+              backColor = '#FEE2E2'; // Light Red
+              borderColor = '#EF4444'; // Red border (3px vastag)
+              cssClass = 'daypilot-event-rejected';
+            } else {
+              // PENDING
+              backColor = '#FEF3C7'; // Light Orange/Yellow
+              borderColor = '#F59E0B'; // Orange border
+              cssClass = 'daypilot-event-pending';
+            }
           } else if (request.status === "APPROVED") {
             backColor = '#D1FAE5'; // Light Green
+            borderColor = '#10B981'; // Green border
+            cssClass = 'daypilot-event-approved';
           } else if (request.status === "REJECTED") {
             backColor = '#FEE2E2'; // Light Red
+            borderColor = '#EF4444'; // Red border
+            cssClass = 'daypilot-event-rejected';
           }
 
           // DayPilot LOCAL TIME formátum (YYYY-MM-DDTHH:mm:ss, Z nélkül)
@@ -546,7 +567,8 @@ export default function ScheduleDetailPage() {
             resource: request.userId, // Egyszerűsített - direkt userId
             text: text,
             backColor: backColor,
-            borderColor: request.status === "APPROVED" ? '#10B981' : 'darker',
+            borderColor: borderColor,
+            cssClass: cssClass,
             tags: { type: 'request', data: request }
           });
         });

@@ -39,7 +39,7 @@ const VacationRequestsList: React.FC<VacationRequestsListProps> = ({ initialFilt
 
   const translations = {
     en: {
-      title: "My Vacation Requests",
+      title: "Time Off Requests",
       all: "All",
       pending: "Pending",
       approved: "Approved",
@@ -54,7 +54,7 @@ const VacationRequestsList: React.FC<VacationRequestsListProps> = ({ initialFilt
       notes: "Notes",
       delete: "Delete",
       loading: "Loading...",
-      noRequests: "No vacation requests found",
+      noRequests: "No time off requests found",
       confirmDelete: "Are you sure you want to delete this request?",
       document: "Document",
       viewDocument: "View Document",
@@ -105,7 +105,7 @@ const VacationRequestsList: React.FC<VacationRequestsListProps> = ({ initialFilt
         const data = await response.json();
         setRequests(data);
       } catch (err) {
-        console.error("Error fetching vacation requests:", err);
+        console.error("Error fetching time off requests:", err);
       } finally {
         setLoading(false);
       }

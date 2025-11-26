@@ -141,16 +141,26 @@ const ScheduleMobileDayView: React.FC<ScheduleMobileDayViewProps> = ({
         }
     };
 
-    const getRequestCardStyle = (type: string) => {
-        switch (type) {
-            case "TIME_OFF":
-                return "bg-yellow-50 border-yellow-200";
-            case "AVAILABLE_ALL_DAY":
+    const getRequestCardStyle = (type: string, status: string) => {
+        // Először státusz alapján (ha TIME_OFF vagy egyéb)
+        if (type === "TIME_OFF") {
+            if (status === "APPROVED") {
+                return "bg-green-50 border-green-400 border-2";
+            } else if (status === "REJECTED") {
+                return "bg-red-50 border-red-400 border-2 opacity-80";
+            } else {
+                // PENDING
+                return "bg-yellow-50 border-yellow-300 border-2";
+            }
+        } else {
+            // AVAILABLE_ALL_DAY és SPECIFIC_TIME
+            if (status === "APPROVED") {
+                return "bg-green-50 border-green-400 border-2";
+            } else if (status === "REJECTED") {
+                return "bg-red-50 border-red-400 border-2 opacity-80";
+            } else {
                 return "bg-blue-50 border-blue-200";
-            case "SPECIFIC_TIME":
-                return "bg-blue-50 border-blue-200";
-            default:
-                return "bg-gray-50 border-gray-200";
+            }
         }
     };
 
@@ -311,7 +321,7 @@ const ScheduleMobileDayView: React.FC<ScheduleMobileDayViewProps> = ({
                                             {requestsForDay.map((request: any) => (
                                                 <div
                                                     key={request.id}
-                                                    className={`rounded-lg p-3 space-y-2 border ${getRequestCardStyle(request.type)}`}
+                                                    className={`rounded-lg p-3 space-y-2 border ${getRequestCardStyle(request.type, request.status)}`}
                                                 >
                                                     {/* Employee Info */}
                                                     <div className="flex items-center justify-between">
