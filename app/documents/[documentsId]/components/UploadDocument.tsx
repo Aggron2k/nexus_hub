@@ -21,32 +21,53 @@ const UploadDocument: React.FC<UploadDocumentProps> = ({ userId, onUploadSuccess
     const translations = {
         en: {
             uploadDocument: "Upload Document",
-            documentName: "Document name",
-            selectFile: "Please provide a document name and select a file.",
+            documentName: "Document name (optional)",
+            selectFile: "Please select a file.",
             uploading: "Uploading...",
             upload: "Upload",
             uploadSuccess: "Document uploaded successfully!",
             uploadError: "Failed to upload document.",
             chooseFile: "Choose file",
             noFileSelected: "No file selected",
+            onlyPdf: "Only PDF files can be uploaded!",
+            placeholder: "Default: filename",
         },
         hu: {
             uploadDocument: "Dokumentum feltöltése",
-            documentName: "Dokumentum neve",
-            selectFile: "Kérjük, adja meg a dokumentum nevét, és válasszon fájlt.",
+            documentName: "Dokumentum neve (opcionális)",
+            selectFile: "Kérjük, válasszon fájlt.",
             uploading: "Feltöltés...",
             upload: "Feltöltés",
             uploadSuccess: "Dokumentum sikeresen feltöltve!",
             uploadError: "Nem sikerült feltölteni a dokumentumot.",
             chooseFile: "Fájl kiválasztása",
             noFileSelected: "Nincs fájl kiválasztva",
+            onlyPdf: "Csak PDF fájlokat lehet feltölteni!",
+            placeholder: "Alapértelmezett: fájlnév",
         },
     };
 
     const t = translations[language];
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = e.target.files?.[0];
+
+        if (selectedFile) {
+            // PDF ellenőrzés
+            if (selectedFile.type !== 'application/pdf' && !selectedFile.name.toLowerCase().endsWith('.pdf')) {
+                toast.error(t.onlyPdf);
+                e.target.value = ''; // Reset input
+                setFile(null);
+                return;
+            }
+            setFile(selectedFile);
+        } else {
+            setFile(null);
+        }
+    };
+
     const handleUpload = async () => {
-        if (!file || !name) {
+        if (!file) {
             toast.error(t.selectFile);
             return;
         }
@@ -54,11 +75,17 @@ const UploadDocument: React.FC<UploadDocumentProps> = ({ userId, onUploadSuccess
         setIsUploading(true);
 
         try {
+            // Ha nincs megadva név, a fájl nevét használjuk (kiterjesztés nélkül)
+            let documentName = name.trim();
+            if (!documentName) {
+                documentName = file.name.replace(/\.pdf$/i, '');
+            }
+
             const formData = new FormData();
             formData.append("file", file);
             formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_PRESET || "krkiyocl");
             formData.append("resource_type", "raw");
-            formData.append("public_id", name);
+            formData.append("public_id", documentName);
 
             const uploadResponse = await axios.post(
                 `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/raw/upload`,
@@ -69,11 +96,12 @@ const UploadDocument: React.FC<UploadDocumentProps> = ({ userId, onUploadSuccess
 
             await axios.post("/api/documents", {
                 userId,
-                name,
+                name: documentName,
                 fileType: file.type,
                 fileUrl,
             });
 
+            toast.success(t.uploadSuccess);
             setName("");
             setFile(null);
 
@@ -107,7 +135,7 @@ const UploadDocument: React.FC<UploadDocumentProps> = ({ userId, onUploadSuccess
                     <input
                         id="documentName"
                         type="text"
-                        placeholder={t.documentName}
+                        placeholder={t.placeholder}
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-nexus-secondary focus:border-nexus-secondary transition-colors"
@@ -124,7 +152,8 @@ const UploadDocument: React.FC<UploadDocumentProps> = ({ userId, onUploadSuccess
                         <input
                             id="fileInput"
                             type="file"
-                            onChange={(e) => setFile(e.target.files?.[0] || null)}
+                            accept=".pdf,application/pdf"
+                            onChange={handleFileChange}
                             className="sr-only"
                             disabled={isUploading}
                         />
@@ -143,7 +172,7 @@ const UploadDocument: React.FC<UploadDocumentProps> = ({ userId, onUploadSuccess
                 {/* Upload Button */}
                 <button
                     onClick={handleUpload}
-                    disabled={isUploading || !file || !name}
+                    disabled={isUploading || !file}
                     className="w-full flex items-center justify-center px-4 py-3 bg-nexus-tertiary text-white font-medium rounded-md hover:bg-nexus-secondary focus:outline-none focus:ring-2 focus:ring-nexus-secondary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                     {isUploading ? (

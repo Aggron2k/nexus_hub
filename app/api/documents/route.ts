@@ -12,12 +12,20 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { userId, name, fileType, fileUrl } = body;
+    let { userId, name, fileType, fileUrl } = body;
 
     // Ellenőrizzük, hogy minden szükséges adat meg van-e adva
     if (!userId || !name || !fileType || !fileUrl) {
         return NextResponse.json(
             { error: 'All fields (userId, name, fileType, fileUrl) are required' },
+            { status: 400 }
+        );
+    }
+
+    // PDF típus ellenőrzés (backend validáció)
+    if (fileType !== 'application/pdf') {
+        return NextResponse.json(
+            { error: 'Only PDF files are allowed' },
             { status: 400 }
         );
     }
@@ -32,6 +40,25 @@ export async function POST(req: Request) {
     }
 
     try {
+        // Duplikátum ellenőrzés - user-specifikus
+        const existingDoc = await prisma.document.findFirst({
+            where: {
+                userId,
+                name
+            }
+        });
+
+        // Ha létezik duplikátum, időbélyeggel egészítjük ki
+        if (existingDoc) {
+            const timestamp = new Date().toISOString()
+                .replace(/T/, '_')
+                .replace(/\..+/, '')
+                .replace(/:/g, '-');
+            name = `${name}_${timestamp}`;
+
+            console.log(`Duplicate detected, renamed to: ${name}`);
+        }
+
         // Új dokumentum hozzáadása az adatbázishoz
         const newDocument = await prisma.document.create({
             data: {
