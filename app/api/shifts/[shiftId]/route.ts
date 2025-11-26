@@ -150,8 +150,8 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     try {
         const currentUser = await getCurrentUser();
 
-        // Csak GeneralManager és CEO rögzíthet tényleges munkaórákat
-        if (!currentUser || !['GeneralManager', 'CEO'].includes(currentUser.role)) {
+        // Csak Manager, GeneralManager és CEO rögzíthet tényleges munkaórákat
+        if (!currentUser || !['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role)) {
             return new NextResponse("Unauthorized", { status: 403 });
         }
 

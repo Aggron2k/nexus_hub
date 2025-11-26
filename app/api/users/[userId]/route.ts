@@ -107,12 +107,23 @@ export async function PUT(
         const { userId } = params;
         const body = await request.json();
 
-        // Jogosultságok ellenőrzése
-        const canEdit = currentUser.id === userId ||
-            ['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role);
+        // Lekérjük a szerkesztendő felhasználót
+        const targetUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { role: true }
+        });
+
+        if (!targetUser) {
+            return new NextResponse("User not found", { status: 404 });
+        }
+
+        // Jogosultság ellenőrzés
+        const canEdit = currentUser.id === userId || // Saját profil
+            ['GeneralManager', 'CEO'].includes(currentUser.role) || // GM/CEO mindenkit
+            (currentUser.role === 'Manager' && targetUser.role === 'Employee'); // Manager csak Employee-t
 
         if (!canEdit) {
-            return new NextResponse("Forbidden - Nincs jogosultság a módosításhoz", { status: 403 });
+            return new NextResponse("Forbidden - Manager csak Employee felhasználókat szerkeszthet", { status: 403 });
         }
 
         // Szerepkör módosítás jogosultság ellenőrzése

@@ -220,9 +220,9 @@ export default function ScheduleDetailPage() {
           console.log("  Has ended:", hasEnded);
           console.log("  Shift already has actualWorkHours:", clickedShift.actualWorkHours?.status);
 
-          // Ha van currentUser és GM/CEO és a műszak véget ért -> ActualHoursModal
+          // Ha van currentUser és Manager/GM/CEO és a műszak véget ért -> ActualHoursModal
           // Különben -> Edit modal
-          if (currentUserRef.current && ['GeneralManager', 'CEO'].includes(currentUserRef.current.role) && hasEnded) {
+          if (currentUserRef.current && ['Manager', 'GeneralManager', 'CEO'].includes(currentUserRef.current.role) && hasEnded) {
             console.log("  ✅ Opening ActualHoursModal");
             setSelectedShiftForActualHours(clickedShift);
             setIsActualHoursModalOpen(true);
@@ -259,8 +259,8 @@ export default function ScheduleDetailPage() {
       console.log("⏱️ Actual hours clicked!");
       console.log("  Current user (from ref):", currentUserRef.current?.role);
 
-      // Csak GM/CEO módosíthatja
-      if (currentUserRef.current && ['GeneralManager', 'CEO'].includes(currentUserRef.current.role)) {
+      // Csak Manager/GM/CEO módosíthatja
+      if (currentUserRef.current && ['Manager', 'GeneralManager', 'CEO'].includes(currentUserRef.current.role)) {
         if (clickedShift) {
           console.log("  ✅ Opening ActualHoursModal for editing");
           setSelectedShiftForActualHours(clickedShift);

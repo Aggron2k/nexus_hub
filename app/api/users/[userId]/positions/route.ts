@@ -87,11 +87,22 @@ export async function POST(
         const body = await request.json();
         const { positionId, isPrimary = false } = body;
 
-        // Jogosultságok ellenőrzése - csak Manager és feljebb
-        const canEdit = ['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role);
+        // Lekérjük a célfelhasználót
+        const targetUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { role: true }
+        });
+
+        if (!targetUser) {
+            return new NextResponse("User not found", { status: 404 });
+        }
+
+        // Jogosultság ellenőrzés
+        const canEdit = ['GeneralManager', 'CEO'].includes(currentUser.role) ||
+            (currentUser.role === 'Manager' && targetUser.role === 'Employee');
 
         if (!canEdit) {
-            return new NextResponse("Forbidden - Nincs jogosultság a pozíció hozzáadásához", { status: 403 });
+            return new NextResponse("Forbidden - Manager csak Employee pozícióit kezelheti", { status: 403 });
         }
 
         if (!positionId) {
@@ -192,11 +203,22 @@ export async function DELETE(
         const { searchParams } = new URL(request.url);
         const positionId = searchParams.get('positionId');
 
-        // Jogosultságok ellenőrzése
-        const canEdit = ['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role);
+        // Lekérjük a célfelhasználót
+        const targetUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { role: true }
+        });
+
+        if (!targetUser) {
+            return new NextResponse("User not found", { status: 404 });
+        }
+
+        // Jogosultság ellenőrzés
+        const canEdit = ['GeneralManager', 'CEO'].includes(currentUser.role) ||
+            (currentUser.role === 'Manager' && targetUser.role === 'Employee');
 
         if (!canEdit) {
-            return new NextResponse("Forbidden - Nincs jogosultság a pozíció eltávolításához", { status: 403 });
+            return new NextResponse("Forbidden - Manager csak Employee pozícióit kezelheti", { status: 403 });
         }
 
         if (!positionId) {

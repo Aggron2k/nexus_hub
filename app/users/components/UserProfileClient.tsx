@@ -101,7 +101,9 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
     const { language } = useLanguage();
     const router = useRouter();
 
-    const canEdit = ['GeneralManager', 'CEO'].includes(currentUser.role);
+    const canEdit =
+        ['GeneralManager', 'CEO'].includes(currentUser.role) || // GM/CEO mindenkit szerkeszthet
+        (currentUser.role === 'Manager' && selectedUser?.role === 'Employee'); // Manager csak Employee-t
     const isOwnProfile = selectedUserId === currentUser.id;
 
     const translations = {
