@@ -44,6 +44,7 @@ const ScheduleMobileDayView: React.FC<ScheduleMobileDayViewProps> = ({
             specificTime: "Specific time",
             availableAllDay: "Available All Day",
             convert: "Convert",
+            review: "Review",
         },
         hu: {
             noShifts: "Nincs beosztva műszak",
@@ -59,6 +60,7 @@ const ScheduleMobileDayView: React.FC<ScheduleMobileDayViewProps> = ({
             specificTime: "Konkrét időpont",
             availableAllDay: "Elérhető egész nap",
             convert: "Átalakítás",
+            review: "Áttekintés",
         },
     };
 
@@ -379,6 +381,16 @@ const ScheduleMobileDayView: React.FC<ScheduleMobileDayViewProps> = ({
                                                             className="w-full mt-2 px-3 py-2 bg-nexus-tertiary text-white rounded-md hover:bg-nexus-secondary transition text-sm font-medium"
                                                         >
                                                             {t.convert}
+                                                        </button>
+                                                    )}
+
+                                                    {/* Review Button - Manager Only, Pending Only, TIME_OFF */}
+                                                    {canManage && request.status === "PENDING" && onConvertRequest && request.type === "TIME_OFF" && (
+                                                        <button
+                                                            onClick={() => onConvertRequest(request)}
+                                                            className="w-full mt-2 px-3 py-2 bg-nexus-tertiary text-white rounded-md hover:bg-nexus-secondary transition text-sm font-medium"
+                                                        >
+                                                            {t.review}
                                                         </button>
                                                     )}
                                                 </div>

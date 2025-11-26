@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import { HiCheck, HiXMark, HiCalendar, HiCheckCircle, HiClock, HiExclamationTriangle } from "react-icons/hi2";
+import Modal from "@/app/components/Modal";
+import { HiCheck, HiXMark, HiCalendar, HiCheckCircle, HiClock, HiExclamationTriangle, HiDocumentText } from "react-icons/hi2";
 
 interface VacationBalance {
   annualVacationDays: number;
@@ -104,8 +105,10 @@ export default function ReviewRequestModal({
         setPositionId("");
       }
 
-      // Reset notes
+      // Reset notes and reject mode
       setNotes("");
+      setIsRejectMode(false);
+      setRejectionReason("");
     }
   }, [isOpen, request]);
 
@@ -152,15 +155,15 @@ export default function ReviewRequestModal({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "PENDING":
-        return "bg-gray-100 text-gray-700";
+        return "bg-yellow-100 text-yellow-800";
       case "APPROVED":
-        return "bg-green-100 text-green-700";
+        return "bg-green-100 text-green-800";
       case "REJECTED":
-        return "bg-red-100 text-red-700";
+        return "bg-red-100 text-red-800";
       case "CONVERTED_TO_SHIFT":
-        return "bg-blue-100 text-blue-700";
+        return "bg-blue-100 text-blue-800";
       default:
-        return "bg-gray-100 text-gray-700";
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -269,451 +272,469 @@ export default function ReviewRequestModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">
-            {isRejectMode ? "Kérés elutasítása" : "Műszak kérés áttekintése"}
-          </h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <HiXMark className="h-6 w-6" />
-          </button>
-        </div>
+    <Modal isOpen={isOpen} onClose={onClose}>
+      {!isRejectMode ? (
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex items-center gap-3 pb-4 border-b border-gray-200">
+            <div className="p-2 bg-nexus-primary rounded-lg">
+              <HiDocumentText className="h-6 w-6 text-nexus-tertiary" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Műszak kérés áttekintése</h2>
+              <p className="text-sm text-gray-600">{formatDate(request.date)}</p>
+            </div>
+          </div>
 
-        {!isRejectMode ? (
-          <>
-            {/* Request Details */}
-            <div className="px-6 py-4 space-y-4">
-              {/* Employee Info */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Alkalmazott</p>
-                    <p className="text-base font-medium text-gray-900">
-                      {request.user?.name}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Státusz</p>
-                    <span
-                      className={`inline-block text-xs px-2 py-1 rounded ${getStatusColor(
-                        request.status
-                      )}`}
-                    >
-                      {getStatusLabel(request.status)}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Dátum</p>
-                    <p className="text-base font-medium text-gray-900">
-                      {formatDate(request.date)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Típus</p>
-                    <p className="text-base font-medium text-gray-900">
-                      {getTypeLabel(request.type)}
-                    </p>
-                  </div>
-                </div>
+          {/* Employee Info & Status */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Alkalmazott
+              </label>
+              <p className="text-base font-semibold text-gray-900">
+                {request.user?.name}
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Státusz
+              </label>
+              <span className={`inline-block text-xs px-2.5 py-1 rounded-full font-medium ${getStatusColor(request.status)}`}>
+                {getStatusLabel(request.status)}
+              </span>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Típus
+              </label>
+              <p className="text-base font-semibold text-gray-900">
+                {getTypeLabel(request.type)}
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Beküldve
+              </label>
+              <p className="text-sm text-gray-600">
+                {new Date(request.createdAt).toLocaleDateString("hu-HU", { month: "short", day: "numeric" })}
+              </p>
+            </div>
+          </div>
+
+          {/* Time Information - SPECIFIC_TIME */}
+          {request.type === "SPECIFIC_TIME" && request.preferredStartTime && (
+            <div className="space-y-3">
+              {/* Kért időpont (read-only) */}
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-xs font-medium text-blue-800 mb-1">
+                  Kért időszak
+                </p>
+                <p className="text-base font-semibold text-blue-900">
+                  {new Date(request.preferredStartTime).toLocaleTimeString("hu-HU", { hour: "2-digit", minute: "2-digit" })}{" "}
+                  -{" "}
+                  {new Date(request.preferredEndTime).toLocaleTimeString("hu-HU", { hour: "2-digit", minute: "2-digit" })}
+                </p>
               </div>
 
-              {/* Time Information - SPECIFIC_TIME */}
-              {request.type === "SPECIFIC_TIME" &&
-                request.preferredStartTime && (
-                  <div className="space-y-3">
-                    {/* Kért időpont (read-only) */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <p className="text-xs font-medium text-blue-800 mb-1">
-                        📋 Kért időszak
-                      </p>
-                      <p className="text-base font-semibold text-blue-900">
-                        {new Date(request.preferredStartTime).toLocaleTimeString(
-                          "hu-HU",
-                          {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          }
-                        )}{" "}
-                        -{" "}
-                        {new Date(request.preferredEndTime).toLocaleTimeString(
-                          "hu-HU",
-                          {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          }
-                        )}
-                      </p>
-                    </div>
-
-                    {/* Módosítható időpont */}
-                    <div className="bg-white border border-gray-300 rounded-lg p-4">
-                      <p className="text-sm font-medium text-gray-700 mb-2">
-                        ✏️ Műszak időszak (megbeszélés alapján módosítható)
-                      </p>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs text-gray-600 mb-1">Kezdés *</label>
-                          <input
-                            type="time"
-                            value={shiftTimes.startTime}
-                            onChange={(e) => setShiftTimes({...shiftTimes, startTime: e.target.value})}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-nexus-tertiary focus:border-nexus-tertiary"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-600 mb-1">Befejezés *</label>
-                          <input
-                            type="time"
-                            value={shiftTimes.endTime}
-                            onChange={(e) => setShiftTimes({...shiftTimes, endTime: e.target.value})}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-nexus-tertiary focus:border-nexus-tertiary"
-                            required
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Pozíció választás */}
-                    <div className="bg-white border border-gray-300 rounded-lg p-4">
-                      <p className="text-sm font-medium text-gray-700 mb-2">
-                        📍 Pozíció *
-                      </p>
-                      <select
-                        value={positionId}
-                        onChange={(e) => setPositionId(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-nexus-tertiary focus:border-nexus-tertiary"
-                        required
-                      >
-                        <option value="">Válassz pozíciót...</option>
-                        {positions.map((position) => {
-                          const isPrimary = request.user?.userPositions?.find(
-                            (up: any) => up.positionId === position.id && up.isPrimary
-                          );
-                          return (
-                            <option key={position.id} value={position.id}>
-                              {position.displayNames?.hu || position.name}
-                              {isPrimary ? " (Elsődleges)" : ""}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </div>
-
-                    {/* Megjegyzések */}
-                    <div className="bg-white border border-gray-300 rounded-lg p-4">
-                      <p className="text-sm font-medium text-gray-700 mb-2">
-                        📝 Megjegyzések (opcionális)
-                      </p>
-                      <textarea
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        rows={3}
-                        placeholder="Opcionális megjegyzések..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-nexus-tertiary focus:border-nexus-tertiary resize-none"
-                      />
-                    </div>
-                  </div>
-                )}
-
-              {request.type === "AVAILABLE_ALL_DAY" && (
-                <div className="space-y-3">
-                  {/* Info banner */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <p className="text-sm text-blue-800">
-                      📋 Az alkalmazott egész nap elérhető. Add meg a pontos időpontot.
-                    </p>
-                  </div>
-
-                  {/* Időpont megadás */}
-                  <div className="bg-white border border-gray-300 rounded-lg p-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">
-                      ✏️ Műszak időszak
-                    </p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Kezdés *</label>
-                        <input
-                          type="time"
-                          value={shiftTimes.startTime}
-                          onChange={(e) => setShiftTimes({...shiftTimes, startTime: e.target.value})}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-nexus-tertiary focus:border-nexus-tertiary"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Befejezés *</label>
-                        <input
-                          type="time"
-                          value={shiftTimes.endTime}
-                          onChange={(e) => setShiftTimes({...shiftTimes, endTime: e.target.value})}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-nexus-tertiary focus:border-nexus-tertiary"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Pozíció választás */}
-                  <div className="bg-white border border-gray-300 rounded-lg p-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">
-                      📍 Pozíció *
-                    </p>
-                    <select
-                      value={positionId}
-                      onChange={(e) => setPositionId(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-nexus-tertiary focus:border-nexus-tertiary"
+              {/* Módosítható időpont */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Műszak időszak (módosítható)
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Kezdés *</label>
+                    <input
+                      type="time"
+                      value={shiftTimes.startTime}
+                      onChange={(e) => setShiftTimes({ ...shiftTimes, startTime: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-nexus-tertiary focus:border-transparent"
                       required
-                    >
-                      <option value="">Válassz pozíciót...</option>
-                      {positions.map((position) => {
-                        const isPrimary = request.user?.userPositions?.find(
-                          (up: any) => up.positionId === position.id && up.isPrimary
-                        );
-                        return (
-                          <option key={position.id} value={position.id}>
-                            {position.displayNames?.hu || position.name}
-                            {isPrimary ? " (Elsődleges)" : ""}
-                          </option>
-                        );
-                      })}
-                    </select>
+                    />
                   </div>
-
-                  {/* Megjegyzések */}
-                  <div className="bg-white border border-gray-300 rounded-lg p-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">
-                      📝 Megjegyzések (opcionális)
-                    </p>
-                    <textarea
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      rows={3}
-                      placeholder="Opcionális megjegyzések..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-nexus-tertiary focus:border-nexus-tertiary resize-none"
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Befejezés *</label>
+                    <input
+                      type="time"
+                      value={shiftTimes.endTime}
+                      onChange={(e) => setShiftTimes({ ...shiftTimes, endTime: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-nexus-tertiary focus:border-transparent"
+                      required
                     />
                   </div>
                 </div>
-              )}
+              </div>
 
-              {request.type === "TIME_OFF" && (
-                <>
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
-                    <p className="text-sm text-orange-800 font-medium">
-                      🗓️ Szabadság kérés
-                    </p>
-                    <p className="text-xs text-orange-700 mt-1">
-                      Ha jóváhagyod, {request.vacationDays || 1} nap kerül levonásra a szabadság egyenlegből.
-                    </p>
+              {/* Pozíció választás */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Pozíció *
+                </label>
+                <select
+                  value={positionId}
+                  onChange={(e) => setPositionId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-nexus-tertiary focus:border-transparent"
+                  required
+                >
+                  <option value="">Válassz pozíciót...</option>
+                  {positions.map((position) => {
+                    const isPrimary = request.user?.userPositions?.find(
+                      (up: { positionId: string; isPrimary: boolean }) => up.positionId === position.id && up.isPrimary
+                    );
+                    return (
+                      <option key={position.id} value={position.id}>
+                        {position.displayNames?.hu || position.name}
+                        {isPrimary ? " (Elsődleges)" : ""}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              {/* Megjegyzések */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Megjegyzések (opcionális)
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                  placeholder="Opcionális megjegyzések..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-nexus-tertiary focus:border-transparent resize-none"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Time Information - AVAILABLE_ALL_DAY */}
+          {request.type === "AVAILABLE_ALL_DAY" && (
+            <div className="space-y-3">
+              {/* Info banner */}
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  Az alkalmazott egész nap elérhető. Add meg a pontos időpontot.
+                </p>
+              </div>
+
+              {/* Időpont megadás */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Műszak időszak
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Kezdés *</label>
+                    <input
+                      type="time"
+                      value={shiftTimes.startTime}
+                      onChange={(e) => setShiftTimes({ ...shiftTimes, startTime: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-nexus-tertiary focus:border-transparent"
+                      required
+                    />
                   </div>
-
-                  {/* Szabadság egyenleg megjelenítése */}
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <HiCalendar className="h-5 w-5 text-blue-600" />
-                      <h4 className="text-sm font-semibold text-gray-900">
-                        Szabadság egyenleg
-                      </h4>
-                    </div>
-
-                    {balanceLoading ? (
-                      <p className="text-sm text-gray-500">Betöltés...</p>
-                    ) : vacationBalance ? (
-                      <>
-                        <div className="grid grid-cols-2 gap-3 mb-3">
-                          {/* Éves keret */}
-                          <div className="bg-white rounded-lg p-2">
-                            <div className="flex items-center gap-2">
-                              <HiCalendar className="h-4 w-4 text-blue-600" />
-                              <div>
-                                <p className="text-xs text-gray-600">Éves keret</p>
-                                <p className="text-sm font-bold text-gray-900">
-                                  {vacationBalance.annualVacationDays} nap
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Felhasznált */}
-                          <div className="bg-white rounded-lg p-2">
-                            <div className="flex items-center gap-2">
-                              <HiCheckCircle className="h-4 w-4 text-green-600" />
-                              <div>
-                                <p className="text-xs text-gray-600">Felhasznált</p>
-                                <p className="text-sm font-bold text-gray-900">
-                                  {vacationBalance.usedVacationDays} nap
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Függőben */}
-                          <div className="bg-white rounded-lg p-2">
-                            <div className="flex items-center gap-2">
-                              <HiClock className="h-4 w-4 text-yellow-600" />
-                              <div>
-                                <p className="text-xs text-gray-600">Függőben</p>
-                                <p className="text-sm font-bold text-gray-900">
-                                  {vacationBalance.pendingDays} nap
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Fennmaradó */}
-                          <div className="bg-white rounded-lg p-2">
-                            <div className="flex items-center gap-2">
-                              <HiCalendar className="h-4 w-4 text-purple-600" />
-                              <div>
-                                <p className="text-xs text-gray-600">Fennmaradó</p>
-                                <p className="text-sm font-bold text-gray-900">
-                                  {vacationBalance.remainingDays} nap
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Rendelkezésre álló - kiemelt */}
-                        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg p-3">
-                          <div className="flex items-center justify-between text-white">
-                            <div>
-                              <p className="text-xs opacity-90">Rendelkezésre áll</p>
-                              <p className="text-2xl font-bold">
-                                {vacationBalance.availableDays} nap
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-2xl font-bold">{vacationBalance.usagePercentage}%</p>
-                              <p className="text-xs opacity-90">használva</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Figyelmeztetés vagy siker üzenet */}
-                        <div className="mt-3">
-                          {vacationBalance.availableDays < (request.vacationDays || 1) ? (
-                            <div className="flex items-start gap-2 bg-red-100 border border-red-300 rounded-lg p-2">
-                              <HiExclamationTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                              <div>
-                                <p className="text-sm font-semibold text-red-800">
-                                  Nincs elegendő szabadság!
-                                </p>
-                                <p className="text-xs text-red-700">
-                                  Ez a kérés {request.vacationDays || 1} napot igényel, de csak {vacationBalance.availableDays} nap áll rendelkezésre.
-                                </p>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex items-start gap-2 bg-green-100 border border-green-300 rounded-lg p-2">
-                              <HiCheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                              <div>
-                                <p className="text-sm font-semibold text-green-800">
-                                  Elegendő szabadság áll rendelkezésre
-                                </p>
-                                <p className="text-xs text-green-700">
-                                  Jóváhagyás után: {vacationBalance.availableDays - (request.vacationDays || 1)} nap marad
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <HiExclamationTriangle className="h-5 w-5" />
-                        <p className="text-sm">Nem sikerült betölteni az egyenleget</p>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {/* Notes */}
-              {request.notes && (
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">
-                    Megjegyzés az alkalmazottól
-                  </p>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-sm text-gray-900 italic">
-                      {request.notes}
-                    </p>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Befejezés *</label>
+                    <input
+                      type="time"
+                      value={shiftTimes.endTime}
+                      onChange={(e) => setShiftTimes({ ...shiftTimes, endTime: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-nexus-tertiary focus:border-transparent"
+                      required
+                    />
                   </div>
                 </div>
-              )}
+              </div>
 
-              {/* Submission Info */}
-              <div className="text-xs text-gray-500">
-                Beküldve:{" "}
-                {new Date(request.createdAt).toLocaleString("hu-HU")}
+              {/* Pozíció választás */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Pozíció *
+                </label>
+                <select
+                  value={positionId}
+                  onChange={(e) => setPositionId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-nexus-tertiary focus:border-transparent"
+                  required
+                >
+                  <option value="">Válassz pozíciót...</option>
+                  {positions.map((position) => {
+                    const isPrimary = request.user?.userPositions?.find(
+                      (up: { positionId: string; isPrimary: boolean }) => up.positionId === position.id && up.isPrimary
+                    );
+                    return (
+                      <option key={position.id} value={position.id}>
+                        {position.displayNames?.hu || position.name}
+                        {isPrimary ? " (Elsődleges)" : ""}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              {/* Megjegyzések */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Megjegyzések (opcionális)
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                  placeholder="Opcionális megjegyzések..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-nexus-tertiary focus:border-transparent resize-none"
+                />
               </div>
             </div>
+          )}
 
-            {/* Actions */}
-            {request.status === "PENDING" && (
-              <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+          {/* Time Off - Szabadság egyenleg */}
+          {request.type === "TIME_OFF" && (
+            <div className="space-y-4">
+              {/* Info banner */}
+              <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                <p className="text-sm text-orange-800 font-medium">
+                  🗓️ Szabadság kérés
+                </p>
+                <p className="text-xs text-orange-700 mt-1">
+                  Ha jóváhagyod, {request.vacationDays || 1} nap kerül levonásra a szabadság egyenlegből.
+                </p>
+              </div>
+
+              {/* Szabadság egyenleg megjelenítése */}
+              <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <HiCalendar className="h-5 w-5 text-blue-600" />
+                  <h4 className="text-sm font-semibold text-gray-900">
+                    Szabadság egyenleg
+                  </h4>
+                </div>
+
+                {balanceLoading ? (
+                  <p className="text-sm text-gray-500">Betöltés...</p>
+                ) : vacationBalance ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      {/* Éves keret */}
+                      <div className="bg-white rounded-lg p-2">
+                        <div className="flex items-center gap-2">
+                          <HiCalendar className="h-4 w-4 text-blue-600" />
+                          <div>
+                            <p className="text-xs text-gray-600">Éves keret</p>
+                            <p className="text-sm font-bold text-gray-900">
+                              {vacationBalance.annualVacationDays} nap
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Felhasznált */}
+                      <div className="bg-white rounded-lg p-2">
+                        <div className="flex items-center gap-2">
+                          <HiCheckCircle className="h-4 w-4 text-green-600" />
+                          <div>
+                            <p className="text-xs text-gray-600">Felhasznált</p>
+                            <p className="text-sm font-bold text-gray-900">
+                              {vacationBalance.usedVacationDays} nap
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Függőben */}
+                      <div className="bg-white rounded-lg p-2">
+                        <div className="flex items-center gap-2">
+                          <HiClock className="h-4 w-4 text-yellow-600" />
+                          <div>
+                            <p className="text-xs text-gray-600">Függőben</p>
+                            <p className="text-sm font-bold text-gray-900">
+                              {vacationBalance.pendingDays} nap
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Fennmaradó */}
+                      <div className="bg-white rounded-lg p-2">
+                        <div className="flex items-center gap-2">
+                          <HiCalendar className="h-4 w-4 text-purple-600" />
+                          <div>
+                            <p className="text-xs text-gray-600">Fennmaradó</p>
+                            <p className="text-sm font-bold text-gray-900">
+                              {vacationBalance.remainingDays} nap
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Rendelkezésre álló - kiemelt */}
+                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg p-3 mb-3">
+                      <div className="flex items-center justify-between text-white">
+                        <div>
+                          <p className="text-xs opacity-90">Rendelkezésre áll</p>
+                          <p className="text-2xl font-bold">
+                            {vacationBalance.availableDays} nap
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold">{vacationBalance.usagePercentage}%</p>
+                          <p className="text-xs opacity-90">használva</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Figyelmeztetés vagy siker üzenet */}
+                    {vacationBalance.availableDays < (request.vacationDays || 1) ? (
+                      <div className="flex items-start gap-2 bg-red-100 border border-red-300 rounded-lg p-2">
+                        <HiExclamationTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-semibold text-red-800">
+                            Nincs elegendő szabadság!
+                          </p>
+                          <p className="text-xs text-red-700">
+                            Ez a kérés {request.vacationDays || 1} napot igényel, de csak {vacationBalance.availableDays} nap áll rendelkezésre.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-2 bg-green-100 border border-green-300 rounded-lg p-2">
+                        <HiCheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-semibold text-green-800">
+                            Elegendő szabadság áll rendelkezésre
+                          </p>
+                          <p className="text-xs text-green-700">
+                            Jóváhagyás után: {vacationBalance.availableDays - (request.vacationDays || 1)} nap marad
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <HiExclamationTriangle className="h-5 w-5" />
+                    <p className="text-sm">Nem sikerült betölteni az egyenleget</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Notes from Employee */}
+          {request.notes && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Megjegyzés az alkalmazottól
+              </label>
+              <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <p className="text-sm text-gray-900 italic">
+                  &quot;{request.notes}&quot;
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          {request.status === "PENDING" ? (
+            <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={() => setIsRejectMode(true)}
+                disabled={isLoading}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <HiXMark className="inline h-5 w-5 mr-1" />
+                Elutasítás
+              </button>
+              <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setIsRejectMode(true)}
-                  className="px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100"
+                  type="button"
+                  onClick={onClose}
                   disabled={isLoading}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
                 >
-                  <HiXMark className="inline h-5 w-5 mr-1" />
-                  Elutasítás
+                  Mégse
                 </button>
                 <button
+                  type="button"
                   onClick={handleApproveClick}
-                  className="px-4 py-2 text-sm font-medium text-white bg-nexus-tertiary rounded-md hover:bg-nexus-tertiary/90"
                   disabled={isLoading}
+                  className="px-4 py-2 text-sm font-medium text-white bg-nexus-tertiary hover:bg-nexus-primary rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <HiCheck className="inline h-5 w-5 mr-1" />
-                  Jóváhagyás & Műszak létrehozása
+                  {isLoading ? "Feldolgozás..." : (request.type === "TIME_OFF" ? "Jóváhagyás" : "Jóváhagyás & Műszak létrehozása")}
                 </button>
               </div>
-            )}
-          </>
-        ) : (
-          <>
-            {/* Rejection Form */}
-            <div className="px-6 py-4">
-              <p className="text-sm text-gray-700 mb-3">
-                Kérlek add meg az elutasítás okát:
-              </p>
-              <textarea
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="Pl: Ezen a napon már elegendő dolgozó van beosztva..."
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nexus-tertiary"
-                disabled={isLoading}
-              />
             </div>
-
-            {/* Rejection Actions */}
-            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+          ) : (
+            // Read-only mode - csak Bezárás gomb
+            <div className="flex items-center justify-end pt-4 border-t border-gray-200">
               <button
-                onClick={() => setIsRejectMode(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                disabled={isLoading}
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-sm font-medium text-white bg-nexus-tertiary hover:bg-nexus-primary rounded-md"
               >
-                Mégse
+                Bezárás
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        // Rejection Mode
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex items-center gap-3 pb-4 border-b border-gray-200">
+            <div className="p-2 bg-red-100 rounded-lg">
+              <HiXMark className="h-6 w-6 text-red-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Kérés elutasítása</h2>
+              <p className="text-sm text-gray-600">{request.user?.name}</p>
+            </div>
+          </div>
+
+          {/* Rejection Reason */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Elutasítás oka *
+            </label>
+            <textarea
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Pl: Ezen a napon már elegendő dolgozó van beosztva..."
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-nexus-tertiary focus:border-transparent resize-none"
+              disabled={isLoading}
+              required
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+            <div></div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsRejectMode(false)}
+                disabled={isLoading}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+              >
+                Vissza
               </button>
               <button
+                type="button"
                 onClick={handleRejectSubmit}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
                 disabled={isLoading}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? "Elutasítás..." : "Elutasítás"}
               </button>
             </div>
-          </>
-        )}
-      </div>
-    </div>
+          </div>
+        </div>
+      )}
+    </Modal>
   );
 }

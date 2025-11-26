@@ -442,7 +442,7 @@ export default function ScheduleDetailPage() {
         if (requestsResponse.ok) {
           requestsData = await requestsResponse.json();
           setShiftRequests(requestsData);
-          console.log("📋 ShiftRequests loaded:", requestsData.length, "requests");
+          console.log(" ShiftRequests loaded:", requestsData.length, "requests");
         }
 
         // Műszakok lekérése
@@ -557,7 +557,7 @@ export default function ScheduleDetailPage() {
           const startStr = `${startTime.getFullYear()}-${String(startTime.getMonth() + 1).padStart(2, '0')}-${String(startTime.getDate()).padStart(2, '0')}T${String(startTime.getHours()).padStart(2, '0')}:${String(startTime.getMinutes()).padStart(2, '0')}:${String(startTime.getSeconds()).padStart(2, '0')}`;
           const endStr = `${endTime.getFullYear()}-${String(endTime.getMonth() + 1).padStart(2, '0')}-${String(endTime.getDate()).padStart(2, '0')}T${String(endTime.getHours()).padStart(2, '0')}:${String(endTime.getMinutes()).padStart(2, '0')}:${String(endTime.getSeconds()).padStart(2, '0')}`;
 
-          console.log(`📋 Creating request event: ${request.type} for ${request.user?.name} on ${requestDate.toISOString().split('T')[0]}`);
+          console.log(` Creating request event: ${request.type} for ${request.user?.name} on ${requestDate.toISOString().split('T')[0]}`);
           console.log(`   Start: ${startStr}, End: ${endStr}`);
 
           events.push({
@@ -889,9 +889,9 @@ export default function ScheduleDetailPage() {
           }}
           onDeleteShift={handleDeleteShift}
           onConvertRequest={(request) => {
-            console.log("Mobile: Convert request clicked", request);
+            console.log("Mobile: Request clicked", request);
             setSelectedRequest(request);
-            setIsConvertModalOpen(true);
+            setIsReviewModalOpen(true);
           }}
         />
       </div>
@@ -966,11 +966,10 @@ export default function ScheduleDetailPage() {
                   <button
                     onClick={handlePublish}
                     disabled={isPublishing}
-                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-md transition ${
-                      schedule.isPublished
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-md transition ${schedule.isPublished
                         ? "bg-gray-500 text-white hover:bg-gray-600"
                         : "bg-green-600 text-white hover:bg-green-700"
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {isPublishing
                       ? (schedule.isPublished ? t.unpublishing : t.publishing)

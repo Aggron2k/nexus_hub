@@ -931,7 +931,7 @@ async function main() {
 
     console.log('✅ Week 3 shifts kitöltve!');
 
-    console.log('\n📋 ShiftRequest-ek létrehozása...');
+    console.log('\n ShiftRequest-ek létrehozása...');
 
     // Week 2 requests (Oct 6-12) - Több kérés különböző emberektől
 
@@ -1900,7 +1900,7 @@ async function main() {
         console.log(`${publishStatus} ${weekLabel} - ${filledShiftCount}/${shiftCount} shift kitöltve, ${requestCount} kérés`);
     }
 
-    console.log('\n📋 ShiftRequest-ek státusz szerint:');
+    console.log('\n ShiftRequest-ek státusz szerint:');
     const allRequests = await prisma.shiftRequest.findMany({ select: { status: true } });
     const requestsByStatus = allRequests.reduce((acc: any, req) => {
         acc[req.status] = (acc[req.status] || 0) + 1;
@@ -1944,7 +1944,7 @@ main()
     .catch((e) => {
         console.error('❌ Seed hiba:', e);
         process.exit(1);
-        
+
     })
     .finally(async () => {
         await prisma.$disconnect();
