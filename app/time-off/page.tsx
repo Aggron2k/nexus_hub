@@ -21,11 +21,7 @@ export default function TimeOffPage() {
       try {
         const userResponse = await axios.get('/api/users/me');
         setCurrentUser(userResponse.data);
-
-        // Ha GM vagy CEO, átirányítjuk az admin oldalra (csak desktop-on)
-        if ((userResponse.data.role === "GeneralManager" || userResponse.data.role === "CEO") && window.innerWidth >= 1024) {
-          router.push('/time-off/admin');
-        }
+        // GM/CEO is láthatja a saját szabadságát - nincs automatikus átirányítás
       } catch (error) {
         console.error('Error fetching user data:', error);
         router.push('/');
