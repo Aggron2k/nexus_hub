@@ -116,6 +116,7 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
             creating: "Creating...",
             titleRequired: "Title is required",
             selectPosition: "Select a position",
+            showAllUsers: "Show all users",
             selectAtLeastOneUser: "Select at least one user",
             dueDateBeforeStartDate: "Due date cannot be earlier than start date",
             priorities: {
@@ -144,6 +145,7 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
             creating: "Létrehozás...",
             titleRequired: "A cím kötelező",
             selectPosition: "Válassz pozíciót",
+            showAllUsers: "Összes felhasználó megjelenítése",
             selectAtLeastOneUser: "Válassz legalább egy felhasználót",
             dueDateBeforeStartDate: "A határidő nem lehet korábbi, mint a kezdés dátuma",
             priorities: {
@@ -415,18 +417,28 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
                             id="targetPosition"
                             value={targetPositionId}
                             onChange={(e) => setTargetPositionId(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-nexus-secondary focus:border-nexus-secondary"
+                            disabled={assignmentType === "everyone"}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-nexus-secondary focus:border-nexus-secondary disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
                         >
-                            <option value="">{t.selectPosition}</option>
+                            <option value="">
+                                {assignmentType === "specific" ? t.showAllUsers : t.selectPosition}
+                            </option>
                             {positions.map(position => (
                                 <option key={position.id} value={position.id}>
                                     {getPositionDisplayName(position)}
                                 </option>
                             ))}
                         </select>
-                        {selectedPosition && (
+                        {selectedPosition && assignmentType !== "everyone" && (
                             <p className="mt-1 text-sm text-gray-500">
                                 {selectedPosition.descriptions?.[language] || selectedPosition.descriptions?.['en'] || ''}
+                            </p>
+                        )}
+                        {assignmentType === "everyone" && (
+                            <p className="mt-1 text-sm text-gray-500 italic">
+                                {language === 'en'
+                                    ? "Target position is not needed when assigning to everyone"
+                                    : "Célpozíció nem szükséges, ha mindenkihez hozzárendelünk"}
                             </p>
                         )}
                     </div>
@@ -442,7 +454,9 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
                                     type="radio"
                                     value="all"
                                     checked={assignmentType === "all"}
-                                    onChange={(e) => setAssignmentType(e.target.value as "all" | "specific" | "everyone")}
+                                    onChange={(e) => {
+                                        setAssignmentType(e.target.value as "all" | "specific" | "everyone");
+                                    }}
                                     className="h-4 w-4 text-nexus-tertiary focus:ring-nexus-secondary border-gray-300"
                                 />
                                 <span className="ml-2 text-sm text-gray-700">{t.assignToAll}</span>
@@ -452,7 +466,10 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
                                     type="radio"
                                     value="everyone"
                                     checked={assignmentType === "everyone"}
-                                    onChange={(e) => setAssignmentType(e.target.value as "all" | "specific" | "everyone")}
+                                    onChange={(e) => {
+                                        setAssignmentType(e.target.value as "all" | "specific" | "everyone");
+                                        setTargetPositionId(""); // Clear target position when selecting everyone
+                                    }}
                                     className="h-4 w-4 text-nexus-tertiary focus:ring-nexus-secondary border-gray-300"
                                 />
                                 <span className="ml-2 text-sm text-gray-700">{t.assignToEveryone}</span>
@@ -462,7 +479,9 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
                                     type="radio"
                                     value="specific"
                                     checked={assignmentType === "specific"}
-                                    onChange={(e) => setAssignmentType(e.target.value as "all" | "specific" | "everyone")}
+                                    onChange={(e) => {
+                                        setAssignmentType(e.target.value as "all" | "specific" | "everyone");
+                                    }}
                                     className="h-4 w-4 text-nexus-tertiary focus:ring-nexus-secondary border-gray-300"
                                 />
                                 <span className="ml-2 text-sm text-gray-700">{t.assignToSpecific}</span>

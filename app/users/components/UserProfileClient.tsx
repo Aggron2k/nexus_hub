@@ -89,6 +89,8 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
         accountNumber: '',
         hourlyRate: 0,
         currency: 'HUF',
+        taxNumber: '',
+        socialSecurityNumber: '',
         notes: ''
     });
 
@@ -117,7 +119,8 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
             weeklyWorkHours: "Weekly Hours", birthCountry: "Birth Country", birthCity: "Birth City",
             address: "Street Address", city: "City", postalCode: "Postal Code", country: "Country",
             bankName: "Bank", accountNumber: "Account", hourlyRate: "Hourly Rate",
-            currency: "Currency", notes: "Notes", changePassword: "Change Password",
+            currency: "Currency", notes: "Notes", taxNumber: "Tax Number", socialSecurityNumber: "Social Security Number",
+            changePassword: "Change Password",
             currentPassword: "Current Password", newPassword: "New Password", confirmPassword: "Confirm Password",
             active: "Active", inactive: "Inactive", suspended: "Suspended", terminated: "Terminated",
             quickStats: "Quick Stats", daysInTeam: "Days in team", currentRole: "Current role",
@@ -140,7 +143,8 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
             weeklyWorkHours: "Heti munkaidő", birthCountry: "Születési ország", birthCity: "Születési város",
             address: "Utca és házszám", city: "Város", postalCode: "Irányítószám", country: "Ország",
             bankName: "Bank", accountNumber: "Számlaszám", hourlyRate: "Órabér",
-            currency: "Pénznem", notes: "Megjegyzések", changePassword: "Jelszó módosítása",
+            currency: "Pénznem", notes: "Megjegyzések", taxNumber: "Adószám", socialSecurityNumber: "TAJ Szám",
+            changePassword: "Jelszó módosítása",
             currentPassword: "Jelenlegi jelszó", newPassword: "Új jelszó", confirmPassword: "Új jelszó megerősítése",
             active: "Aktív", inactive: "Inaktív", suspended: "Felfüggesztve", terminated: "Megszüntetett",
             quickStats: "Gyors statisztikák", daysInTeam: "Napja a csapatban", currentRole: "Jelenlegi szerep",
@@ -190,6 +194,8 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                         accountNumber: userData.accountNumber || '',
                         hourlyRate: userData.hourlyRate || 0,
                         currency: userData.currency || 'HUF',
+                        taxNumber: userData.taxNumber || '',
+                        socialSecurityNumber: userData.socialSecurityNumber || '',
                         notes: userData.notes || ''
                     });
                 }
@@ -527,7 +533,9 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                                             {[
                                                 { key: 'bankName', label: t.bankName, type: 'text', disabled: !canEdit },
                                                 { key: 'accountNumber', label: t.accountNumber, type: 'text', disabled: !canEdit },
-                                                { key: 'hourlyRate', label: t.hourlyRate, type: 'number', disabled: !canEdit }
+                                                { key: 'hourlyRate', label: t.hourlyRate, type: 'number', disabled: !canEdit },
+                                                { key: 'taxNumber', label: t.taxNumber, type: 'text', disabled: !canEdit },
+                                                { key: 'socialSecurityNumber', label: t.socialSecurityNumber, type: 'text', disabled: !canEdit }
                                             ].map(({ key, label, type, disabled }) => (
                                                 <div key={key}>
                                                     <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>

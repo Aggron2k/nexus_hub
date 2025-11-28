@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/app/context/LanguageContext";
 import axios from "axios";
-import { HiChevronLeft, HiChevronRight } from "react-icons/hi2";
+import { HiChevronLeft, HiChevronRight, HiChevronDown } from "react-icons/hi2";
 
 interface WeekDay {
     date: string;
@@ -37,6 +37,7 @@ const MonthlyHoursBreakdown: React.FC = () => {
     const [data, setData] = useState<MonthlyData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [currentDate, setCurrentDate] = useState(new Date());
+    const [expandedWeek, setExpandedWeek] = useState<number | null>(null);
 
     const fetchMonthlyData = async (year: number, month: number) => {
         setIsLoading(true);
@@ -117,6 +118,10 @@ const MonthlyHoursBreakdown: React.FC = () => {
         setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
     };
 
+    const toggleWeek = (weekNumber: number) => {
+        setExpandedWeek(expandedWeek === weekNumber ? null : weekNumber);
+    };
+
     return (
         <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
             {/* Header with Month Navigation */}
@@ -147,41 +152,77 @@ const MonthlyHoursBreakdown: React.FC = () => {
                     <p className="text-gray-500">{t.loading}</p>
                 </div>
             ) : data && data.weeklyData.length > 0 ? (
-                <div className="space-y-6">
-                    {/* Weekly Breakdown */}
-                    {data.weeklyData.map((week) => (
-                        <div key={week.weekNumber} className="border border-gray-200 rounded-lg p-4">
-                            <h3 className="text-lg font-semibold text-gray-700 mb-3">
-                                {t.week} {week.weekNumber} ({formatDate(week.weekStart)} - {formatDate(week.weekEnd)})
-                            </h3>
-                            <div className="space-y-2">
-                                {week.days.map((day, index) => (
-                                    <div key={index} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                                        <span className="text-sm font-medium text-gray-600 w-32">
-                                            {dayNames[index]} ({new Date(day.date).getDate()})
-                                        </span>
-                                        <span className="text-sm text-gray-800">
-                                            {day.hours > 0 ? `${day.hours}h` : '-'}
-                                        </span>
-                                        <span className="text-sm font-semibold text-gray-900 w-32 text-right">
-                                            {day.grossAmount > 0 ? `${formatCurrency(day.grossAmount)} Ft` : '-'}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="mt-3 pt-3 border-t-2 border-gray-300">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-md font-bold text-gray-700">{t.weeklyTotal}</span>
-                                    <span className="text-md font-bold text-gray-900">
-                                        {week.totalHours}h → {formatCurrency(week.totalGrossAmount)} Ft
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+                <div className="space-y-4">
+                    {/* Weekly Breakdown - Scrollable Area */}
+                    <div className="max-h-[800px] overflow-y-auto space-y-2 pr-2">
+                        {data.weeklyData.map((week) => {
+                            const isExpanded = expandedWeek === week.weekNumber;
+                            return (
+                                <div
+                                    key={week.weekNumber}
+                                    className={`border-2 rounded-lg transition-all ${
+                                        isExpanded
+                                            ? 'border-nexus-tertiary bg-blue-50'
+                                            : 'border-gray-200 bg-white hover:border-gray-300'
+                                    }`}
+                                >
+                                    {/* Accordion Header - Always Visible */}
+                                    <button
+                                        onClick={() => toggleWeek(week.weekNumber)}
+                                        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 rounded-lg transition-colors"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <HiChevronDown
+                                                className={`h-5 w-5 text-gray-600 transition-transform ${
+                                                    isExpanded ? 'rotate-0' : '-rotate-90'
+                                                }`}
+                                            />
+                                            <div className="text-left">
+                                                <h3 className="text-base lg:text-lg font-semibold text-gray-700">
+                                                    {t.week} {week.weekNumber} ({formatDate(week.weekStart)} - {formatDate(week.weekEnd)})
+                                                </h3>
+                                                <p className="text-sm text-gray-600 mt-1">
+                                                    {week.totalHours}h → {formatCurrency(week.totalGrossAmount)} Ft
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </button>
 
-                    {/* Monthly Total */}
-                    <div className="bg-nexus-primary rounded-lg p-4 mt-6">
+                                    {/* Accordion Body - Conditional */}
+                                    {isExpanded && (
+                                        <div className="px-4 pb-4 space-y-2">
+                                            <div className="border-t border-gray-200 pt-3">
+                                                {week.days.map((day, index) => (
+                                                    <div key={index} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                                                        <span className="text-sm font-medium text-gray-600 w-32">
+                                                            {dayNames[index]} ({new Date(day.date).getDate()})
+                                                        </span>
+                                                        <span className="text-sm text-gray-800">
+                                                            {day.hours > 0 ? `${day.hours}h` : '-'}
+                                                        </span>
+                                                        <span className="text-sm font-semibold text-gray-900 w-32 text-right">
+                                                            {day.grossAmount > 0 ? `${formatCurrency(day.grossAmount)} Ft` : '-'}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="mt-3 pt-3 border-t-2 border-gray-300 bg-gray-50 rounded px-3 py-2">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-sm lg:text-md font-bold text-gray-700">{t.weeklyTotal}</span>
+                                                    <span className="text-sm lg:text-md font-bold text-gray-900">
+                                                        {week.totalHours}h → {formatCurrency(week.totalGrossAmount)} Ft
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Monthly Total - Always Visible */}
+                    <div className="bg-nexus-primary rounded-lg p-4 sticky bottom-0">
                         <div className="flex justify-between items-center">
                             <span className="text-lg font-bold text-white">{t.monthlyTotal}</span>
                             <span className="text-lg font-bold text-white">
