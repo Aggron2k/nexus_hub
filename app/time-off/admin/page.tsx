@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/app/context/LanguageContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import EmployeeBalanceTable from "../components/EmployeeBalanceTable";
 import TimeOffMobileSelector from "../components/TimeOffMobileSelector";
@@ -11,9 +11,10 @@ import TimeOffMobileHeader from "../components/TimeOffMobileHeader";
 export default function TimeOffAdminPage() {
   const { language } = useLanguage();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showMobileSelector, setShowMobileSelector] = useState(true);
+  const [showMobileSelector, setShowMobileSelector] = useState(searchParams.get('view') !== 'selected');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -100,15 +101,21 @@ export default function TimeOffAdminPage() {
           <TimeOffMobileSelector
             onSelectMyTimeOff={() => {
               setShowMobileSelector(false);
-              router.push('/time-off');
+              router.push('/time-off?view=selected');
             }}
-            onSelectTeamOverview={() => setShowMobileSelector(false)}
+            onSelectTeamOverview={() => {
+              setShowMobileSelector(false);
+              router.push('/time-off/admin?view=selected');
+            }}
           />
         ) : (
           // Mobile Content
           <div className="h-full bg-nexus-bg overflow-y-auto pb-20">
             <TimeOffMobileHeader
-              onBack={() => setShowMobileSelector(true)}
+              onBack={() => {
+                setShowMobileSelector(true);
+                router.push('/time-off/admin');
+              }}
               title={t.teamOverview}
             />
 

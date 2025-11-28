@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/app/context/LanguageContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import VacationRequestsList from "./components/VacationRequestsList";
 import VacationCalendar from "./components/VacationCalendar";
@@ -12,9 +12,10 @@ import TimeOffMobileHeader from "./components/TimeOffMobileHeader";
 export default function TimeOffPage() {
   const { language } = useLanguage();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showMobileSelector, setShowMobileSelector] = useState(true);
+  const [showMobileSelector, setShowMobileSelector] = useState(searchParams.get('view') !== 'selected');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -74,10 +75,13 @@ export default function TimeOffPage() {
         {isAdmin && showMobileSelector ? (
           // Mobile Selector (GM/CEO only)
           <TimeOffMobileSelector
-            onSelectMyTimeOff={() => setShowMobileSelector(false)}
+            onSelectMyTimeOff={() => {
+              setShowMobileSelector(false);
+              router.push('/time-off?view=selected');
+            }}
             onSelectTeamOverview={() => {
               setShowMobileSelector(false);
-              router.push('/time-off/admin');
+              router.push('/time-off/admin?view=selected');
             }}
           />
         ) : (
@@ -85,7 +89,10 @@ export default function TimeOffPage() {
           <div className="h-full bg-nexus-bg overflow-y-auto pb-20">
             {isAdmin && (
               <TimeOffMobileHeader
-                onBack={() => setShowMobileSelector(true)}
+                onBack={() => {
+                  setShowMobileSelector(true);
+                  router.push('/time-off');
+                }}
                 title={t.myTimeOff}
               />
             )}

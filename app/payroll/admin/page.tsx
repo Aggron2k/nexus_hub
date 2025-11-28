@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/app/context/LanguageContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import EmployeePayrollTable from "../components/EmployeePayrollTable";
 import PayrollMobileSelector from "../components/PayrollMobileSelector";
@@ -11,9 +11,10 @@ import PayrollMobileHeader from "../components/PayrollMobileHeader";
 export default function PayrollAdminPage() {
     const { language } = useLanguage();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [showMobileSelector, setShowMobileSelector] = useState(true);
+    const [showMobileSelector, setShowMobileSelector] = useState(searchParams.get('view') !== 'selected');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -100,15 +101,21 @@ export default function PayrollAdminPage() {
                     <PayrollMobileSelector
                         onSelectMyPayroll={() => {
                             setShowMobileSelector(false);
-                            router.push('/payroll');
+                            router.push('/payroll?view=selected');
                         }}
-                        onSelectTeamPayroll={() => setShowMobileSelector(false)}
+                        onSelectTeamPayroll={() => {
+                            setShowMobileSelector(false);
+                            router.push('/payroll/admin?view=selected');
+                        }}
                     />
                 ) : (
                     // Mobile Content
                     <div className="h-full bg-nexus-bg overflow-y-auto pb-20">
                         <PayrollMobileHeader
-                            onBack={() => setShowMobileSelector(true)}
+                            onBack={() => {
+                                setShowMobileSelector(true);
+                                router.push('/payroll/admin');
+                            }}
                             title={t.teamPayroll}
                         />
 

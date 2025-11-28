@@ -118,23 +118,23 @@ const MonthlyHoursBreakdown: React.FC = () => {
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
             {/* Header with Month Navigation */}
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">{t.title}</h2>
-                <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-4 mb-6 lg:flex-row lg:items-center lg:justify-between">
+                <h2 className="text-xl lg:text-2xl font-bold text-gray-800">{t.title}</h2>
+                <div className="flex items-center justify-center gap-2 lg:gap-3">
                     <button
                         onClick={goToPreviousMonth}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
                     >
                         <HiChevronLeft className="h-5 w-5 text-gray-600" />
                     </button>
-                    <span className="text-lg font-semibold text-gray-700 min-w-[200px] text-center">
+                    <span className="text-base lg:text-lg font-semibold text-gray-700 whitespace-nowrap px-2">
                         {monthNames[language][currentDate.getMonth()]} {currentDate.getFullYear()}
                     </span>
                     <button
                         onClick={goToNextMonth}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
                     >
                         <HiChevronRight className="h-5 w-5 text-gray-600" />
                     </button>
