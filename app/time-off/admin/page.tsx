@@ -14,7 +14,7 @@ export default function TimeOffAdminPage() {
   const searchParams = useSearchParams();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showMobileSelector, setShowMobileSelector] = useState(searchParams.get('view') !== 'selected');
+  const [showMobileSelector, setShowMobileSelector] = useState(searchParams?.get('view') !== 'selected');
 
   useEffect(() => {
     const fetchData = async () => {

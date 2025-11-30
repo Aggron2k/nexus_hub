@@ -60,6 +60,14 @@ enum TimeOffType {
   SICK_LEAVE       // Betegszabadság
 }
 
+enum MessageType {
+  ANNOUNCEMENT     // Bejelentés
+  NEWS             // Hírek
+  QUESTION         // Kérdés
+  IDEA             // Ötlet
+  BIRTHDAY         // Születésnap
+}
+
 // Új Position model - dinamikus pozíciók
 model Position {
   id String @id @default(auto()) @map("_id") @db.ObjectId
@@ -194,6 +202,12 @@ model User {
   shiftRequests ShiftRequest[] @relation("UserShiftRequests")
   actualWorkHours ActualWorkHours[] @relation("UserActualWorkHours")
   timeOffRequests TimeOffRequest[] @relation("UserTimeOffRequests")
+
+  // Message Board kapcsolatok
+  messages MessageBoard[] @relation("UserMessages")
+  messageReactions MessageReaction[] @relation("UserReactions")
+  messageComments MessageComment[] @relation("UserComments")
+  pinnedMessages MessageBoard[] @relation("PinnedByUser")
 
   @@index([employeeId]) // Egyedi index csak nem-null értékekre
 }
@@ -501,4 +515,80 @@ model TimeOffRequest {
   @@index([status])
   @@index([startDate])
   @@index([endDate])
+}
+
+// MESSAGE BOARD MODELS - Üzenőfal
+
+// Üzenet a falon
+model MessageBoard {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Szerző
+  authorId String @db.ObjectId
+  author User @relation("UserMessages", fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Tartalom
+  title String?
+  content String // Fő szöveg
+  imageUrl String? // Cloudinary URL (opcionális)
+
+  // Típus/Kategória
+  type MessageType
+
+  // Pinnelés (csak CEO/GM)
+  isPinned Boolean @default(false)
+  pinnedById String? @db.ObjectId
+  pinnedBy User? @relation("PinnedByUser", fields: [pinnedById], references: [id])
+  pinnedAt DateTime?
+
+  // Kapcsolatok
+  reactions MessageReaction[]
+  comments MessageComment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([authorId])
+  @@index([type])
+  @@index([isPinned])
+  @@index([createdAt])
+}
+
+// Reakciók (like, emoji)
+model MessageReaction {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  messageId String @db.ObjectId
+  message MessageBoard @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  userId String @db.ObjectId
+  user User @relation("UserReactions", fields: [userId], references: [id], onDelete: Cascade)
+
+  emoji String // "👍", "❤️", "😄", "🎉"
+
+  createdAt DateTime @default(now())
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@index([userId])
+}
+
+// Kommentek
+model MessageComment {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  messageId String @db.ObjectId
+  message MessageBoard @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  authorId String @db.ObjectId
+  author User @relation("UserComments", fields: [authorId], references: [id], onDelete: Cascade)
+
+  content String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([messageId])
+  @@index([authorId])
+  @@index([createdAt])
 }

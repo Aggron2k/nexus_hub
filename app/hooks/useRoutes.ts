@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { HiCash } from "react-icons/hi";
-import { HiArrowLeftOnRectangle, HiUsers, HiCalendarDays, HiDocument, HiClipboardDocumentList } from "react-icons/hi2";
+import { HiArrowLeftOnRectangle, HiUsers, HiCalendarDays, HiDocument, HiClipboardDocumentList, HiChatBubbleLeftRight } from "react-icons/hi2";
 import { FaTasks } from "react-icons/fa";
 import { BiTrip } from "react-icons/bi";
 import { MdSpaceDashboard } from "react-icons/md";
@@ -24,6 +24,7 @@ const useRoutes = () => {
             calendar: "Calendar",
             myRequests: "My Requests",
             tasks: "Tasks",
+            messages: "Messages",
             documents: "Documents",
             timeOff: "Time Off",
             payroll: "Payroll",
@@ -37,6 +38,7 @@ const useRoutes = () => {
             calendar: "Naptár",
             myRequests: "Kéréseim",
             tasks: "Feladatok",
+            messages: "Üzenőfal",
             documents: "Iratok",
             timeOff: "Szabadság",
             payroll: "Bérezés",
@@ -52,6 +54,12 @@ const useRoutes = () => {
             href: '/dashboard',
             icon: MdSpaceDashboard,
             active: pathname === '/dashboard',
+        },
+        {
+            label: translations[language].messages,
+            href: '/messages',
+            icon: HiChatBubbleLeftRight,
+            active: pathname === '/messages',
         },
         {
             label: translations[language].users,

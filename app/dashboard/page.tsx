@@ -10,6 +10,7 @@ import UserPositionsCard from "./components/UserPositionsCard";
 import VacationBalanceCard from "../time-off/components/VacationBalanceCard";
 import PayrollSummaryWidget from "../payroll/components/PayrollSummaryWidget";
 import DashboardMobileHeader from "./components/DashboardMobileHeader";
+import MessageBoardWidget from "../messages/components/MessageBoardWidget";
 
 export default function DashboardPage() {
     const { language } = useLanguage();
@@ -76,6 +77,9 @@ export default function DashboardPage() {
                     {/* Welcome Card */}
                     <WelcomeCard user={currentUser} />
 
+                    {/* Message Board Widget */}
+                    <MessageBoardWidget />
+
                     {/* Hour Summary Widget */}
                     {latestSchedule && (
                         <HourSummaryWidget
@@ -126,6 +130,11 @@ export default function DashboardPage() {
                         {/* Harmadik sor: Todo Stats (teljes szélesség) */}
                         <div>
                             <TodoStats />
+                        </div>
+
+                        {/* Negyedik sor: Message Board Widget (teljes szélesség) */}
+                        <div>
+                            <MessageBoardWidget />
                         </div>
                     </div>
                 </div>
