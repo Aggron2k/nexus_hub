@@ -4,6 +4,9 @@
 import { useLanguage } from "@/app/context/LanguageContext";
 import { HiUsers } from "react-icons/hi2";
 
+export const dynamic = 'force-dynamic';
+
+
 export default function UsersPage() {
     const { language } = useLanguage();
 

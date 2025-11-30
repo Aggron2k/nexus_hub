@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { User } from "@prisma/client";
-import { HiHome, HiClock } from "react-icons/hi2";
+import { HiClock } from "react-icons/hi2";
 import Image from "next/image";
+import ActiveUsersWidget from "./ActiveUsersWidget";
 
 interface MessagesSidebarProps {
     currentUser: User | null;
@@ -97,6 +98,9 @@ const MessagesSidebar: React.FC<MessagesSidebarProps> = ({ currentUser }) => {
                         <p className="text-2xl font-bold text-nexus-tertiary tabular-nums">{formatTime()}</p>
                     </div>
                 </div>
+
+                {/* Active Users Widget */}
+                <ActiveUsersWidget />
             </div>
         </aside>
     );

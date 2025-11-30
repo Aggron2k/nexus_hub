@@ -15,6 +15,10 @@ interface CreateMessageModalProps {
     onClose: () => void;
 }
 
+interface CloudinaryUploadWidgetInfo {
+    secure_url: string;
+}
+
 const CreateMessageModal: React.FC<CreateMessageModalProps> = ({ isOpen, onClose }) => {
     const router = useRouter();
     const { language } = useLanguage();
@@ -186,10 +190,10 @@ const CreateMessageModal: React.FC<CreateMessageModalProps> = ({ isOpen, onClose
                                 options={{
                                     maxFiles: 1,
                                     maxFileSize: 5000000, // 5MB
-                                    sources: ['local', 'camera'],
+                                    sources: ['local', 'url', 'camera'],
                                     resourceType: 'image'
                                 }}
-                                onSuccess={(result: any) => {
+                                onSuccess={(result: { info?: CloudinaryUploadWidgetInfo }) => {
                                     setFormData({ ...formData, imageUrl: result.info.secure_url });
                                 }}
                             >
