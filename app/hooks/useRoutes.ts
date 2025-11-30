@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { HiChat, HiCash } from "react-icons/hi";
+import { HiCash } from "react-icons/hi";
 import { HiArrowLeftOnRectangle, HiUsers, HiCalendarDays, HiDocument, HiClipboardDocumentList } from "react-icons/hi2";
 import { FaTasks } from "react-icons/fa";
 import { BiTrip } from "react-icons/bi";
@@ -10,19 +10,16 @@ import { IoLanguage } from "react-icons/io5";
 import { signOut } from "next-auth/react";
 import { toast } from "react-hot-toast";
 
-import useConversation from "./useConversation";
 import { useLanguage } from "@/app/context/LanguageContext";
 
 const useRoutes = () => {
     const pathname = usePathname();
-    const { conversationId } = useConversation();
     const { language, toggleLanguage } = useLanguage();
 
     // Fordítások
     const translations = {
         en: {
             dashboard: "Dashboard",
-            chat: "Chat",
             users: "People",
             calendar: "Calendar",
             myRequests: "My Requests",
@@ -36,7 +33,6 @@ const useRoutes = () => {
         },
         hu: {
             dashboard: "Irányítópult",
-            chat: "Csevegés",
             users: "Emberek",
             calendar: "Naptár",
             myRequests: "Kéréseim",
@@ -56,12 +52,6 @@ const useRoutes = () => {
             href: '/dashboard',
             icon: MdSpaceDashboard,
             active: pathname === '/dashboard',
-        },
-        {
-            label: translations[language].chat,
-            href: '/conversations',
-            icon: HiChat,
-            active: pathname === '/conversations' || !!conversationId,
         },
         {
             label: translations[language].users,
@@ -120,7 +110,7 @@ const useRoutes = () => {
             },
             icon: HiArrowLeftOnRectangle,
         },
-    ], [pathname, conversationId, toggleLanguage, language]);
+    ], [pathname, toggleLanguage, language]);
 
     return routes;
 };

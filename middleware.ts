@@ -32,7 +32,6 @@ export const config = {
     matcher: [
         // Protected routes
         "/users/:path*",
-        "/conversations/:path*",
         "/dashboard/:path*",
         "/documents/:path*",
         "/tasks/:path*",

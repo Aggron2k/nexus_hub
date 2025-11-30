@@ -28,12 +28,6 @@ async function main() {
     console.log('Törlés: Todo...');
     await prisma.todo.deleteMany();
 
-    console.log('Törlés: Message...');
-    await prisma.message.deleteMany();
-
-    console.log('Törlés: Conversation...');
-    await prisma.conversation.deleteMany();
-
     console.log('Törlés: Document...');
     await prisma.document.deleteMany();
 

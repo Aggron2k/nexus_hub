@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Role } from '@prisma/client';
-import { HiPencil, HiCheck, HiUser, HiBriefcase, HiChatBubbleLeft, HiChevronLeft, HiTrash, HiBanknotes, HiArrowUp } from 'react-icons/hi2';
+import { HiPencil, HiCheck, HiUser, HiBriefcase, HiChevronLeft, HiTrash, HiBanknotes, HiArrowUp } from 'react-icons/hi2';
 import { HiX } from 'react-icons/hi';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { useRouter } from 'next/navigation';
@@ -62,7 +62,6 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
     const [positions, setPositions] = useState<Position[]>([]);
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [chatLoading, setChatLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'profile' | 'employment' | 'bank'>('profile');
     const [showPasswordSection, setShowPasswordSection] = useState(false);
@@ -112,7 +111,7 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
         en: {
             profile: "User Profile", edit: "Edit", save: "Save", cancel: "Cancel", saving: "Saving...",
             name: "Name", email: "Email", role: "Role", position: "Position", profileImage: "Profile Image",
-            registered: "Registered", lastModified: "Last Modified", chat: "Chat", loading: "Loading...",
+            registered: "Registered", lastModified: "Last Modified", loading: "Loading...",
             employee: "Employee", manager: "Manager", generalManager: "General Manager", ceo: "CEO",
             profileTab: "Profile", employmentTab: "Employment", bankTab: "Banking",
             employeeId: "Employee ID", phoneNumber: "Phone", employmentStatus: "Status",
@@ -136,7 +135,7 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
         hu: {
             profile: "Felhasználói Profil", edit: "Szerkesztés", save: "Mentés", cancel: "Mégse", saving: "Mentés...",
             name: "Név", email: "Email", role: "Szerep", position: "Pozíció", profileImage: "Profilkép",
-            registered: "Regisztráció", lastModified: "Utolsó módosítás", chat: "Chat", loading: "Betöltés...",
+            registered: "Regisztráció", lastModified: "Utolsó módosítás", loading: "Betöltés...",
             employee: "Alkalmazott", manager: "Menedzser", generalManager: "Általános Vezető", ceo: "Vezérigazgató",
             profileTab: "Alapadatok", employmentTab: "Munkavállalói adatok", bankTab: "Banki adatok",
             employeeId: "Munkavállalói azonosító", phoneNumber: "Telefon", employmentStatus: "Állapot",
@@ -263,15 +262,6 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
         }
     };
 
-    const handleChatClick = useCallback(() => {
-        if (!selectedUser || isOwnProfile) return;
-        setChatLoading(true);
-        axios.post('/api/conversations', { userId: selectedUser.id })
-            .then((response) => router.push(`/conversations/${response.data.id}`))
-            .catch(() => setError('Chat hiba'))
-            .finally(() => setChatLoading(false));
-    }, [selectedUser, isOwnProfile, router]);
-
     // Felhasználó törlése
     const handleDelete = async () => {
         if (!selectedUser) return;
@@ -387,16 +377,6 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                                 </div>
                             </div>
                             <div className="flex gap-2">
-                                {!isOwnProfile && (
-                                    <button
-                                        onClick={handleChatClick}
-                                        disabled={chatLoading}
-                                        className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-nexus-primary text-nexus-tertiary rounded-lg hover:bg-opacity-90"
-                                    >
-                                        <HiChatBubbleLeft className="h-4 w-4" />
-                                        <span className="hidden sm:inline">{t.chat}</span>
-                                    </button>
-                                )}
                                 {(canEdit || isOwnProfile) && !isEditing && (
                                     <button
                                         onClick={() => setIsEditing(true)}
