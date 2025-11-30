@@ -55,7 +55,7 @@ export async function GET() {
         // Kiszűrjük a törölt felhasználókat (ugyanúgy mint getAllUsers)
         const users = allUsers.filter(user => !user.deletedAt);
 
-        // Feldolgozzuk a választ - backward compatibility
+        // Feldolgozzuk a választ - multi-position support + backward compatibility
         const processedUsers = users.map(user => {
             const primaryPosition = user.userPositions.find(up => up.isPrimary);
             const firstPosition = user.userPositions[0];
@@ -66,7 +66,18 @@ export async function GET() {
                 email: user.email,
                 role: user.role,
                 createdAt: user.createdAt,
-                // Backward compatibility
+
+                // NEW: All positions array for multi-position support
+                positions: user.userPositions.map(up => ({
+                    id: up.position.id,
+                    name: up.position.name,
+                    displayNames: up.position.displayNames,
+                    color: up.position.color,
+                    isPrimary: up.isPrimary,
+                    assignedAt: up.assignedAt
+                })),
+
+                // DEPRECATED: Backward compatibility - will be removed in future
                 position: (primaryPosition || firstPosition)?.position || null,
                 positionId: (primaryPosition || firstPosition)?.position.id || null
             };

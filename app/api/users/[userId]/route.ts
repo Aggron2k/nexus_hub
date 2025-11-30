@@ -134,7 +134,7 @@ export async function PUT(
             name,
             email,
             role,
-            positionId, // Backward compatibility - egy pozíció beállításához
+            // positionId REMOVED - use /api/users/[userId]/positions endpoint for position management
             image,
             employeeId,
             phoneNumber,
@@ -250,25 +250,9 @@ export async function PUT(
         if (currency !== undefined) updateData.currency = currency || 'HUF';
         if (notes !== undefined) updateData.notes = notes || null;
 
-        // Pozíció kezelés (backward compatibility)
-        if (positionId !== undefined) {
-            // Törli az összes meglévő pozíciót
-            await prisma.userPosition.deleteMany({
-                where: { userId: userId }
-            });
-
-            // Ha van új pozíció, hozzáadja elsődlegesként
-            if (positionId) {
-                await prisma.userPosition.create({
-                    data: {
-                        userId: userId,
-                        positionId: positionId,
-                        isPrimary: true,
-                        assignedBy: currentUser.id
-                    }
-                });
-            }
-        }
+        // Position management is handled through /api/users/[userId]/positions endpoint
+        // The multi-position support requires dedicated endpoint for position assignments
+        // REMOVED: Destructive positionId handler that deleted all user positions
 
         // Felhasználó frissítése
         const updatedUser = await prisma.user.update({

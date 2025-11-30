@@ -159,20 +159,53 @@ export async function POST(request: NextRequest) {
         let userIds: string[] = [];
 
         if (assignToAll && targetPositionId) {
+            // DEBUG: Log the query
+            console.log('🔍 TODO Creation - Searching for users with positionId:', targetPositionId);
+
             // Minden felhasználó aki az adott pozícióban van
+            // MongoDB-nál a deletedAt mező hiánya != null, ezért employmentStatus-t használunk
             const usersWithPosition = await prisma.user.findMany({
                 where: {
-                    deletedAt: null, // Csak aktív felhasználók
+                    employmentStatus: 'ACTIVE', // Csak aktív alkalmazottak
                     userPositions: {
                         some: {
                             positionId: targetPositionId
                         }
                     }
                 },
-                select: { id: true }
+                select: { id: true, name: true, email: true }  // DEBUG: select name/email
             });
 
+            // DEBUG: Log results
+            console.log('✅ Found users with this position:', usersWithPosition.length);
+            if (usersWithPosition.length > 0) {
+                console.log('   Users:', usersWithPosition.map(u => `${u.name} (${u.email})`).join(', '));
+            }
+
             if (usersWithPosition.length === 0) {
+                // DEBUG: Check if ANY users exist with positions
+                const allUsersWithPositions = await prisma.user.findMany({
+                    where: {
+                        employmentStatus: 'ACTIVE',
+                        userPositions: {
+                            some: {}
+                        }
+                    },
+                    select: { id: true, name: true, email: true }
+                });
+                console.log('❌ No users found with positionId:', targetPositionId);
+                console.log('📊 Total ACTIVE users with ANY position:', allUsersWithPositions.length);
+                if (allUsersWithPositions.length > 0) {
+                    console.log('   These users have positions:', allUsersWithPositions.map(u => u.email).join(', '));
+                }
+
+                // Check the position itself
+                const position = await prisma.position.findUnique({
+                    where: { id: targetPositionId },
+                    select: { name: true, displayNames: true }
+                });
+                console.log('🎯 Target position:', position ? `${position.name} (${JSON.stringify(position.displayNames)})` : 'NOT FOUND');
+
                 return new NextResponse("No users found with the specified position", { status: 400 });
             }
 

@@ -14,8 +14,20 @@ interface UserWithPosition {
     name: string;
     email: string;
     role: string;
-    positionId: string | null;
-    position: {
+    // NEW: Multi-position support via userPositions array
+    positions?: Array<{
+        id: string;
+        name: string;
+        displayNames: {
+            en: string;
+            hu: string;
+        };
+        color: string;
+        isPrimary: boolean;
+    }>;
+    // DEPRECATED: Backward compatibility - kept for fallback
+    positionId?: string | null;
+    position?: {
         id: string;
         name: string;
         displayNames: {
@@ -186,7 +198,11 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
 
     useEffect(() => {
         if (targetPositionId) {
-            const usersWithPosition = users.filter(user => user.positionId === targetPositionId);
+            // Filter users who have this position (in ANY of their positions)
+            const usersWithPosition = users.filter(user =>
+                user.positions?.some(p => p.id === targetPositionId) ||
+                user.position?.id === targetPositionId  // Fallback for old data format
+            );
             setSelectedUserIds(usersWithPosition.map(user => user.id));
         }
     }, [targetPositionId, users]);
@@ -306,7 +322,10 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
     };
 
     const filteredUsers = targetPositionId
-        ? users.filter(user => user.positionId === targetPositionId)
+        ? users.filter(user =>
+            user.positions?.some(p => p.id === targetPositionId) ||
+            user.position?.id === targetPositionId  // Fallback for old data format
+        )
         : users;
 
     const selectedPosition = positions.find(pos => pos.id === targetPositionId);
