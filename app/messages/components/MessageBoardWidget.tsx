@@ -24,8 +24,10 @@ export default function MessageBoardWidget() {
     const translations = {
         en: {
             title: "Latest Message",
+            pinnedTitle: "📌 Pinned Message",
             viewAll: "View All Messages",
             noMessages: "No messages yet",
+            imageAttached: "📎 Image attached to message",
             types: {
                 ANNOUNCEMENT: "Announcement",
                 NEWS: "News",
@@ -36,8 +38,10 @@ export default function MessageBoardWidget() {
         },
         hu: {
             title: "Legutóbbi üzenet",
+            pinnedTitle: "📌 Kitűzött üzenet",
             viewAll: "Összes üzenet",
             noMessages: "Még nincsenek üzenetek",
+            imageAttached: "📎 Képet csatoltak az üzenethez",
             types: {
                 ANNOUNCEMENT: "Bejelentés",
                 NEWS: "Hírek",
@@ -126,7 +130,9 @@ export default function MessageBoardWidget() {
                         <div className="p-2 bg-nexus-primary rounded-lg">
                             <HiChatBubbleLeftRight className="h-5 w-5 text-nexus-tertiary" />
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-900">{t.title}</h3>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                            {latestMessage?.isPinned ? t.pinnedTitle : t.title}
+                        </h3>
                     </div>
                     <button
                         onClick={() => router.push('/messages')}
@@ -174,15 +180,11 @@ export default function MessageBoardWidget() {
                             {latestMessage.content}
                         </p>
 
-                        {/* Image */}
+                        {/* Image indicator */}
                         {latestMessage.imageUrl && (
-                            <div className="rounded-lg overflow-hidden">
-                                <img
-                                    src={latestMessage.imageUrl}
-                                    alt="Message image"
-                                    className="w-full h-32 object-cover"
-                                />
-                            </div>
+                            <p className="text-sm text-gray-500 italic">
+                                {t.imageAttached}
+                            </p>
                         )}
 
                         {/* Reactions */}
