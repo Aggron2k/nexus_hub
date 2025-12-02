@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { HiMenuAlt1, HiX } from "react-icons/hi";
 import useRoutes from "@/app/hooks/useRoutes";
 import MobileItem from "./MobileItem";
-import Avatar from "@/app/components/Avatar";
+import UserProfileImage from "@/app/components/UserProfileImage";
 import { User } from "@prisma/client";
 
 interface MobileFooterProps {
@@ -79,7 +79,7 @@ const MobileFooter: React.FC<MobileFooterProps> = ({ currentUser }) => {
                                 onClick={handleAvatarClick}
                                 className="flex items-center space-x-3 cursor-pointer hover:bg-nexus-primary rounded-lg p-2 transition-colors"
                             >
-                                <Avatar user={currentUser} />
+                                <UserProfileImage userData={currentUser} />
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium text-white truncate">
                                         {currentUser.name || 'Saját profil'}

@@ -193,8 +193,10 @@ const CreateMessageModal: React.FC<CreateMessageModalProps> = ({ isOpen, onClose
                                     sources: ['local', 'url', 'camera'],
                                     resourceType: 'image'
                                 }}
-                                onSuccess={(result: { info?: CloudinaryUploadWidgetInfo }) => {
-                                    setFormData({ ...formData, imageUrl: result.info.secure_url });
+                                onSuccess={(result: any) => {
+                                    if (result?.info && typeof result.info !== 'string' && result.info.secure_url) {
+                                        setFormData({ ...formData, imageUrl: result.info.secure_url });
+                                    }
                                 }}
                             >
                                 {({ open }) => (

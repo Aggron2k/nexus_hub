@@ -1,7 +1,7 @@
 "use client";
 
 import { HiChevronLeft } from "react-icons/hi2";
-import Avatar from "@/app/components/Avatar";
+import UserProfileImage from "@/app/components/UserProfileImage";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { User } from "@prisma/client";
 import { useRouter } from "next/navigation";
@@ -53,7 +53,7 @@ const Header: React.FC<HeaderProps> = ({ user, documentsId }) => {
                 >
                     <HiChevronLeft size={32} />
                 </button>
-                <Avatar user={avatarUser as User} />
+                <UserProfileImage userData={avatarUser as User} />
                 <div className="flex flex-col">
                     <div className="text-lg font-bold">{`${user.name}${t.documents}`}</div>
                     <div className="text-sm font-light text-neutral-500">

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import useRoutes from "@/app/hooks/useRoutes";
 import DesktopItem from "./DesktopItem";
-import Avatar from "@/app/components/Avatar";
+import UserProfileImage from "@/app/components/UserProfileImage";
 import Image from "next/image";
 import Link from 'next/link';
 
@@ -57,7 +57,7 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
                     className="cursor-pointer hover:opacity-75 transition"
                     title="Saját profil megtekintése"
                 >
-                    <Avatar user={currentUser} />
+                    <UserProfileImage userData={currentUser} />
                 </div>
             </nav>
         </div>

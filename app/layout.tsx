@@ -3,7 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import ToasterContext from "./context/ToasterContext";
 import AuthContext from "./context/AuthContext";
-import ActiveStatus from "./components/ActiveStatus";
+import PresenceMonitor from "./components/PresenceMonitor";
 import { LanguageProvider } from "./context/LanguageContext";
 
 const geistSans = localFont({
@@ -33,7 +33,7 @@ export default function RootLayout({
         <AuthContext>
           <ToasterContext />
           <LanguageProvider>
-            <ActiveStatus />
+            <PresenceMonitor />
             {children}
           </LanguageProvider>
         </AuthContext>

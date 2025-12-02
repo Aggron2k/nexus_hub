@@ -9,7 +9,7 @@ import { formatDistanceToNow } from "date-fns";
 import { hu, enUS } from "date-fns/locale";
 import { HiTrash, HiPencil, HiMapPin } from "react-icons/hi2";
 import { MessageType } from "@prisma/client";
-import Avatar from "@/app/components/Avatar";
+import UserProfileImage from "@/app/components/UserProfileImage";
 import ReactionButtons from "./ReactionButtons";
 import CommentSection from "./CommentSection";
 
@@ -165,7 +165,7 @@ const MessageCard: React.FC<MessageCardProps> = ({
                 {/* Header */}
                 <div className="flex items-start justify-between mb-3">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
-                        <Avatar user={message.author as any} />
+                        <UserProfileImage userData={message.author as any} />
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                                 <p className="font-semibold text-gray-900">{message.author.name}</p>

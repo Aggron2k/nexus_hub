@@ -8,7 +8,7 @@ import { formatDistanceToNow } from "date-fns";
 import { hu, enUS } from "date-fns/locale";
 import { HiChatBubbleLeftRight, HiArrowRight } from "react-icons/hi2";
 import { MessageType } from "@prisma/client";
-import Avatar from "@/app/components/Avatar";
+import UserProfileImage from "@/app/components/UserProfileImage";
 import ReactionButtons from "./ReactionButtons";
 import CommentSection from "./CommentSection";
 
@@ -148,7 +148,7 @@ export default function MessageBoardWidget() {
                     <div className="space-y-3">
                         {/* Message header */}
                         <div className="flex items-start gap-3">
-                            <Avatar user={latestMessage.author} />
+                            <UserProfileImage userData={latestMessage.author} />
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <p className="font-semibold text-sm text-gray-900">

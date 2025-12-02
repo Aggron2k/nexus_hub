@@ -3,7 +3,7 @@
 import { User } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
-import Avatar from "@/app/components/Avatar";
+import UserProfileImage from "@/app/components/UserProfileImage";
 import { useLanguage } from "@/app/context/LanguageContext";
 
 interface UserBoxProps {
@@ -71,7 +71,7 @@ const UserBox: React.FC<UserBoxProps> = ({ data, currentUser }) => {
       onClick={handleClick}
       className="w-full relative flex items-center space-x-3 bg-white p-3 hover:bg-nexus-primary rounded-lg transition cursor-pointer group"
     >
-      <Avatar user={data} />
+      <UserProfileImage userData={data} />
 
       <div className="min-w-0 flex-1">
         <div className="focus:outline-none">

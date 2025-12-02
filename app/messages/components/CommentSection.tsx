@@ -7,7 +7,7 @@ import { useLanguage } from "@/app/context/LanguageContext";
 import { formatDistanceToNow } from "date-fns";
 import { hu, enUS } from "date-fns/locale";
 import { HiTrash, HiChatBubbleLeft } from "react-icons/hi2";
-import Avatar from "@/app/components/Avatar";
+import UserProfileImage from "@/app/components/UserProfileImage";
 
 interface Comment {
     id: string;
@@ -125,7 +125,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                         <div className="space-y-2 max-h-60 overflow-y-auto">
                             {comments.map((comment) => (
                                 <div key={comment.id} className="flex gap-2 bg-gray-50 rounded-lg p-2">
-                                    <Avatar user={comment.author as any} />
+                                    <UserProfileImage userData={comment.author as any} />
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-start justify-between gap-2">
                                             <div className="flex-1 min-w-0">
