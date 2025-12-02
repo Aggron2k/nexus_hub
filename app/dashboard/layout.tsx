@@ -1,6 +1,6 @@
 // app/dashboard/layout.tsx
 import getCurrentUser from "@/app/actions/getCurrentUser";
-import Sidebar from "../components/sidebar/Sidebar";
+import ApplicationShell from "../components/navigation/ApplicationShell";
 import DashboardSidebar from "./components/DashboardSidebar";
 
 export default async function DashboardLayout({
@@ -11,11 +11,11 @@ export default async function DashboardLayout({
     const currentUser = await getCurrentUser();
 
     return (
-        <Sidebar>
+        <ApplicationShell>
             <div className="h-full">
                 <DashboardSidebar currentUser={currentUser} />
                 {children}
             </div>
-        </Sidebar>
+        </ApplicationShell>
     );
 }

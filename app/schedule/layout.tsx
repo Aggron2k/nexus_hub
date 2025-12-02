@@ -1,7 +1,7 @@
 // app/schedule/layout.tsx
 import getCurrentUser from '../actions/getCurrentUser';
 import { redirect } from 'next/navigation';
-import Sidebar from '../components/sidebar/Sidebar';
+import ApplicationShell from '../components/navigation/ApplicationShell';
 import ScheduleList from './components/ScheduleList';
 
 export default async function ScheduleLayout({
@@ -19,11 +19,11 @@ export default async function ScheduleLayout({
   const canManage = ['GeneralManager', 'CEO'].includes(currentUser.role);
 
   return (
-    <Sidebar>
+    <ApplicationShell>
       <div className="h-full">
         <ScheduleList currentUser={currentUser} canManage={canManage} />
         {children}
       </div>
-    </Sidebar>
+    </ApplicationShell>
   );
 }

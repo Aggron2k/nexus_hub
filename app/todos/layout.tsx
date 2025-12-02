@@ -1,5 +1,5 @@
 // app/todos/layout.tsx
-import Sidebar from "../components/sidebar/Sidebar";
+import ApplicationShell from "../components/navigation/ApplicationShell";
 import TodoList from "./components/TodoList";
 import getCurrentUser from "../actions/getCurrentUser";
 
@@ -11,11 +11,11 @@ export default async function TodosLayout({
     const currentUser = await getCurrentUser();
 
     return (
-        <Sidebar>
+        <ApplicationShell>
             <div className="h-full">
                 <TodoList currentUser={currentUser} />
                 {children}
             </div>
-        </Sidebar>
+        </ApplicationShell>
     );
 }

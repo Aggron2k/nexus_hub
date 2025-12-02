@@ -2,7 +2,7 @@ import getAllUsers from '../actions/getAllUsers';
 import getDeletedUsers from '../actions/getDeletedUsers';
 import getCurrentUser from '../actions/getCurrentUser';
 import { redirect } from 'next/navigation';
-import Sidebar from '../components/sidebar/Sidebar';
+import ApplicationShell from '../components/navigation/ApplicationShell';
 import UserList from './components/UserList';
 
 export default async function UsersLayout({
@@ -20,11 +20,11 @@ export default async function UsersLayout({
   const deletedUsers = await getDeletedUsers(); // CEO számára
 
   return (
-    <Sidebar>
+    <ApplicationShell>
       <div className="h-full">
         <UserList items={users} deletedItems={deletedUsers} currentUser={currentUser} />
         {children}
       </div>
-    </Sidebar>
+    </ApplicationShell>
   );
 }

@@ -1,6 +1,6 @@
 // app/messages/layout.tsx
 import getCurrentUser from "@/app/actions/getCurrentUser";
-import Sidebar from "../components/sidebar/Sidebar";
+import ApplicationShell from "../components/navigation/ApplicationShell";
 import MessagesSidebar from "./components/MessagesSidebar";
 
 export default async function MessagesLayout({
@@ -11,11 +11,11 @@ export default async function MessagesLayout({
     const currentUser = await getCurrentUser();
 
     return (
-        <Sidebar>
+        <ApplicationShell>
             <div className="h-full">
                 <MessagesSidebar currentUser={currentUser} />
                 {children}
             </div>
-        </Sidebar>
+        </ApplicationShell>
     );
 }

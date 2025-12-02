@@ -1,6 +1,6 @@
 import getCurrentUser from '../actions/getCurrentUser';
 import { redirect } from 'next/navigation';
-import Sidebar from '../components/sidebar/Sidebar';
+import ApplicationShell from '../components/navigation/ApplicationShell';
 import WeekList from './components/WeekList';
 import prisma from '@/app/libs/prismadb';
 
@@ -34,7 +34,7 @@ export default async function MyRequestsLayout({
   });
 
   return (
-    <Sidebar>
+    <ApplicationShell>
       <div className="h-full">
         <WeekList
           weekSchedules={weekSchedules}
@@ -42,6 +42,6 @@ export default async function MyRequestsLayout({
         />
         {children}
       </div>
-    </Sidebar>
+    </ApplicationShell>
   );
 }

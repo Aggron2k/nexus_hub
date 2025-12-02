@@ -1,6 +1,6 @@
 // app/payroll/layout.tsx
 import getCurrentUser from "@/app/actions/getCurrentUser";
-import Sidebar from "../components/sidebar/Sidebar";
+import ApplicationShell from "../components/navigation/ApplicationShell";
 import PayrollSidebar from "./components/PayrollSidebar";
 
 export default async function PayrollLayout({
@@ -11,11 +11,11 @@ export default async function PayrollLayout({
     const currentUser = await getCurrentUser();
 
     return (
-        <Sidebar>
+        <ApplicationShell>
             <div className="h-full">
                 <PayrollSidebar currentUser={currentUser} />
                 {children}
             </div>
-        </Sidebar>
+        </ApplicationShell>
     );
 }

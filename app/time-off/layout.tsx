@@ -1,7 +1,7 @@
 // app/time-off/layout.tsx
 import getCurrentUser from "@/app/actions/getCurrentUser";
 import { redirect } from "next/navigation";
-import Sidebar from "../components/sidebar/Sidebar";
+import ApplicationShell from "../components/navigation/ApplicationShell";
 import TimeOffSidebar from "./components/TimeOffSidebar";
 
 export default async function TimeOffLayout({
@@ -16,11 +16,11 @@ export default async function TimeOffLayout({
   }
 
   return (
-    <Sidebar>
+    <ApplicationShell>
       <div className="h-full">
         <TimeOffSidebar currentUser={currentUser} />
         {children}
       </div>
-    </Sidebar>
+    </ApplicationShell>
   );
 }
