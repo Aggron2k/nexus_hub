@@ -8,7 +8,7 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useLanguage } from "@/app/context/LanguageContext";
 
-import Button from "@/app/components/Button";
+import ActionButton from "@/app/components/forms/ActionButton";
 import Modal from "@/app/components/Modal";
 
 interface NewUserModalProps {
@@ -293,20 +293,22 @@ const NewUserModal: React.FC<NewUserModalProps> = ({
 
                 {/* Actions */}
                 <div className="mt-6 flex items-center justify-end gap-x-3 pt-4 border-t border-gray-200">
-                    <Button
+                    <ActionButton
                         disabled={isLoading}
                         onClick={handleClose}
                         type="button"
-                        secondary
+                        variant="secondary"
                     >
                         {t.cancel}
-                    </Button>
-                    <Button
+                    </ActionButton>
+                    <ActionButton
                         disabled={isLoading}
                         type="submit"
+                        variant="primary"
+                        isLoading={isLoading}
                     >
-                        {isLoading ? "..." : t.create}
-                    </Button>
+                        {t.create}
+                    </ActionButton>
                 </div>
             </form>
         </Modal>

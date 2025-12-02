@@ -5,9 +5,9 @@ import { useCallback, useEffect, useState } from "react";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import { BsGithub, BsGoogle } from 'react-icons/bs';
 
-import Input from "../../components/inputs/Input";
-import Button from "@/app/components/Button";
-import AuthSocialButton from "./AuthSocialButton";
+import FormInput from "@/app/components/forms/FormInput";
+import ActionButton from "@/app/components/forms/ActionButton";
+import SocialAuthButton from "./SocialAuthButton";
 import AuthLoadingModal from "./AuthLoadingModal"; // Új import
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -210,7 +210,7 @@ const AuthForm = () => {
             </div>
 
             {variant === 'REGISTER' && (
-              <Input
+              <FormInput
                 id="name"
                 label={t.nameLabel}
                 register={register}
@@ -219,7 +219,7 @@ const AuthForm = () => {
               />
             )}
 
-            <Input
+            <FormInput
               id="email"
               label={t.emailLabel}
               type="email"
@@ -228,7 +228,7 @@ const AuthForm = () => {
               disabled={isLoading}
             />
 
-            <Input
+            <FormInput
               id="password"
               label={t.passwordLabel}
               type="password"
@@ -238,9 +238,9 @@ const AuthForm = () => {
             />
 
             <div>
-              <Button disabled={isLoading} fullWidth type="submit">
+              <ActionButton disabled={isLoading} fullWidth type="submit" isLoading={isLoading}>
                 {variant === 'LOGIN' ? t.signInButton : t.registerButton}
-              </Button>
+              </ActionButton>
             </div>
           </form>
 
@@ -257,13 +257,15 @@ const AuthForm = () => {
             </div>
 
             <div className="mt-6 flex gap-2">
-              <AuthSocialButton
+              <SocialAuthButton
                 icon={BsGithub}
                 onClick={() => socialAction('github')}
+                ariaLabel="Sign in with GitHub"
               />
-              <AuthSocialButton
+              <SocialAuthButton
                 icon={BsGoogle}
                 onClick={() => socialAction('google')}
+                ariaLabel="Sign in with Google"
               />
             </div>
           </div>
