@@ -10,6 +10,7 @@ import axios from 'axios';
 import LoadingModal from '@/app/components/LoadingModal';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
+import ProfileImageUpload from './ProfileImageUpload';
 
 interface Position {
     id: string;
@@ -449,12 +450,22 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                                 <div className="p-6">
                                     {/* Profile Tab */}
                                     {activeTab === 'profile' && (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            {[
-                                                { key: 'name', label: t.name, type: 'text' },
-                                                { key: 'email', label: t.email, type: 'email' },
-                                                { key: 'role', label: t.role, type: 'select', options: [{ value: Role.Employee, label: t.employee }, { value: Role.Manager, label: t.manager }, { value: Role.GeneralManager, label: t.generalManager }, { value: Role.CEO, label: t.ceo }], disabled: !canEdit }
-                                            ].map(({ key, label, type, options, disabled }) => (
+                                        <div className="space-y-6">
+                                            {/* Profile Image Upload - csak edit módban */}
+                                            {isEditing && (
+                                                <ProfileImageUpload
+                                                    currentImageUrl={editData.image}
+                                                    onImageUpload={(imageUrl) => setEditData({ ...editData, image: imageUrl })}
+                                                    onImageRemove={() => setEditData({ ...editData, image: '' })}
+                                                />
+                                            )}
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                {[
+                                                    { key: 'name', label: t.name, type: 'text' },
+                                                    { key: 'email', label: t.email, type: 'email' },
+                                                    { key: 'role', label: t.role, type: 'select', options: [{ value: Role.Employee, label: t.employee }, { value: Role.Manager, label: t.manager }, { value: Role.GeneralManager, label: t.generalManager }, { value: Role.CEO, label: t.ceo }], disabled: !canEdit }
+                                                ].map(({ key, label, type, options, disabled }) => (
                                                 <div key={key}>
                                                     <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
                                                     {isEditing ? (
@@ -471,6 +482,7 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                                                     )}
                                                 </div>
                                             ))}
+                                            </div>
                                         </div>
                                     )}
 
