@@ -48,6 +48,7 @@ export async function GET(request: NextRequest) {
               select: {
                 name: true,
                 displayNames: true,
+                color: true,
               },
             },
           },
@@ -118,9 +119,7 @@ export async function GET(request: NextRequest) {
           name: employee.name || "Unknown",
           email: employee.email,
           role: employee.role,
-          position: (employee.userPositions[0]?.position?.displayNames as any)?.en ||
-                    employee.userPositions[0]?.position?.name ||
-                    "No Position",
+          position: employee.userPositions[0]?.position || null,
           annualVacationDays: totalAnnual,
           usedVacationDays: used,
           pendingDays: totalPending,

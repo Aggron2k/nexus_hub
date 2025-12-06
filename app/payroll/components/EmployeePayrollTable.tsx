@@ -8,13 +8,22 @@ import Image from "next/image";
 import PayrollDetailsModal from "./PayrollDetailsModal";
 import { useRouter } from "next/navigation";
 
+interface Position {
+    name: string;
+    displayNames: {
+        en: string;
+        hu: string;
+    };
+    color: string;
+}
+
 interface Employee {
     userId: string;
     name: string;
     email: string;
     image: string;
     role: string;
-    position: any;
+    position: Position | null;
     hours: number;
     hourlyRate: number;
     grossAmount: number;
@@ -105,6 +114,11 @@ const EmployeePayrollTable: React.FC = () => {
     };
 
     const t = translations[language];
+
+    const getPositionDisplayName = (position: Position | null): string => {
+        if (!position) return "No Position";
+        return position.displayNames?.[language] || position.displayNames?.en || position.name;
+    };
 
     const monthNames = {
         en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
@@ -252,8 +266,19 @@ const EmployeePayrollTable: React.FC = () => {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-gray-700">
-                                            {employee.position ? employee.position[language] || employee.position['en'] : '-'}
+                                        <td className="px-4 py-3">
+                                            {employee.position ? (
+                                                <span
+                                                    className="px-2 py-1 rounded text-xs font-medium text-white"
+                                                    style={{ backgroundColor: employee.position.color }}
+                                                >
+                                                    {getPositionDisplayName(employee.position)}
+                                                </span>
+                                            ) : (
+                                                <span className="px-2 py-1 bg-gray-200 text-gray-600 rounded text-xs font-medium">
+                                                    -
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
                                             {employee.hours}h

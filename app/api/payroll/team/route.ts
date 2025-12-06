@@ -39,7 +39,13 @@ export async function GET(request: Request) {
                         isPrimary: true,
                     },
                     include: {
-                        position: true,
+                        position: {
+                            select: {
+                                name: true,
+                                displayNames: true,
+                                color: true,
+                            },
+                        },
                     },
                 },
             },
@@ -74,7 +80,7 @@ export async function GET(request: Request) {
                     email: user.email,
                     image: user.image,
                     role: user.role,
-                    position: user.userPositions[0]?.position?.displayNames || null,
+                    position: user.userPositions[0]?.position || null,
                     hours: Math.round(totalHours * 10) / 10,
                     hourlyRate,
                     grossAmount: Math.round(grossAmount),

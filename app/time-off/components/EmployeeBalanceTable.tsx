@@ -9,12 +9,21 @@ import {
   HiCheckCircle,
 } from "react-icons/hi2";
 
+interface Position {
+  name: string;
+  displayNames: {
+    en: string;
+    hu: string;
+  };
+  color: string;
+}
+
 interface EmployeeBalance {
   id: string;
   name: string;
   email: string;
   role: string;
-  position: string;
+  position: Position | null;
   annualVacationDays: number;
   usedVacationDays: number;
   pendingDays: number;
@@ -75,6 +84,11 @@ const EmployeeBalanceTable: React.FC = () => {
 
   const t = translations[language];
 
+  const getPositionDisplayName = (position: Position | null): string => {
+    if (!position) return "No Position";
+    return position.displayNames?.[language] || position.displayNames?.en || position.name;
+  };
+
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
@@ -107,10 +121,14 @@ const EmployeeBalanceTable: React.FC = () => {
   };
 
   const sortedEmployees = [...employees].sort((a, b) => {
-    let aValue = a[sortField];
-    let bValue = b[sortField];
+    let aValue: any = a[sortField];
+    let bValue: any = b[sortField];
 
-    if (typeof aValue === "string") {
+    // Special handling for position field
+    if (sortField === "position") {
+      aValue = getPositionDisplayName(a.position).toLowerCase();
+      bValue = getPositionDisplayName(b.position).toLowerCase();
+    } else if (typeof aValue === "string") {
       aValue = aValue.toLowerCase();
       bValue = (bValue as string).toLowerCase();
     }
@@ -122,9 +140,10 @@ const EmployeeBalanceTable: React.FC = () => {
 
   const filteredEmployees = sortedEmployees.filter((employee) => {
     const query = searchQuery.toLowerCase();
+    const positionName = getPositionDisplayName(employee.position).toLowerCase();
     return (
       employee.name.toLowerCase().includes(query) ||
-      employee.position.toLowerCase().includes(query) ||
+      positionName.includes(query) ||
       employee.email.toLowerCase().includes(query)
     );
   });
@@ -288,9 +307,18 @@ const EmployeeBalanceTable: React.FC = () => {
                     </div>
                   </td>
                   <td className="py-3 px-4">
-                    <span className="px-2 py-1 bg-nexus-primary text-nexus-tertiary rounded text-xs font-medium">
-                      {employee.position}
-                    </span>
+                    {employee.position ? (
+                      <span
+                        className="px-2 py-1 rounded text-xs font-medium text-white"
+                        style={{ backgroundColor: employee.position.color }}
+                      >
+                        {getPositionDisplayName(employee.position)}
+                      </span>
+                    ) : (
+                      <span className="px-2 py-1 bg-gray-200 text-gray-600 rounded text-xs font-medium">
+                        -
+                      </span>
+                    )}
                   </td>
                   <td className="text-center py-3 px-4 font-medium">
                     {employee.annualVacationDays}
