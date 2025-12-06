@@ -30,12 +30,17 @@ export default withAuth(
 
 export const config = {
     matcher: [
-        // Protected routes
-        "/users/:path*",
+        // Protected routes - only accessible when logged in
         "/dashboard/:path*",
+        "/users/:path*",
         "/documents/:path*",
-        "/tasks/:path*",
-        // Include home page for cleanup
+        "/todos/:path*",
+        "/messages/:path*",
+        "/schedule/:path*",
+        "/payroll/:path*",
+        "/time-off/:path*",
+        "/my-requests/:path*",
+        // Include home page for cleanup and redirect
         "/",
     ],
 };

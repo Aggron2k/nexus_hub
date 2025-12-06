@@ -139,14 +139,14 @@ const UserList: React.FC<UserListProps> = ({ items, deletedItems = [], currentUs
     <>
       {/* New User Modal */}
       <NewUserModal
-        currentUser={currentUser}
         isOpen={isNewUserModalOpen}
+        currentUser={currentUser}
         onClose={() => setIsNewUserModalOpen(false)}
       />
 
       <aside
         className={clsx(
-          `fixed inset-y-0 pb-20 lg:pb-0 lg:left-20 lg:w-80 lg:block overflow-y-auto border-r border-gray-200`,
+          "fixed inset-y-0 lg:left-20 lg:block pb-20 lg:pb-0  lg:w-80  overflow-y-auto border-gray-200 border-r ",
           isUserSelected ? "hidden" : "block w-full left-0"
         )}
       >

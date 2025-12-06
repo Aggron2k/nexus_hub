@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
-import prisma from "@/app/libs/prismadb";
+import databaseClient from "@/app/libs/prismadb";
+
+const prisma = databaseClient;
 
 // GET /api/time-off/balance - Lekéri a bejelentkezett user (vagy megadott user) szabadság egyenlegét
 // Query params: userId (optional, csak CEO/GM használhatja más user lekérdezésére)

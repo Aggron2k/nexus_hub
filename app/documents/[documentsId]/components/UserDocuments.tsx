@@ -5,7 +5,7 @@ import axios from "axios";
 import dynamic from "next/dynamic";
 import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
 import { useLanguage } from "@/app/context/LanguageContext";
-import { pusherClient } from "@/app/libs/pusher";
+import { realtimeBrowserClient as pusherClient } from "@/app/libs/pusher";
 import { FullDocumentType } from "@/app/types";
 import { HiDocumentText, HiEye, HiXMark, HiCalendar } from "react-icons/hi2";
 

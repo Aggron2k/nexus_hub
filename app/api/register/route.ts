@@ -3,7 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
 import bcrypt from "bcrypt";
 
-import prisma from "@/app/libs/prismadb";
+import databaseClient from "@/app/libs/prismadb";
+
+const prisma = databaseClient;
 
 export async function GET() {
     try {

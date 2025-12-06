@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
-import prisma from "@/app/libs/prismadb";
+import databaseClient from "@/app/libs/prismadb";
+
+const prisma = databaseClient;
 
 // GET /api/time-off/team - Lekéri az összes alkalmazott szabadság egyenlegét (csak GM/CEO)
 export async function GET(request: NextRequest) {

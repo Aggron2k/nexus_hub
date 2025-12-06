@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
-import prisma from "@/app/libs/prismadb";
+import databaseClient from "@/app/libs/prismadb";
+
+const prisma = databaseClient;
 
 // DEBUG endpoint - Ellenőrzi hogy vannak-e userek és milyen adataik vannak
 export async function GET(request: NextRequest) {

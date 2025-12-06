@@ -1,7 +1,7 @@
 import { Channel, Members } from "pusher-js";
 import { useOnlineUsersList } from "./useOnlineUsersList";
 import { useEffect, useState } from "react";
-import { pusherClient } from "../libs/pusher";
+import { realtimeBrowserClient as pusherClient } from "../libs/pusher";
 
 /**
  * usePresenceSync - Synchronizes user presence status via Pusher

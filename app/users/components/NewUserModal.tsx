@@ -9,7 +9,7 @@ import { toast } from "react-hot-toast";
 import { useLanguage } from "@/app/context/LanguageContext";
 
 import ActionButton from "@/app/components/forms/ActionButton";
-import Modal from "@/app/components/Modal";
+import DialogOverlay from "@/app/components/DialogOverlay";
 
 interface NewUserModalProps {
     isOpen?: boolean;
@@ -161,18 +161,22 @@ const NewUserModal: React.FC<NewUserModalProps> = ({
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={handleClose}>
-            <form onSubmit={handleSubmit(onSubmit)}>
-                <div className="space-y-6">
-                    {/* Header */}
-                    <div className="border-b border-gray-200 pb-4">
-                        <h2 className="text-lg font-semibold leading-6 text-gray-900">
-                            {t.title}
-                        </h2>
-                        <p className="mt-1 text-sm text-gray-600">
-                            {t.description}
-                        </p>
-                    </div>
+        <DialogOverlay
+            visible={isOpen}
+            onDismiss={handleClose}
+            size="large"
+            content={
+                <form onSubmit={handleSubmit(onSubmit)}>
+                    <div className="space-y-6">
+                        {/* Header */}
+                        <div className="border-b border-gray-200 pb-4">
+                            <h2 className="text-lg font-semibold leading-6 text-gray-900">
+                                {t.title}
+                            </h2>
+                            <p className="mt-1 text-sm text-gray-600">
+                                {t.description}
+                            </p>
+                        </div>
 
                     {/* Form Fields */}
                     <div className="space-y-4">
@@ -311,7 +315,8 @@ const NewUserModal: React.FC<NewUserModalProps> = ({
                     </ActionButton>
                 </div>
             </form>
-        </Modal>
+            }
+        />
     );
 };
 

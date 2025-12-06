@@ -1,8 +1,10 @@
 // app/api/users/me/route.ts
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/libs/auth";
-import prisma from "@/app/libs/prismadb";
+import { nextAuthConfiguration as authOptions } from "@/app/libs/auth";
+import databaseClient from "@/app/libs/prismadb";
+
+const prisma = databaseClient;
 
 export async function GET() {
     try {

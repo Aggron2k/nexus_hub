@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import prisma from "@/app/libs/prismadb";
+import databaseClient from "@/app/libs/prismadb";
+
+const prisma = databaseClient;
 import getCurrentUser from "@/app/actions/getCurrentUser";
 
 export async function GET(request: Request) {

@@ -1,5 +1,7 @@
-import prisma from "@/app/libs/prismadb";
+import databaseClient from "@/app/libs/prismadb";
 import { User } from "@prisma/client";
+
+const prisma = databaseClient;
 
 const getAllUsers = async (): Promise<User[]> => {
     try {

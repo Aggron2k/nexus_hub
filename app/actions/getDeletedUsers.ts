@@ -1,6 +1,8 @@
-import prisma from "@/app/libs/prismadb";
+import databaseClient from "@/app/libs/prismadb";
 import { User } from "@prisma/client";
 import getCurrentUser from "./getCurrentUser";
+
+const prisma = databaseClient;
 
 const getDeletedUsers = async (): Promise<User[]> => {
     try {

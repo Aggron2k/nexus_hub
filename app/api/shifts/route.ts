@@ -1,7 +1,9 @@
 // app/api/shifts/route.ts
 import { NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
-import prisma from "@/app/libs/prismadb";
+import databaseClient from "@/app/libs/prismadb";
+
+const prisma = databaseClient;
 
 // Helper funkció: Ellenőrzi hogy van-e overlap két időintervallum között
 function hasTimeOverlap(start1: Date, end1: Date, start2: Date, end2: Date): boolean {

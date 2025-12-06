@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/app/libs/prismadb";
+import databaseClient from "@/app/libs/prismadb";
+
+const prisma = databaseClient;
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/libs/auth";
+import { nextAuthConfiguration as authOptions } from "@/app/libs/auth";
 
 // POST - Új műszak kérés létrehozása (Employee által)
 export async function POST(request: NextRequest) {

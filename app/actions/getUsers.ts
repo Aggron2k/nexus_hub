@@ -1,5 +1,7 @@
-import prisma from "@/app/libs/prismadb";
+import databaseClient from "@/app/libs/prismadb";
 import getSession from "./getSession";
+
+const prisma = databaseClient;
 
 const getUsers = async () => {
     const session = await getSession();

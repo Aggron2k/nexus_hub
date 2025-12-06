@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
-import prisma from "@/app/libs/prismadb";
+import databaseClient from "@/app/libs/prismadb";
+
+const prisma = databaseClient;
 
 // GET /api/time-off/requests - Lekéri a bejelentkezett user összes TIME_OFF kérését
 export async function GET(request: NextRequest) {

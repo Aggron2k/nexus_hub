@@ -1,8 +1,10 @@
 // app/api/documents/route.ts
 import { NextResponse } from 'next/server';
-import prisma from '@/app/libs/prismadb';
-import { pusherServer } from '@/app/libs/pusher';
+import databaseClient from '@/app/libs/prismadb';
+import { realtimeServer as pusherServer } from '@/app/libs/pusher';
 import getCurrentUser from '@/app/actions/getCurrentUser';
+
+const prisma = databaseClient;
 
 export async function POST(req: Request) {
     const currentUser = await getCurrentUser();

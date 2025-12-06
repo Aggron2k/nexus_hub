@@ -1,9 +1,11 @@
 // app/api/todos/[todoId]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
-import prisma from "@/app/libs/prismadb";
+import databaseClient from "@/app/libs/prismadb";
+
+const prisma = databaseClient;
 import { TodoStatus } from "@prisma/client";
-import { pusherServer } from "@/app/libs/pusher";
+import { realtimeServer as pusherServer } from "@/app/libs/pusher";
 
 interface IParams {
     todoId: string;

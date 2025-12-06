@@ -10,7 +10,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { HiPlus } from "react-icons/hi2";
 import axios from "axios";
 import CreateTodoModal from "./CreateTodoModal";
-import { pusherClient } from "@/app/libs/pusher";
+import { realtimeBrowserClient as pusherClient } from "@/app/libs/pusher";
 
 interface TodoAssignment {
     id: string;

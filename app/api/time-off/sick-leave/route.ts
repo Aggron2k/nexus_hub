@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
-import prisma from "@/app/libs/prismadb";
+import databaseClient from "@/app/libs/prismadb";
+
+const prisma = databaseClient;
 
 // PATCH /api/time-off/sick-leave - Betegszabadság dokumentum feltöltése
 export async function PATCH(request: NextRequest) {

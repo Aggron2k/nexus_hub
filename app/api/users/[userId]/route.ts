@@ -1,7 +1,9 @@
 // app/api/users/[userId]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
-import prisma from "@/app/libs/prismadb";
+import databaseClient from "@/app/libs/prismadb";
+
+const prisma = databaseClient;
 import { Role, EmploymentStatus } from "@prisma/client";
 
 interface RouteParams {

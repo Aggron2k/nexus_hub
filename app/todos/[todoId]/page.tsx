@@ -21,7 +21,7 @@ import {
     HiChevronLeft
 } from "react-icons/hi2";
 import LoadingModal from "@/app/components/LoadingModal";
-import { pusherClient } from "@/app/libs/pusher";
+import { realtimeBrowserClient as pusherClient } from "@/app/libs/pusher";
 import Link from "next/link";
 
 interface TodoAssignment {

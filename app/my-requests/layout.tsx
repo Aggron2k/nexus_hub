@@ -2,7 +2,9 @@ import getCurrentUser from '../actions/getCurrentUser';
 import { redirect } from 'next/navigation';
 import ApplicationShell from '../components/navigation/ApplicationShell';
 import WeekList from './components/WeekList';
-import prisma from '@/app/libs/prismadb';
+import databaseClient from '@/app/libs/prismadb';
+
+const prisma = databaseClient;
 
 export default async function MyRequestsLayout({
   children

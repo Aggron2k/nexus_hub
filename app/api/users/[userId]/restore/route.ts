@@ -1,7 +1,9 @@
 // app/api/users/[userId]/restore/route.ts
 import { NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
-import prisma from "@/app/libs/prismadb";
+import databaseClient from "@/app/libs/prismadb";
+
+const prisma = databaseClient;
 import { EmploymentStatus } from "@prisma/client";
 
 export async function POST(

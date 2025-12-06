@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import Modal from "@/app/components/Modal";
+import DialogOverlay from "@/app/components/DialogOverlay";
 import { HiCheck, HiXMark, HiCalendar, HiCheckCircle, HiClock, HiExclamationTriangle, HiDocumentText } from "react-icons/hi2";
 
 interface VacationBalance {
@@ -272,7 +272,12 @@ export default function ReviewRequestModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <DialogOverlay
+      visible={isOpen}
+      onDismiss={onClose}
+      size="large"
+      content={
+        <>
       {!isRejectMode ? (
         <div className="space-y-6">
           {/* Header */}
@@ -735,6 +740,8 @@ export default function ReviewRequestModal({
           </div>
         </div>
       )}
-    </Modal>
+        </>
+      }
+    />
   );
 }

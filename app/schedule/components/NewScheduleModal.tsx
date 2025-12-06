@@ -4,7 +4,7 @@ import { User } from "@prisma/client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/app/context/LanguageContext";
-import Modal from "@/app/components/Modal";
+import DialogOverlay from "@/app/components/DialogOverlay";
 import { HiCalendar } from "react-icons/hi2";
 import toast from "react-hot-toast";
 
@@ -152,8 +152,12 @@ const NewScheduleModal: React.FC<NewScheduleModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
-      <form onSubmit={handleSubmit}>
+    <DialogOverlay
+      visible={isOpen}
+      onDismiss={onClose}
+      size="medium"
+      content={
+        <form onSubmit={handleSubmit}>
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center gap-3 pb-4 border-b border-gray-200">
@@ -265,7 +269,8 @@ const NewScheduleModal: React.FC<NewScheduleModalProps> = ({
           </div>
         </div>
       </form>
-    </Modal>
+      }
+    />
   );
 };
 
