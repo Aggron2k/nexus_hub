@@ -872,6 +872,7 @@ export default function ScheduleDetailPage() {
           weekStart={schedule?.weekStart ? new Date(schedule.weekStart) : new Date()}
           weekEnd={schedule?.weekEnd ? new Date(schedule.weekEnd) : new Date()}
           canManage={currentUser && ['GeneralManager', 'CEO'].includes(currentUser.role)}
+          canRecordHours={currentUser && ['Manager', 'GeneralManager', 'CEO'].includes(currentUser.role)}
           onEditShift={(shiftId) => {
             const clickedShift = shiftsRef.current.find(shift => shift.id === shiftId);
             if (clickedShift) {
@@ -888,6 +889,14 @@ export default function ScheduleDetailPage() {
             }
           }}
           onDeleteShift={handleDeleteShift}
+          onRecordActualHours={(shiftId) => {
+            const clickedShift = shiftsRef.current.find(shift => shift.id === shiftId);
+            if (clickedShift) {
+              console.log("Mobile: Opening ActualHoursModal for shift", shiftId);
+              setSelectedShiftForActualHours(clickedShift);
+              setIsActualHoursModalOpen(true);
+            }
+          }}
           onConvertRequest={(request) => {
             console.log("Mobile: Request clicked", request);
             setSelectedRequest(request);

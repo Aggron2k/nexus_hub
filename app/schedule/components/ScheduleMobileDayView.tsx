@@ -2,7 +2,7 @@
 
 import { useLanguage } from "@/app/context/LanguageContext";
 import { useState } from "react";
-import { HiChevronDown, HiChevronRight, HiPencil, HiTrash } from "react-icons/hi2";
+import { HiChevronDown, HiChevronRight, HiPencil, HiTrash, HiClock } from "react-icons/hi2";
 import Image from "next/image";
 import { format, addDays, isSameDay } from "date-fns";
 import { hu, enUS } from "date-fns/locale";
@@ -12,8 +12,10 @@ interface ScheduleMobileDayViewProps {
     weekStart: Date;
     weekEnd: Date;
     canManage: boolean;
+    canRecordHours: boolean;
     onEditShift: (shiftId: string) => void;
     onDeleteShift: (shiftId: string) => void;
+    onRecordActualHours?: (shiftId: string) => void;
     onConvertRequest?: (request: any) => void;
 }
 
@@ -22,8 +24,10 @@ const ScheduleMobileDayView: React.FC<ScheduleMobileDayViewProps> = ({
     weekStart,
     weekEnd,
     canManage,
+    canRecordHours,
     onEditShift,
     onDeleteShift,
+    onRecordActualHours,
     onConvertRequest,
 }) => {
     const { language } = useLanguage();
@@ -45,6 +49,12 @@ const ScheduleMobileDayView: React.FC<ScheduleMobileDayViewProps> = ({
             availableAllDay: "Available All Day",
             convert: "Convert",
             review: "Review",
+            recordHours: "Record Hours",
+            completed: "Completed",
+            recorded: "Recorded",
+            sick: "Sick",
+            absent: "Absent",
+            present: "Present",
         },
         hu: {
             noShifts: "Nincs beosztva műszak",
@@ -61,6 +71,12 @@ const ScheduleMobileDayView: React.FC<ScheduleMobileDayViewProps> = ({
             availableAllDay: "Elérhető egész nap",
             convert: "Átalakítás",
             review: "Áttekintés",
+            recordHours: "Órák rögzítése",
+            completed: "Befejezett",
+            recorded: "Rögzítve",
+            sick: "Beteg",
+            absent: "Hiányzott",
+            present: "Jelen volt",
         },
     };
 
@@ -227,90 +243,137 @@ const ScheduleMobileDayView: React.FC<ScheduleMobileDayViewProps> = ({
                                         {t.noShifts}
                                     </div>
                                 ) : (
-                                    shiftsForDay.map((shift: any) => (
-                                        <div
-                                            key={shift.id}
-                                            className="bg-gray-50 rounded-lg p-3 space-y-2"
-                                            onClick={() => canManage && onEditShift(shift.id)}
-                                        >
-                                            {/* Employee Info */}
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="relative h-8 w-8 rounded-full overflow-hidden">
-                                                        {shift.user?.image ? (
-                                                            <Image
-                                                                src={shift.user.image}
-                                                                alt={shift.user.name || "Employee"}
-                                                                fill
-                                                                className="object-cover"
-                                                            />
-                                                        ) : (
-                                                            <div className="h-full w-full bg-gray-300 flex items-center justify-center text-xs font-semibold text-gray-600">
-                                                                {shift.user?.name?.charAt(0) || "?"}
+                                    shiftsForDay.map((shift: any) => {
+                                        // Check if shift has ended
+                                        const now = new Date();
+                                        const shiftEnd = new Date(shift.endTime);
+                                        const hasEnded = now > shiftEnd;
+                                        const hasActualHours = !!shift.actualWorkHours;
+
+                                        return (
+                                            <div
+                                                key={shift.id}
+                                                className="bg-gray-50 rounded-lg p-3 space-y-2"
+                                            >
+                                                {/* Employee Info */}
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="relative h-8 w-8 rounded-full overflow-hidden">
+                                                            {shift.user?.image ? (
+                                                                <Image
+                                                                    src={shift.user.image}
+                                                                    alt={shift.user.name || "Employee"}
+                                                                    fill
+                                                                    className="object-cover"
+                                                                />
+                                                            ) : (
+                                                                <div className="h-full w-full bg-gray-300 flex items-center justify-center text-xs font-semibold text-gray-600">
+                                                                    {shift.user?.name?.charAt(0) || "?"}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-medium text-gray-900">
+                                                                {shift.user?.name || "Unknown"}
                                                             </div>
-                                                        )}
+                                                            <div className="text-xs text-gray-500">
+                                                                {formatTime(shift.startTime)} - {formatTime(shift.endTime)}
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <div className="font-medium text-gray-900">
-                                                            {shift.user?.name || "Unknown"}
-                                                        </div>
-                                                        <div className="text-xs text-gray-500">
-                                                            {formatTime(shift.startTime)} - {formatTime(shift.endTime)}
-                                                        </div>
+
+                                                    {/* Action Buttons */}
+                                                    <div className="flex items-center gap-2">
+                                                        {/* Record Hours Button - If shift ended and can record */}
+                                                        {canRecordHours && hasEnded && onRecordActualHours && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    onRecordActualHours(shift.id);
+                                                                }}
+                                                                className="p-2 text-green-600 hover:text-green-700 transition"
+                                                                title={t.recordHours}
+                                                            >
+                                                                <HiClock className="h-5 w-5" />
+                                                            </button>
+                                                        )}
+
+                                                        {/* Edit Button - GM/CEO only */}
+                                                        {canManage && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    onEditShift(shift.id);
+                                                                }}
+                                                                className="p-2 text-nexus-tertiary hover:text-nexus-secondary transition"
+                                                            >
+                                                                <HiPencil className="h-5 w-5" />
+                                                            </button>
+                                                        )}
+
+                                                        {/* Delete Button - GM/CEO only */}
+                                                        {canManage && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    onDeleteShift(shift.id);
+                                                                }}
+                                                                className="p-2 text-red-600 hover:text-red-700 transition"
+                                                            >
+                                                                <HiTrash className="h-5 w-5" />
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </div>
 
-                                                {/* Action Buttons - Manager Only */}
-                                                {canManage && (
+                                                {/* Position Info */}
+                                                <div className="flex items-center gap-2">
+                                                    <div
+                                                        className="w-3 h-3 rounded-full"
+                                                        style={{ backgroundColor: shift.position?.color || "#gray" }}
+                                                    />
+                                                    <span className="text-sm text-gray-700">
+                                                        {(shift.position?.displayNames as any)?.[language] || shift.position?.name || "Unknown Position"}
+                                                    </span>
+                                                </div>
+
+                                                {/* Actual Hours Status Badge */}
+                                                {hasActualHours && (
                                                     <div className="flex items-center gap-2">
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                onEditShift(shift.id);
-                                                            }}
-                                                            className="p-2 text-nexus-tertiary hover:text-nexus-secondary transition"
+                                                        <span
+                                                            className={`text-xs px-2 py-1 rounded-full ${
+                                                                shift.actualWorkHours.status === "PRESENT"
+                                                                    ? "bg-green-100 text-green-800"
+                                                                    : shift.actualWorkHours.status === "SICK"
+                                                                    ? "bg-orange-100 text-orange-800"
+                                                                    : "bg-red-100 text-red-800"
+                                                            }`}
                                                         >
-                                                            <HiPencil className="h-5 w-5" />
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                onDeleteShift(shift.id);
-                                                            }}
-                                                            className="p-2 text-red-600 hover:text-red-700 transition"
+                                                            {shift.actualWorkHours.status === "PRESENT"
+                                                                ? t.present
+                                                                : shift.actualWorkHours.status === "SICK"
+                                                                ? t.sick
+                                                                : t.absent}
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                {/* Shift Request Status */}
+                                                {shift.shiftRequest && (
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs text-gray-500">{t.requested}:</span>
+                                                        <span
+                                                            className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeColor(
+                                                                shift.shiftRequest.status
+                                                            )}`}
                                                         >
-                                                            <HiTrash className="h-5 w-5" />
-                                                        </button>
+                                                            {getStatusText(shift.shiftRequest.status)}
+                                                        </span>
                                                     </div>
                                                 )}
                                             </div>
-
-                                            {/* Position Info */}
-                                            <div className="flex items-center gap-2">
-                                                <div
-                                                    className="w-3 h-3 rounded-full"
-                                                    style={{ backgroundColor: shift.position?.color || "#gray" }}
-                                                />
-                                                <span className="text-sm text-gray-700">
-                                                    {(shift.position?.displayNames as any)?.[language] || shift.position?.name || "Unknown Position"}
-                                                </span>
-                                            </div>
-
-                                            {/* Shift Request Status */}
-                                            {shift.shiftRequest && (
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-xs text-gray-500">{t.requested}:</span>
-                                                    <span
-                                                        className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeColor(
-                                                            shift.shiftRequest.status
-                                                        )}`}
-                                                    >
-                                                        {getStatusText(shift.shiftRequest.status)}
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 )}
 
                                 {/* Shift Requests Section - Separate from shifts */}
