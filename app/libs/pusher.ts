@@ -21,6 +21,7 @@ const PUSHER_AUTH_ENDPOINT = '/api/pusher/auth';
 
 /**
  * Validates that all required Pusher environment variables are present
+ * Only validates server-side variables on the server (not in browser)
  *
  * @throws {Error} If any required environment variable is missing
  *
@@ -31,20 +32,24 @@ const PUSHER_AUTH_ENDPOINT = '/api/pusher/auth';
  * ```
  */
 const validatePusherEnvVars = (): void => {
-  const requiredVars = {
-    PUSHER_APP_ID: process.env.PUSHER_APP_ID,
-    NEXT_PUBLIC_PUSHER_APP_KEY: process.env.NEXT_PUBLIC_PUSHER_APP_KEY,
-    PUSHER_SECRET: process.env.PUSHER_SECRET,
-  };
+  // Server-side only validation
+  // PUSHER_APP_ID and PUSHER_SECRET are only available on server
+  if (typeof window === 'undefined') {
+    const requiredVars = {
+      PUSHER_APP_ID: process.env.PUSHER_APP_ID,
+      NEXT_PUBLIC_PUSHER_APP_KEY: process.env.NEXT_PUBLIC_PUSHER_APP_KEY,
+      PUSHER_SECRET: process.env.PUSHER_SECRET,
+    };
 
-  const missingVars = Object.entries(requiredVars)
-    .filter(([, value]) => !value)
-    .map(([key]) => key);
+    const missingVars = Object.entries(requiredVars)
+      .filter(([, value]) => !value)
+      .map(([key]) => key);
 
-  if (missingVars.length > 0) {
-    throw new Error(
-      `Missing required Pusher environment variables: ${missingVars.join(', ')}`
-    );
+    if (missingVars.length > 0) {
+      throw new Error(
+        `[PUSHER] Missing required server environment variables: ${missingVars.join(', ')}`
+      );
+    }
   }
 };
 

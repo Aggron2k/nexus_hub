@@ -191,7 +191,8 @@ const CreateMessageModal: React.FC<CreateMessageModalProps> = ({ isOpen, onClose
                                     maxFiles: 1,
                                     maxFileSize: 5000000, // 5MB
                                     sources: ['local', 'url', 'camera'],
-                                    resourceType: 'image'
+                                    resourceType: 'image',
+                                    clientAllowedFormats: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']
                                 }}
                                 onSuccess={(result: any) => {
                                     if (result?.info && typeof result.info !== 'string' && result.info.secure_url) {
