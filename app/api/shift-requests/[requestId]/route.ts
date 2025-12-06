@@ -5,6 +5,8 @@ const prisma = databaseClient;
 import { getServerSession } from "next-auth";
 import { nextAuthConfiguration as authOptions } from "@/app/libs/auth";
 
+
+export const dynamic = 'force-dynamic';
 interface IParams {
   requestId: string;
 }

@@ -7,6 +7,8 @@ const prisma = databaseClient;
 import { jsPDF } from "jspdf";
 import axios from "axios";
 
+
+export const dynamic = 'force-dynamic';
 export async function POST(request: Request) {
     try {
         const currentUser = await getCurrentUser();

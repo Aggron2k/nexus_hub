@@ -7,6 +7,8 @@ const prisma = databaseClient;
 import { TodoStatus } from "@prisma/client";
 import { realtimeServer as pusherServer } from "@/app/libs/pusher";
 
+
+export const dynamic = 'force-dynamic';
 interface IParams {
     todoId: string;
 }

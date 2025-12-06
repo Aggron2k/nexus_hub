@@ -4,6 +4,8 @@ import ApplicationShell from '../components/navigation/ApplicationShell';
 import WeekList from './components/WeekList';
 import databaseClient from '@/app/libs/prismadb';
 
+
+export const dynamic = 'force-dynamic';
 const prisma = databaseClient;
 
 export default async function MyRequestsLayout({

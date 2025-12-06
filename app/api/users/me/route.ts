@@ -6,6 +6,8 @@ import databaseClient from "@/app/libs/prismadb";
 
 const prisma = databaseClient;
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
     try {
         const session = await getServerSession(authOptions);

@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation';
 import ApplicationShell from '../components/navigation/ApplicationShell';
 import ScheduleList from './components/ScheduleList';
 
+
+export const dynamic = 'force-dynamic';
 export default async function ScheduleLayout({
   children
 }: {

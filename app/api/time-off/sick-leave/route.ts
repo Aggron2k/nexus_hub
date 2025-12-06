@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
 import databaseClient from "@/app/libs/prismadb";
 
+
+export const dynamic = 'force-dynamic';
 const prisma = databaseClient;
 
 // PATCH /api/time-off/sick-leave - Betegszabadság dokumentum feltöltése

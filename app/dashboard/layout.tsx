@@ -3,6 +3,8 @@ import getCurrentUser from "@/app/actions/getCurrentUser";
 import ApplicationShell from "../components/navigation/ApplicationShell";
 import DashboardSidebar from "./components/DashboardSidebar";
 
+
+export const dynamic = 'force-dynamic';
 export default async function DashboardLayout({
     children,
 }: {

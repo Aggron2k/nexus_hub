@@ -6,6 +6,8 @@ import databaseClient from "@/app/libs/prismadb";
 const prisma = databaseClient;
 import bcrypt from "bcrypt";
 
+
+export const dynamic = 'force-dynamic';
 interface RouteParams {
     params: {
         userId: string;

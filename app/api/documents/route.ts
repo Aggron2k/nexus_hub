@@ -4,6 +4,8 @@ import databaseClient from '@/app/libs/prismadb';
 import { realtimeServer as pusherServer } from '@/app/libs/pusher';
 import getCurrentUser from '@/app/actions/getCurrentUser';
 
+
+export const dynamic = 'force-dynamic';
 const prisma = databaseClient;
 
 export async function POST(req: Request) {

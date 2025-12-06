@@ -5,6 +5,8 @@ import getCurrentUser from "@/app/actions/getCurrentUser";
 import ApplicationShell from "../components/navigation/ApplicationShell";
 import UserList from "./components/UserList";
 
+
+export const dynamic = 'force-dynamic';
 /**
  * ===========================================
  * DOCUMENT ACCESS LAYOUT HELPERS

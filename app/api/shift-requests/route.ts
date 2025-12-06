@@ -5,6 +5,8 @@ const prisma = databaseClient;
 import { getServerSession } from "next-auth";
 import { nextAuthConfiguration as authOptions } from "@/app/libs/auth";
 
+
+export const dynamic = 'force-dynamic';
 // POST - Új műszak kérés létrehozása (Employee által)
 export async function POST(request: NextRequest) {
   try {

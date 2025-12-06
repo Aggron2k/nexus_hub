@@ -3,6 +3,8 @@ import getCurrentUser from "@/app/actions/getCurrentUser";
 import { redirect } from "next/navigation";
 import UserProfileClient from "../components/UserProfileClient";
 
+export const dynamic = 'force-dynamic';
+
 interface IParams {
     userId: string;
 }

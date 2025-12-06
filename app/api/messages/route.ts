@@ -6,6 +6,8 @@ import databaseClient from "@/app/libs/prismadb";
 const prisma = databaseClient;
 import { MessageType } from "@prisma/client";
 
+
+export const dynamic = 'force-dynamic';
 // GET - List all messages with filters
 export async function GET(request: Request) {
     try {

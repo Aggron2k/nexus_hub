@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation';
 import ApplicationShell from '../components/navigation/ApplicationShell';
 import UserList from './components/UserList';
 
+
+export const dynamic = 'force-dynamic';
 /**
  * ===========================================
  * USER MANAGEMENT LAYOUT HELPERS
