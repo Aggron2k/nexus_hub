@@ -3,6 +3,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import { useLanguage } from "@/app/context/LanguageContext";
 
 interface Reaction {
     id: string;
@@ -30,6 +31,7 @@ const ReactionButtons: React.FC<ReactionButtonsProps> = ({
     currentUserId,
     onUpdate
 }) => {
+    const { language } = useLanguage();
     const [isLoading, setIsLoading] = useState(false);
 
     // Group reactions by emoji
@@ -48,7 +50,7 @@ const ReactionButtons: React.FC<ReactionButtonsProps> = ({
             onUpdate?.();
         } catch (error: any) {
             console.error('Error toggling reaction:', error);
-            toast.error('Failed to react');
+            toast.error(language === 'hu' ? 'Reakció sikertelen' : 'Failed to react');
         } finally {
             setIsLoading(false);
         }

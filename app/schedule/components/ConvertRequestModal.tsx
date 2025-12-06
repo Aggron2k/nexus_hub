@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/app/context/LanguageContext";
 import { HiX } from "react-icons/hi";
 
 interface ConvertRequestModalProps {
@@ -20,6 +21,7 @@ export default function ConvertRequestModal({
   onSuccess,
 }: ConvertRequestModalProps) {
   const router = useRouter();
+  const { language } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [positions, setPositions] = useState<any[]>([]);
 
@@ -78,7 +80,7 @@ export default function ConvertRequestModal({
     try {
       // Validáció
       if (!formData.positionId) {
-        toast.error("Válassz pozíciót");
+        toast.error(language === 'hu' ? 'Válassz pozíciót' : 'Select a position');
         setIsLoading(false);
         return;
       }
@@ -101,7 +103,7 @@ export default function ConvertRequestModal({
       console.log("  endDateTime:", endDateTime.toISOString());
 
       if (startDateTime >= endDateTime) {
-        toast.error("A befejező időnek később kell lennie, mint a kezdő idő");
+        toast.error(language === 'hu' ? 'A befejező időnek később kell lennie, mint a kezdő idő' : 'End time must be later than start time');
         setIsLoading(false);
         return;
       }
@@ -117,7 +119,7 @@ export default function ConvertRequestModal({
       );
 
       if (response.status === 200 || response.status === 201) {
-        toast.success("Műszak sikeresen létrehozva");
+        toast.success(language === 'hu' ? 'Műszak sikeresen létrehozva' : 'Shift created successfully');
         onClose();
         router.refresh();
         if (onSuccess) onSuccess();
@@ -131,7 +133,7 @@ export default function ConvertRequestModal({
         const errorMessage = error.response.data;
         toast.error(errorMessage);
       } else {
-        toast.error("Hiba történt a konvertálás során");
+        toast.error(language === 'hu' ? 'Hiba történt a konvertálás során' : 'Error occurred during conversion');
       }
     } finally {
       setIsLoading(false);

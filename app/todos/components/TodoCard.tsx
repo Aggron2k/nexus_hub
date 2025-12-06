@@ -177,13 +177,13 @@ const TodoCard: React.FC<TodoCardProps> = ({
             });
 
             onUpdate(response.data);
-            toast.success('Status updated successfully');
+            toast.success(language === 'hu' ? 'Státusz frissítve' : 'Status updated successfully');
 
             // Refresh the page to show updated TODO (same as User/Schedule updates)
             router.refresh();
         } catch (error) {
             console.error('Error updating todo status:', error);
-            toast.error('Failed to update status');
+            toast.error(language === 'hu' ? 'Státusz frissítése sikertelen' : 'Failed to update status');
         } finally {
             setIsUpdating(false);
         }
@@ -195,13 +195,13 @@ const TodoCard: React.FC<TodoCardProps> = ({
         try {
             const response = await axios.patch(`/api/todos/${todo.id}`, { notes });
             onUpdate(response.data);
-            toast.success('Notes updated successfully');
+            toast.success(language === 'hu' ? 'Megjegyzések frissítve' : 'Notes updated successfully');
 
             // Refresh the page to show updated TODO
             router.refresh();
         } catch (error) {
             console.error('Error updating notes:', error);
-            toast.error('Failed to update notes');
+            toast.error(language === 'hu' ? 'Megjegyzések frissítése sikertelen' : 'Failed to update notes');
         }
     };
 

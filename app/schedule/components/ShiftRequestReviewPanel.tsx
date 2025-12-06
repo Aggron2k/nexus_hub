@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/app/context/LanguageContext";
 import { HiClock, HiCheck, HiArrowRight, HiXMark } from "react-icons/hi2";
 import ConvertRequestModal from "./ConvertRequestModal";
 import ReviewRequestModal from "./ReviewRequestModal";
@@ -20,6 +21,7 @@ export default function ShiftRequestReviewPanel({
   onShiftCreated,
 }: ShiftRequestReviewPanelProps) {
   const router = useRouter();
+  const { language } = useLanguage();
   const [requests, setRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
@@ -60,12 +62,12 @@ export default function ShiftRequestReviewPanel({
       await axios.patch(`/api/shift-requests/${requestId}/review`, {
         action: "approve",
       });
-      toast.success("Kérés jóváhagyva");
+      toast.success(language === 'hu' ? 'Kérés jóváhagyva' : 'Request approved');
       fetchRequests();
       router.refresh();
     } catch (error: any) {
       console.error("Error approving request:", error);
-      toast.error("Hiba a jóváhagyás során");
+      toast.error(language === 'hu' ? 'Hiba a jóváhagyás során' : 'Error during approval');
     }
   };
 
@@ -77,7 +79,7 @@ export default function ShiftRequestReviewPanel({
 
   const handleRejectSubmit = async () => {
     if (!rejectionReason.trim()) {
-      toast.error("Add meg az elutasítás okát");
+      toast.error(language === 'hu' ? 'Add meg az elutasítás okát' : 'Provide a rejection reason');
       return;
     }
 
@@ -86,7 +88,7 @@ export default function ShiftRequestReviewPanel({
         action: "reject",
         rejectionReason: rejectionReason,
       });
-      toast.success("Kérés elutasítva");
+      toast.success(language === 'hu' ? 'Kérés elutasítva' : 'Request rejected');
       setIsRejectModalOpen(false);
       setSelectedRequest(null);
       setRejectionReason("");
@@ -94,7 +96,7 @@ export default function ShiftRequestReviewPanel({
       router.refresh();
     } catch (error: any) {
       console.error("Error rejecting request:", error);
-      toast.error("Hiba az elutasítás során");
+      toast.error(language === 'hu' ? 'Hiba az elutasítás során' : 'Error during rejection');
     }
   };
 

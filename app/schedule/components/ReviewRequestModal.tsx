@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/app/context/LanguageContext";
 import DialogOverlay from "@/app/components/DialogOverlay";
 import { HiCheck, HiXMark, HiCalendar, HiCheckCircle, HiClock, HiExclamationTriangle, HiDocumentText } from "react-icons/hi2";
 
@@ -31,6 +32,7 @@ export default function ReviewRequestModal({
   onSuccess,
 }: ReviewRequestModalProps) {
   const router = useRouter();
+  const { language } = useLanguage();
   const [isRejectMode, setIsRejectMode] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -175,7 +177,7 @@ export default function ReviewRequestModal({
       if (request.type === "SPECIFIC_TIME" || request.type === "AVAILABLE_ALL_DAY") {
         // Időpont validáció
         if (!shiftTimes.startTime || !shiftTimes.endTime) {
-          toast.error("Add meg a műszak időpontját!");
+          toast.error(language === 'hu' ? 'Add meg a műszak időpontját!' : 'Provide the shift time!');
           setIsLoading(false);
           return;
         }
@@ -183,14 +185,14 @@ export default function ReviewRequestModal({
         const start = new Date(`1970-01-01T${shiftTimes.startTime}:00`);
         const end = new Date(`1970-01-01T${shiftTimes.endTime}:00`);
         if (start >= end) {
-          toast.error("A befejező időnek később kell lennie, mint a kezdő idő!");
+          toast.error(language === 'hu' ? 'A befejező időnek később kell lennie, mint a kezdő idő!' : 'End time must be later than start time!');
           setIsLoading(false);
           return;
         }
 
         // Pozíció validáció
         if (!positionId) {
-          toast.error("Válassz pozíciót!");
+          toast.error(language === 'hu' ? 'Válassz pozíciót!' : 'Select a position!');
           setIsLoading(false);
           return;
         }
@@ -218,7 +220,7 @@ export default function ReviewRequestModal({
           notes: notes || null,
         });
 
-        toast.success("Műszak sikeresen létrehozva!");
+        toast.success(language === 'hu' ? 'Műszak sikeresen létrehozva!' : 'Shift created successfully!');
         onSuccess();
         onClose();
       } else if (request.type === "TIME_OFF") {
@@ -226,7 +228,7 @@ export default function ReviewRequestModal({
         await axios.patch(`/api/shift-requests/${request.id}/review`, {
           action: "approve",
         });
-        toast.success("Szabadság jóváhagyva!");
+        toast.success(language === 'hu' ? 'Szabadság jóváhagyva!' : 'Time off approved!');
         onSuccess();
         onClose();
       }
@@ -235,7 +237,7 @@ export default function ReviewRequestModal({
       if (error.response?.status === 409) {
         toast.error(error.response.data);
       } else {
-        toast.error("Hiba történt a jóváhagyás során");
+        toast.error(language === 'hu' ? 'Hiba történt a jóváhagyás során' : 'Error occurred during approval');
       }
     } finally {
       setIsLoading(false);
@@ -244,7 +246,7 @@ export default function ReviewRequestModal({
 
   const handleRejectSubmit = async () => {
     if (!rejectionReason.trim()) {
-      toast.error("Kérlek add meg az elutasítás okát");
+      toast.error(language === 'hu' ? 'Kérlek add meg az elutasítás okát' : 'Please provide a rejection reason');
       return;
     }
 
@@ -255,7 +257,7 @@ export default function ReviewRequestModal({
         rejectionReason: rejectionReason,
       });
 
-      toast.success("Kérés elutasítva");
+      toast.success(language === 'hu' ? 'Kérés elutasítva' : 'Request rejected');
       onClose();
       router.refresh();
       if (onSuccess) onSuccess();
@@ -264,7 +266,7 @@ export default function ReviewRequestModal({
       if (error.response?.status === 400) {
         toast.error(error.response.data);
       } else {
-        toast.error("Hiba történt az elutasítás során");
+        toast.error(language === 'hu' ? 'Hiba történt az elutasítás során' : 'Error occurred during rejection');
       }
     } finally {
       setIsLoading(false);

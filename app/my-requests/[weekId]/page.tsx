@@ -90,7 +90,7 @@ export default function WeekRequestsPage() {
       setRequests(requestsResponse.data);
     } catch (error) {
       console.error("Error fetching data:", error);
-      toast.error("Hiba az adatok betöltésekor");
+      toast.error(language === 'hu' ? 'Hiba az adatok betöltésekor' : 'Error loading data');
     } finally {
       setIsLoading(false);
     }

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/app/context/LanguageContext";
 import { HiXMark, HiClock } from "react-icons/hi2";
 
 interface ActualHoursModalProps {
@@ -20,6 +21,7 @@ export default function ActualHoursModal({
   onSuccess,
 }: ActualHoursModalProps) {
   const router = useRouter();
+  const { language } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     actualStatus: shift?.actualWorkHours?.status || "PRESENT",
@@ -115,7 +117,7 @@ export default function ActualHoursModal({
 
     if (formData.actualStatus === "PRESENT") {
       if (!formData.actualStartTime || !formData.actualEndTime) {
-        toast.error("Kérlek add meg a kezdő és befejező időpontot");
+        toast.error(language === 'hu' ? 'Kérlek add meg a kezdő és befejező időpontot' : 'Please provide start and end time');
         return;
       }
 
@@ -127,7 +129,7 @@ export default function ActualHoursModal({
       const endMinutes = endHour * 60 + endMin;
 
       if (startMinutes >= endMinutes) {
-        toast.error("A kezdő időpont korábbi kell legyen mint a befejező");
+        toast.error(language === 'hu' ? 'A kezdő időpont korábbi kell legyen mint a befejező' : 'Start time must be earlier than end time');
         return;
       }
     }
@@ -156,7 +158,7 @@ export default function ActualHoursModal({
 
       await axios.patch(`/api/shifts/${shift.id}`, bodyData);
 
-      toast.success("Tényleges munkaórák sikeresen rögzítve");
+      toast.success(language === 'hu' ? 'Tényleges munkaórák sikeresen rögzítve' : 'Actual hours recorded successfully');
       onClose();
       router.refresh();
       if (onSuccess) onSuccess();
@@ -165,7 +167,7 @@ export default function ActualHoursModal({
       if (error.response?.status === 400) {
         toast.error(error.response.data);
       } else {
-        toast.error("Hiba történt a rögzítés során");
+        toast.error(language === 'hu' ? 'Hiba történt a rögzítés során' : 'Error occurred during recording');
       }
     } finally {
       setIsLoading(false);

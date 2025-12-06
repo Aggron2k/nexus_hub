@@ -155,11 +155,11 @@ export default function ScheduleDetailPage() {
       await axios.patch(`/api/shift-requests/${requestId}/review`, {
         action: "approve",
       });
-      toast.success("Kérés jóváhagyva");
+      toast.success(language === 'hu' ? 'Kérés jóváhagyva' : 'Request approved');
       window.location.reload();
     } catch (error) {
       console.error("Error approving request:", error);
-      toast.error("Hiba a jóváhagyás során");
+      toast.error(language === 'hu' ? 'Hiba a jóváhagyás során' : 'Error during approval');
     }
   };
 

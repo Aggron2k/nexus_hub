@@ -9,6 +9,7 @@ import UserDocuments from "./components/UserDocuments";
 import Header from "./components/Header"; // Header importálása
 import LoadingModal from "@/app/components/LoadingModal"; // LoadingModal importálása
 import { toast } from "react-hot-toast"; // Toast importálása
+import { useLanguage } from "@/app/context/LanguageContext";
 
 interface User {
     id: string;
@@ -18,6 +19,7 @@ interface User {
 
 const DocumentsPage = () => {
     const router = useRouter();
+    const { language } = useLanguage();
     const { documentsId } = useParams() as { documentsId: string }; // Explicit típus a params-hoz
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState<boolean>(true); // Loading állapot
@@ -25,7 +27,7 @@ const DocumentsPage = () => {
 
     useEffect(() => {
         if (!documentsId) {
-            const errorMessage = "User ID is required to view this page.";
+            const errorMessage = language === 'hu' ? 'Felhasználói azonosító szükséges az oldal megtekintéséhez.' : 'User ID is required to view this page.';
             setError(errorMessage);
             toast.error(errorMessage); // Toast a hibára
             setLoading(false); // Betöltés vége hiba esetén
@@ -44,7 +46,7 @@ const DocumentsPage = () => {
 
                 // Ha 403 Forbidden, akkor átirányítjuk a saját profiljára
                 if (error.response?.status === 403) {
-                    toast.error("You can only view your own documents");
+                    toast.error(language === 'hu' ? 'Csak a saját dokumentumaidat tekintheted meg' : 'You can only view your own documents');
                     // Lekérjük a saját user ID-t és átirányítjuk
                     axios.get('/api/users/me')
                         .then((meResponse) => {
@@ -56,15 +58,15 @@ const DocumentsPage = () => {
                     return;
                 }
 
-                const errorMessage = "Failed to fetch user data.";
+                const errorMessage = language === 'hu' ? 'Felhasználói adatok betöltése sikertelen.' : 'Failed to fetch user data.';
                 setError(errorMessage);
                 toast.error(errorMessage); // Toast a hibára
                 setLoading(false); // Betöltés vége hiba esetén
             });
-    }, [documentsId, router]);
+    }, [documentsId, router, language]);
 
     const handleDocumentUploadSuccess = () => {
-        toast.success("Document uploaded successfully!"); // Siker toast
+        toast.success(language === 'hu' ? 'Dokumentum sikeresen feltöltve!' : 'Document uploaded successfully!'); // Siker toast
     };
 
     if (loading) return <LoadingModal />; // LoadingModal megjelenítése

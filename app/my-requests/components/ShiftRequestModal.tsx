@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/app/context/LanguageContext";
 
 interface ShiftRequestModalProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ export default function ShiftRequestModal({
   onSuccess,
 }: ShiftRequestModalProps) {
   const router = useRouter();
+  const { language } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
 
   // Format dates for input min/max
@@ -53,7 +55,7 @@ export default function ShiftRequestModal({
     try {
       // Validáció
       if (!formData.date) {
-        toast.error("Válassz dátumot");
+        toast.error(language === 'hu' ? 'Válassz dátumot' : 'Select a date');
         setIsLoading(false);
         return;
       }
@@ -74,7 +76,7 @@ export default function ShiftRequestModal({
         endDateTime.setHours(parseInt(endHours), parseInt(endMinutes), 0);
 
         if (startDateTime >= endDateTime) {
-          toast.error("A befejező időnek később kell lennie, mint a kezdő idő");
+          toast.error(language === 'hu' ? 'A befejező időnek később kell lennie, mint a kezdő idő' : 'End time must be later than start time');
           setIsLoading(false);
           return;
         }
@@ -90,7 +92,7 @@ export default function ShiftRequestModal({
       });
 
       if (response.status === 200 || response.status === 201) {
-        toast.success("Műszak kérés sikeresen elküldve");
+        toast.success(language === 'hu' ? 'Műszak kérés sikeresen elküldve' : 'Shift request submitted successfully');
         resetForm();
         onClose();
         router.refresh();
@@ -105,7 +107,7 @@ export default function ShiftRequestModal({
         const errorMessage = error.response.data;
         toast.error(errorMessage);
       } else {
-        toast.error("Hiba történt a kérés beküldése során");
+        toast.error(language === 'hu' ? 'Hiba történt a kérés beküldése során' : 'Error occurred while submitting request');
       }
     } finally {
       setIsLoading(false);

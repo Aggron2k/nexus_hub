@@ -213,7 +213,7 @@ export default function TodoDetailPage() {
             // Listen for TODO deletion
             channel.bind('todo:delete', (data: { todoId: string }) => {
                 if (data.todoId === todoId) {
-                    toast.error("This todo has been deleted");
+                    toast.error(language === 'hu' ? 'Ez a todo törölve lett' : 'This todo has been deleted');
                     router.push('/todos');
                 }
             });
@@ -249,11 +249,11 @@ export default function TodoDetailPage() {
                 completedAt: newStatus === 'COMPLETED' ? new Date().toISOString() : null
             });
 
-            toast.success("Status updated successfully!");
+            toast.success(language === 'hu' ? 'Státusz frissítve!' : 'Status updated successfully!');
             fetchTodoDetails(); // Refresh data
         } catch (error) {
             console.error("Error updating todo status:", error);
-            toast.error("Failed to update status");
+            toast.error(language === 'hu' ? 'Státusz frissítése sikertelen' : 'Failed to update status');
         }
     };
 

@@ -189,7 +189,7 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
                 setPositions(activePositions);
             } catch (error) {
                 console.error('Error loading data:', error);
-                toast.error('Failed to load data');
+                toast.error(language === 'hu' ? 'Adatok betöltése sikertelen' : 'Failed to load data');
             }
         };
 
@@ -220,7 +220,7 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
             setUsers(response.data);
         } catch (error) {
             console.error('Error fetching users:', error);
-            toast.error('Failed to load users');
+            toast.error(language === 'hu' ? 'Felhasználók betöltése sikertelen' : 'Failed to load users');
         }
     };
 
@@ -231,7 +231,7 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
             setPositions(response.data.filter((pos: Position) => pos.isActive));
         } catch (error) {
             console.error('Error fetching positions:', error);
-            toast.error('Failed to load positions');
+            toast.error(language === 'hu' ? 'Pozíciók betöltése sikertelen' : 'Failed to load positions');
         }
     };
 
@@ -284,7 +284,7 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
 
             await axios.post('/api/todos', todoData);
 
-            toast.success('Todo created successfully!');
+            toast.success(language === 'hu' ? 'Todo sikeresen létrehozva!' : 'Todo created successfully!');
 
             // Reset form and close modal
             resetForm();
@@ -295,7 +295,7 @@ const CreateTodoModal: React.FC<CreateTodoModalProps> = ({
 
         } catch (error) {
             console.error('Error creating todo:', error);
-            toast.error('Failed to create todo');
+            toast.error(language === 'hu' ? 'Todo létrehozása sikertelen' : 'Failed to create todo');
         } finally {
             setIsLoading(false);
         }

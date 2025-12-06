@@ -225,10 +225,10 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                 const updatedUser = await response.json();
                 setSelectedUser(updatedUser);
                 setIsEditing(false);
-                toast.success('Profil frissítve!');
+                toast.success(language === 'hu' ? 'Profil frissítve!' : 'Profile updated!');
             }
         } catch (err) {
-            toast.error('Hiba történt!');
+            toast.error(language === 'hu' ? 'Hiba történt!' : 'An error occurred!');
         } finally {
             setLoading(false);
         }
@@ -236,7 +236,7 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
 
     const handlePasswordChange = async () => {
         if (passwordData.newPassword !== passwordData.confirmPassword) {
-            toast.error('A jelszavak nem egyeznek!');
+            toast.error(language === 'hu' ? 'A jelszavak nem egyeznek!' : 'Passwords do not match!');
             return;
         }
         setLoading(true);
@@ -250,14 +250,14 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
                 }),
             });
             if (response.ok) {
-                toast.success('Jelszó megváltoztatva!');
+                toast.success(language === 'hu' ? 'Jelszó megváltoztatva!' : 'Password changed!');
                 setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
                 setShowPasswordSection(false);
             } else {
-                toast.error('Hibás jelenlegi jelszó!');
+                toast.error(language === 'hu' ? 'Hibás jelenlegi jelszó!' : 'Incorrect current password!');
             }
         } catch (err) {
-            toast.error('Hiba történt!');
+            toast.error(language === 'hu' ? 'Hiba történt!' : 'An error occurred!');
         } finally {
             setLoading(false);
         }
@@ -278,7 +278,7 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
             if (error.response?.data) {
                 toast.error(error.response.data);
             } else {
-                toast.error('Hiba történt a törlés során');
+                toast.error(language === 'hu' ? 'Hiba történt a törlés során' : 'Error occurred during deletion');
             }
         } finally {
             setLoading(false);
@@ -300,7 +300,7 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
             setShowAddPositionModal(false);
             toast.success(t.positionAdded);
         } catch (error) {
-            toast.error('Hiba a pozíció hozzáadásakor');
+            toast.error(language === 'hu' ? 'Hiba a pozíció hozzáadásakor' : 'Error adding position');
         } finally {
             setLoading(false);
         }
@@ -316,7 +316,7 @@ const UserProfileClient: React.FC<UserProfileClientProps> = ({ currentUser, sele
             setSelectedUser(response.data);
             toast.success(t.positionRemoved);
         } catch (error) {
-            toast.error('Hiba a pozíció eltávolításakor');
+            toast.error(language === 'hu' ? 'Hiba a pozíció eltávolításakor' : 'Error removing position');
         } finally {
             setLoading(false);
         }
