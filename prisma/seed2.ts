@@ -610,47 +610,47 @@ async function main() {
     // ÚJ RÉSZ: SCHEDULE, SHIFT, REQUEST ADATOK
     // ========================================
 
-    console.log('\n📅 WeekSchedule-ok létrehozása (2025 október)...');
+    console.log('\n📅 WeekSchedule-ok létrehozása (2025 december)...');
 
-    // Week 1: 2025-09-29 (hétfő) - 2025-10-05 (vasárnap) - PUBLISHED
+    // Week 1: 2025-12-02 (hétfő) - 2025-12-08 (vasárnap) - PUBLISHED (múltbeli)
     const week1 = await prisma.weekSchedule.create({
         data: {
-            weekStart: new Date('2025-09-29T00:00:00.000Z'),
-            weekEnd: new Date('2025-10-05T23:59:59.999Z'),
-            requestDeadline: new Date('2025-09-26T23:59:59.999Z'),
+            weekStart: new Date('2025-12-02T00:00:00.000Z'),
+            weekEnd: new Date('2025-12-08T23:59:59.999Z'),
+            requestDeadline: new Date('2025-11-29T23:59:59.999Z'),
             createdById: ceoUser.id,
             isPublished: true
         }
     });
 
-    // Week 2: 2025-10-06 (hétfő) - 2025-10-12 (vasárnap) - PUBLISHED
+    // Week 2: 2025-12-09 (hétfő) - 2025-12-15 (vasárnap) - PUBLISHED (jelenlegi hét, ma: 2025-12-13)
     const week2 = await prisma.weekSchedule.create({
         data: {
-            weekStart: new Date('2025-10-06T00:00:00.000Z'),
-            weekEnd: new Date('2025-10-12T23:59:59.999Z'),
-            requestDeadline: new Date('2025-10-03T23:59:59.999Z'),
+            weekStart: new Date('2025-12-09T00:00:00.000Z'),
+            weekEnd: new Date('2025-12-15T23:59:59.999Z'),
+            requestDeadline: new Date('2025-12-06T23:59:59.999Z'),
             createdById: ceoUser.id,
             isPublished: true
         }
     });
 
-    // Week 3: 2025-10-13 (hétfő) - 2025-10-19 (vasárnap) - PUBLISHED
+    // Week 3: 2025-12-16 (hétfő) - 2025-12-22 (vasárnap) - PUBLISHED (jövőbeli)
     const week3 = await prisma.weekSchedule.create({
         data: {
-            weekStart: new Date('2025-10-13T00:00:00.000Z'),
-            weekEnd: new Date('2025-10-19T23:59:59.999Z'),
-            requestDeadline: new Date('2025-10-10T23:59:59.999Z'),
+            weekStart: new Date('2025-12-16T00:00:00.000Z'),
+            weekEnd: new Date('2025-12-22T23:59:59.999Z'),
+            requestDeadline: new Date('2025-12-13T23:59:59.999Z'),
             createdById: ceoUser.id,
             isPublished: true
         }
     });
 
-    // Week 4: 2025-10-20 (hétfő) - 2025-10-26 (vasárnap) - DRAFT
+    // Week 4: 2025-12-23 (hétfő) - 2025-12-29 (vasárnap) - DRAFT (karácsonyi hét)
     const week4 = await prisma.weekSchedule.create({
         data: {
-            weekStart: new Date('2025-10-20T00:00:00.000Z'),
-            weekEnd: new Date('2025-10-26T23:59:59.999Z'),
-            requestDeadline: new Date('2025-10-17T23:59:59.999Z'),
+            weekStart: new Date('2025-12-23T00:00:00.000Z'),
+            weekEnd: new Date('2025-12-29T23:59:59.999Z'),
+            requestDeadline: new Date('2025-12-20T23:59:59.999Z'),
             createdById: ceoUser.id,
             isPublished: false // DRAFT
         }
@@ -698,11 +698,11 @@ async function main() {
     // Helper function: Get user by name
     const getUserByName = (name: string) => allUsers.find(u => u.name === name);
 
-    // Helper function: Budapesti időzónában hoz létre dátumot (UTC+2)
+    // Helper function: Budapesti időzónában hoz létre dátumot (UTC+1)
     const createBudapestTime = (dateStr: string, hour: number, minute: number = 0) => {
-        // Budapesti időzóna: UTC+2 (október)
+        // Budapesti időzóna: UTC+1 (december - téli időszámítás)
         const date = new Date(dateStr);
-        date.setUTCHours(hour - 2, minute, 0, 0); // UTC-ben 2 órával korábbi
+        date.setUTCHours(hour - 1, minute, 0, 0); // UTC-ben 1 órával korábbi
         return date;
     };
 
@@ -764,185 +764,185 @@ async function main() {
         }
     };
 
-    // Week 1 shifts (2025-09-29 - 2025-10-05)
+    // Week 1 shifts (2025-12-02 - 2025-12-08)
     // CEO - Hétfő-Péntek, Kitchen
     for (let i = 0; i < 5; i++) {
-        const shiftDate = new Date('2025-09-29');
+        const shiftDate = new Date('2025-12-02');
         shiftDate.setDate(shiftDate.getDate() + i);
         await createOrUpdateShift(week1.id, ceoUser.id, shiftDate, positions[1].id, 8, 16);
     }
 
     // GM (Nagy Anna) - Hétfő-Szombat, Storage
     for (let i = 0; i < 6; i++) {
-        const shiftDate = new Date('2025-09-29');
+        const shiftDate = new Date('2025-12-02');
         shiftDate.setDate(shiftDate.getDate() + i);
         await createOrUpdateShift(week1.id, users[0].id, shiftDate, positions[2].id, 7, 15);
     }
 
-    // Manager (Kovács Péter) - Kedd-Vasárnap, Kitchen
+    // Manager (Kovács Péter) - Kedd-Vasárnap, Kitchen (de dec 5 csütörtök SICK)
     for (let i = 1; i < 7; i++) {
-        const shiftDate = new Date('2025-09-29');
+        const shiftDate = new Date('2025-12-02');
         shiftDate.setDate(shiftDate.getDate() + i);
         await createOrUpdateShift(week1.id, users[1].id, shiftDate, positions[1].id, 10, 18);
     }
 
     // Szabó Éva - Hétfő, Szerda, Péntek, Cashier
-    await createOrUpdateShift(week1.id, users[2].id, new Date('2025-09-29'), positions[0].id, 9, 17);
-    await createOrUpdateShift(week1.id, users[2].id, new Date('2025-10-01'), positions[0].id, 9, 17);
-    await createOrUpdateShift(week1.id, users[2].id, new Date('2025-10-03'), positions[0].id, 9, 17);
+    await createOrUpdateShift(week1.id, users[2].id, new Date('2025-12-02'), positions[0].id, 9, 17);
+    await createOrUpdateShift(week1.id, users[2].id, new Date('2025-12-04'), positions[0].id, 9, 17);
+    await createOrUpdateShift(week1.id, users[2].id, new Date('2025-12-06'), positions[0].id, 9, 17);
 
     // Tóth Marcell - Kedd, Csütörtök, Szombat, Packer
-    await createOrUpdateShift(week1.id, users[3].id, new Date('2025-09-30'), positions[3].id, 6, 14);
-    await createOrUpdateShift(week1.id, users[3].id, new Date('2025-10-02'), positions[3].id, 6, 14);
-    await createOrUpdateShift(week1.id, users[3].id, new Date('2025-10-04'), positions[3].id, 6, 14);
+    await createOrUpdateShift(week1.id, users[3].id, new Date('2025-12-03'), positions[3].id, 6, 14);
+    await createOrUpdateShift(week1.id, users[3].id, new Date('2025-12-05'), positions[3].id, 6, 14);
+    await createOrUpdateShift(week1.id, users[3].id, new Date('2025-12-07'), positions[3].id, 6, 14);
 
     // Varga Tamás - Hétfő-Péntek, Delivery
     for (let i = 0; i < 5; i++) {
-        const shiftDate = new Date('2025-09-29');
+        const shiftDate = new Date('2025-12-02');
         shiftDate.setDate(shiftDate.getDate() + i);
         await createOrUpdateShift(week1.id, users[4].id, shiftDate, positions[4].id, 11, 19);
     }
 
     // Molnár Zsuzsanna - Hétfő, Szerda, Cleaning (4 óra - részmunkaidős)
-    await createOrUpdateShift(week1.id, users[5].id, new Date('2025-09-29'), positions[5].id, 5, 9);
-    await createOrUpdateShift(week1.id, users[5].id, new Date('2025-10-01'), positions[5].id, 5, 9);
+    await createOrUpdateShift(week1.id, users[5].id, new Date('2025-12-02'), positions[5].id, 5, 9);
+    await createOrUpdateShift(week1.id, users[5].id, new Date('2025-12-04'), positions[5].id, 5, 9);
 
     console.log('✅ Week 1 shifts kitöltve!');
 
-    // Week 2 shifts (2025-10-06 - 2025-10-12) - ShiftRequest időpontokhoz igazítva
+    // Week 2 shifts (2025-12-09 - 2025-12-15) - ShiftRequest időpontokhoz igazítva
     // CEO
     for (let i = 0; i < 5; i++) {
-        const shiftDate = new Date('2025-10-06');
+        const shiftDate = new Date('2025-12-09');
         shiftDate.setDate(shiftDate.getDate() + i);
         await createOrUpdateShift(week2.id, ceoUser.id, shiftDate, positions[1].id, 8, 16);
     }
 
     // GM (Nagy Anna)
     for (let i = 0; i < 6; i++) {
-        const shiftDate = new Date('2025-10-06');
+        const shiftDate = new Date('2025-12-09');
         shiftDate.setDate(shiftDate.getDate() + i);
         await createOrUpdateShift(week2.id, users[0].id, shiftDate, positions[2].id, 7, 15);
     }
 
     // Manager (Kovács Péter)
-    // Oct 7 - SPECIFIC_TIME request 10:00-18:00 APPROVED
-    await createOrUpdateShift(week2.id, users[1].id, new Date('2025-10-07'), positions[0].id, 10, 18);
-    // Oct 9 - AVAILABLE_ALL_DAY request APPROVED
-    await createOrUpdateShift(week2.id, users[1].id, new Date('2025-10-09'), positions[0].id, 10, 18);
+    // Dec 10 - SPECIFIC_TIME request 10:00-18:00 APPROVED
+    await createOrUpdateShift(week2.id, users[1].id, new Date('2025-12-10'), positions[0].id, 10, 18);
+    // Dec 12 - AVAILABLE_ALL_DAY request APPROVED
+    await createOrUpdateShift(week2.id, users[1].id, new Date('2025-12-12'), positions[0].id, 10, 18);
     // Többi nap: standard
-    await createOrUpdateShift(week2.id, users[1].id, new Date('2025-10-08'), positions[1].id, 10, 18);
-    await createOrUpdateShift(week2.id, users[1].id, new Date('2025-10-10'), positions[1].id, 10, 18);
-    await createOrUpdateShift(week2.id, users[1].id, new Date('2025-10-11'), positions[1].id, 10, 18);
-    await createOrUpdateShift(week2.id, users[1].id, new Date('2025-10-12'), positions[1].id, 10, 18);
+    await createOrUpdateShift(week2.id, users[1].id, new Date('2025-12-11'), positions[1].id, 10, 18);
+    await createOrUpdateShift(week2.id, users[1].id, new Date('2025-12-13'), positions[1].id, 10, 18);
+    await createOrUpdateShift(week2.id, users[1].id, new Date('2025-12-14'), positions[1].id, 10, 18);
+    await createOrUpdateShift(week2.id, users[1].id, new Date('2025-12-15'), positions[1].id, 10, 18);
 
     // Szabó Éva (Cashier)
-    // Oct 6 - AVAILABLE_ALL_DAY request APPROVED
-    await createOrUpdateShift(week2.id, users[2].id, new Date('2025-10-06'), positions[1].id, 9, 17);
-    // Oct 7 - nincs request, standard
-    await createOrUpdateShift(week2.id, users[2].id, new Date('2025-10-07'), positions[1].id, 9, 17);
-    // Oct 8 - TIME_OFF request APPROVED, nincs shift
-    // Oct 9 - nincs request, standard
-    await createOrUpdateShift(week2.id, users[2].id, new Date('2025-10-09'), positions[1].id, 9, 17);
-    // Oct 10 - SPECIFIC_TIME request 10:00-18:00 APPROVED
-    await createOrUpdateShift(week2.id, users[2].id, new Date('2025-10-10'), positions[1].id, 10, 18);
-    // Oct 11 - SPECIFIC_TIME request REJECTED, nincs shift
+    // Dec 9 - AVAILABLE_ALL_DAY request APPROVED
+    await createOrUpdateShift(week2.id, users[2].id, new Date('2025-12-09'), positions[1].id, 9, 17);
+    // Dec 10 - nincs request, standard
+    await createOrUpdateShift(week2.id, users[2].id, new Date('2025-12-10'), positions[1].id, 9, 17);
+    // Dec 11 - TIME_OFF request APPROVED, nincs shift
+    // Dec 12 - nincs request, standard
+    await createOrUpdateShift(week2.id, users[2].id, new Date('2025-12-12'), positions[1].id, 9, 17);
+    // Dec 13 - SPECIFIC_TIME request 10:00-18:00 APPROVED
+    await createOrUpdateShift(week2.id, users[2].id, new Date('2025-12-13'), positions[1].id, 10, 18);
+    // Dec 14 - SPECIFIC_TIME request REJECTED, nincs shift
 
     // Tóth Marcell (Packer)
-    // Oct 7 - AVAILABLE_ALL_DAY request CONVERTED_TO_SHIFT
-    await createOrUpdateShift(week2.id, users[3].id, new Date('2025-10-07'), positions[3].id, 6, 14);
-    // Oct 8 - SPECIFIC_TIME request 8:00-16:00 APPROVED
-    await createOrUpdateShift(week2.id, users[3].id, new Date('2025-10-08'), positions[3].id, 8, 16);
-    // Oct 9 - nincs request, standard
-    await createOrUpdateShift(week2.id, users[3].id, new Date('2025-10-09'), positions[3].id, 6, 14);
-    // Oct 10 - SPECIFIC_TIME request 14:00-22:00 CONVERTED_TO_SHIFT
-    await createOrUpdateShift(week2.id, users[3].id, new Date('2025-10-10'), positions[3].id, 14, 22);
-    // Oct 11 - AVAILABLE_ALL_DAY request APPROVED
-    await createOrUpdateShift(week2.id, users[3].id, new Date('2025-10-11'), positions[3].id, 6, 14);
+    // Dec 10 - AVAILABLE_ALL_DAY request CONVERTED_TO_SHIFT
+    await createOrUpdateShift(week2.id, users[3].id, new Date('2025-12-10'), positions[3].id, 6, 14);
+    // Dec 11 - SPECIFIC_TIME request 8:00-16:00 APPROVED
+    await createOrUpdateShift(week2.id, users[3].id, new Date('2025-12-11'), positions[3].id, 8, 16);
+    // Dec 12 - nincs request, standard
+    await createOrUpdateShift(week2.id, users[3].id, new Date('2025-12-12'), positions[3].id, 6, 14);
+    // Dec 13 - SPECIFIC_TIME request 14:00-22:00 CONVERTED_TO_SHIFT
+    await createOrUpdateShift(week2.id, users[3].id, new Date('2025-12-13'), positions[3].id, 14, 22);
+    // Dec 14 - AVAILABLE_ALL_DAY request APPROVED
+    await createOrUpdateShift(week2.id, users[3].id, new Date('2025-12-14'), positions[3].id, 6, 14);
 
     // Varga Tamás (Delivery)
-    // Oct 6 - SPECIFIC_TIME request 14:00-22:00 PENDING
-    await createOrUpdateShift(week2.id, users[4].id, new Date('2025-10-06'), positions[4].id, 14, 22);
-    // Oct 7 - nincs request, standard
-    await createOrUpdateShift(week2.id, users[4].id, new Date('2025-10-07'), positions[4].id, 11, 19);
-    // Oct 8 - AVAILABLE_ALL_DAY request PENDING
-    await createOrUpdateShift(week2.id, users[4].id, new Date('2025-10-08'), positions[4].id, 11, 19);
-    // Oct 9 - nincs request, standard
-    await createOrUpdateShift(week2.id, users[4].id, new Date('2025-10-09'), positions[4].id, 11, 19);
-    // Oct 10 - AVAILABLE_ALL_DAY request PENDING
-    await createOrUpdateShift(week2.id, users[4].id, new Date('2025-10-10'), positions[4].id, 11, 19);
-    // Oct 12 - AVAILABLE_ALL_DAY request PENDING
-    await createOrUpdateShift(week2.id, users[4].id, new Date('2025-10-12'), positions[4].id, 11, 19);
+    // Dec 9 - SPECIFIC_TIME request 14:00-22:00 PENDING
+    await createOrUpdateShift(week2.id, users[4].id, new Date('2025-12-09'), positions[4].id, 14, 22);
+    // Dec 10 - nincs request, standard
+    await createOrUpdateShift(week2.id, users[4].id, new Date('2025-12-10'), positions[4].id, 11, 19);
+    // Dec 11 - AVAILABLE_ALL_DAY request PENDING
+    await createOrUpdateShift(week2.id, users[4].id, new Date('2025-12-11'), positions[4].id, 11, 19);
+    // Dec 12 - nincs request, standard
+    await createOrUpdateShift(week2.id, users[4].id, new Date('2025-12-12'), positions[4].id, 11, 19);
+    // Dec 13 - AVAILABLE_ALL_DAY request PENDING
+    await createOrUpdateShift(week2.id, users[4].id, new Date('2025-12-13'), positions[4].id, 11, 19);
+    // Dec 15 - AVAILABLE_ALL_DAY request PENDING
+    await createOrUpdateShift(week2.id, users[4].id, new Date('2025-12-15'), positions[4].id, 11, 19);
 
     // Molnár Zsuzsanna (Cleaning)
-    // Oct 6 - nincs request, standard
-    await createOrUpdateShift(week2.id, users[5].id, new Date('2025-10-06'), positions[5].id, 5, 9);
-    // Oct 7 - SPECIFIC_TIME request 6:00-10:00 APPROVED
-    await createOrUpdateShift(week2.id, users[5].id, new Date('2025-10-07'), positions[5].id, 6, 10);
-    // Oct 8 - nincs request, standard
-    await createOrUpdateShift(week2.id, users[5].id, new Date('2025-10-08'), positions[5].id, 5, 9);
-    // Oct 9 - TIME_OFF request PENDING, nincs shift
-    // Oct 12 - SPECIFIC_TIME request 6:00-10:00 APPROVED
-    await createOrUpdateShift(week2.id, users[5].id, new Date('2025-10-12'), positions[5].id, 6, 10);
+    // Dec 9 - nincs request, standard
+    await createOrUpdateShift(week2.id, users[5].id, new Date('2025-12-09'), positions[5].id, 5, 9);
+    // Dec 10 - SPECIFIC_TIME request 6:00-10:00 APPROVED
+    await createOrUpdateShift(week2.id, users[5].id, new Date('2025-12-10'), positions[5].id, 6, 10);
+    // Dec 11 - nincs request, standard
+    await createOrUpdateShift(week2.id, users[5].id, new Date('2025-12-11'), positions[5].id, 5, 9);
+    // Dec 12 - TIME_OFF request PENDING, nincs shift
+    // Dec 15 - SPECIFIC_TIME request 6:00-10:00 APPROVED
+    await createOrUpdateShift(week2.id, users[5].id, new Date('2025-12-15'), positions[5].id, 6, 10);
 
     console.log('✅ Week 2 shifts kitöltve!');
 
-    // Week 3 shifts (2025-10-13 - 2025-10-19)
+    // Week 3 shifts (2025-12-16 - 2025-12-22)
     // CEO
     for (let i = 0; i < 5; i++) {
-        const shiftDate = new Date('2025-10-13');
+        const shiftDate = new Date('2025-12-16');
         shiftDate.setDate(shiftDate.getDate() + i);
         await createOrUpdateShift(week3.id, ceoUser.id, shiftDate, positions[1].id, 8, 16);
     }
 
     // GM
     for (let i = 0; i < 6; i++) {
-        const shiftDate = new Date('2025-10-13');
+        const shiftDate = new Date('2025-12-16');
         shiftDate.setDate(shiftDate.getDate() + i);
         await createOrUpdateShift(week3.id, users[0].id, shiftDate, positions[2].id, 7, 15);
     }
 
     // Manager
     for (let i = 1; i < 7; i++) {
-        const shiftDate = new Date('2025-10-13');
+        const shiftDate = new Date('2025-12-16');
         shiftDate.setDate(shiftDate.getDate() + i);
         await createOrUpdateShift(week3.id, users[1].id, shiftDate, positions[1].id, 10, 18);
     }
 
     // Szabó Éva
-    await createOrUpdateShift(week3.id, users[2].id, new Date('2025-10-13'), positions[0].id, 9, 17);
-    // 2025-10-15 - TIME_OFF request (PENDING)
-    await createOrUpdateShift(week3.id, users[2].id, new Date('2025-10-17'), positions[0].id, 9, 17);
+    await createOrUpdateShift(week3.id, users[2].id, new Date('2025-12-16'), positions[0].id, 9, 17);
+    // 2025-12-18 - TIME_OFF request (PENDING)
+    await createOrUpdateShift(week3.id, users[2].id, new Date('2025-12-20'), positions[0].id, 9, 17);
 
     // Tóth Marcell
-    await createOrUpdateShift(week3.id, users[3].id, new Date('2025-10-14'), positions[3].id, 6, 14);
-    await createOrUpdateShift(week3.id, users[3].id, new Date('2025-10-16'), positions[3].id, 6, 14);
-    await createOrUpdateShift(week3.id, users[3].id, new Date('2025-10-18'), positions[3].id, 6, 14);
+    await createOrUpdateShift(week3.id, users[3].id, new Date('2025-12-17'), positions[3].id, 6, 14);
+    await createOrUpdateShift(week3.id, users[3].id, new Date('2025-12-19'), positions[3].id, 6, 14);
+    await createOrUpdateShift(week3.id, users[3].id, new Date('2025-12-21'), positions[3].id, 6, 14);
 
-    // Varga Tamás - SKIP 2025-10-16 (csütörtök) - TIME_OFF
-    await createOrUpdateShift(week3.id, users[4].id, new Date('2025-10-13'), positions[4].id, 11, 19);
-    await createOrUpdateShift(week3.id, users[4].id, new Date('2025-10-14'), positions[4].id, 11, 19);
-    await createOrUpdateShift(week3.id, users[4].id, new Date('2025-10-15'), positions[4].id, 11, 19);
-    // 2025-10-16 - TIME_OFF
-    await createOrUpdateShift(week3.id, users[4].id, new Date('2025-10-17'), positions[4].id, 11, 19);
+    // Varga Tamás - SKIP 2025-12-19 (csütörtök) - TIME_OFF
+    await createOrUpdateShift(week3.id, users[4].id, new Date('2025-12-16'), positions[4].id, 11, 19);
+    await createOrUpdateShift(week3.id, users[4].id, new Date('2025-12-17'), positions[4].id, 11, 19);
+    await createOrUpdateShift(week3.id, users[4].id, new Date('2025-12-18'), positions[4].id, 11, 19);
+    // 2025-12-19 - TIME_OFF
+    await createOrUpdateShift(week3.id, users[4].id, new Date('2025-12-20'), positions[4].id, 11, 19);
 
     // Molnár Zsuzsanna
-    await createOrUpdateShift(week3.id, users[5].id, new Date('2025-10-13'), positions[5].id, 5, 9);
-    await createOrUpdateShift(week3.id, users[5].id, new Date('2025-10-15'), positions[5].id, 5, 9);
+    await createOrUpdateShift(week3.id, users[5].id, new Date('2025-12-16'), positions[5].id, 5, 9);
+    await createOrUpdateShift(week3.id, users[5].id, new Date('2025-12-09'), positions[5].id, 5, 9);
 
     console.log('✅ Week 3 shifts kitöltve!');
 
     console.log('\n ShiftRequest-ek létrehozása...');
 
-    // Week 2 requests (Oct 6-12) - Több kérés különböző emberektől
+    // Week 2 requests (Dec 9-12) - Több kérés különböző emberektől
 
-    // Október 6 (Hétfő) - 2 request
+    // December 9 (Hétfő) - 2 request
     await prisma.shiftRequest.create({
         data: {
             weekScheduleId: week2.id,
             userId: users[2].id, // Szabó Éva
             positionId: positions[1].id, // Cashier
             type: 'AVAILABLE_ALL_DAY',
-            date: new Date('2025-10-06T00:00:00.000Z'),
+            date: new Date('2025-12-09T00:00:00.000Z'),
             preferredStartTime: null,
             preferredEndTime: null,
             status: 'APPROVED',
@@ -956,22 +956,22 @@ async function main() {
             userId: users[4].id, // Varga Tamás
             positionId: positions[4].id, // Delivery
             type: 'SPECIFIC_TIME',
-            date: new Date('2025-10-06T00:00:00.000Z'),
-            preferredStartTime: createBudapestTime('2025-10-06', 14, 0), // 14:00 Budapest = 12:00 UTC
-            preferredEndTime: createBudapestTime('2025-10-06', 22, 0), // 22:00 Budapest = 20:00 UTC
+            date: new Date('2025-12-09T00:00:00.000Z'),
+            preferredStartTime: createBudapestTime('2025-12-09', 14, 0), // 14:00 Budapest = 12:00 UTC
+            preferredEndTime: createBudapestTime('2025-12-09', 22, 0), // 22:00 Budapest = 20:00 UTC
             status: 'PENDING',
             notes: 'Délutáni műszak preferált'
         }
     });
 
-    // Október 7 (Kedd) - 3 request
+    // December 10 (Kedd) - 3 request
     await prisma.shiftRequest.create({
         data: {
             weekScheduleId: week2.id,
             userId: users[3].id, // Tóth Marcell
             positionId: positions[3].id, // Packer
             type: 'AVAILABLE_ALL_DAY',
-            date: new Date('2025-10-07T00:00:00.000Z'),
+            date: new Date('2025-12-10T00:00:00.000Z'),
             preferredStartTime: null,
             preferredEndTime: null,
             status: 'CONVERTED_TO_SHIFT',
@@ -985,9 +985,9 @@ async function main() {
             userId: users[5].id, // Molnár Zsuzsanna
             positionId: positions[5].id, // Cleaning
             type: 'SPECIFIC_TIME',
-            date: new Date('2025-10-07T00:00:00.000Z'),
-            preferredStartTime: createBudapestTime('2025-10-07', 6, 0), // 6:00 Budapest = 4:00 UTC
-            preferredEndTime: createBudapestTime('2025-10-07', 10, 0), // 10:00 Budapest = 8:00 UTC
+            date: new Date('2025-12-10T00:00:00.000Z'),
+            preferredStartTime: createBudapestTime('2025-12-10', 6, 0), // 6:00 Budapest = 4:00 UTC
+            preferredEndTime: createBudapestTime('2025-12-10', 10, 0), // 10:00 Budapest = 8:00 UTC
             status: 'APPROVED',
             notes: 'Hajnali műszak kérése'
         }
@@ -999,22 +999,22 @@ async function main() {
             userId: users[1].id, // Kovács Péter (Manager)
             positionId: positions[0].id, // Manager
             type: 'SPECIFIC_TIME',
-            date: new Date('2025-10-07T00:00:00.000Z'),
-            preferredStartTime: createBudapestTime('2025-10-07', 10, 0), // 10:00 Budapest = 8:00 UTC
-            preferredEndTime: createBudapestTime('2025-10-07', 18, 0), // 18:00 Budapest = 16:00 UTC
+            date: new Date('2025-12-10T00:00:00.000Z'),
+            preferredStartTime: createBudapestTime('2025-12-10', 10, 0), // 10:00 Budapest = 8:00 UTC
+            preferredEndTime: createBudapestTime('2025-12-10', 18, 0), // 18:00 Budapest = 16:00 UTC
             status: 'APPROVED',
             notes: 'Normál műszak'
         }
     });
 
-    // Október 8 (Szerda) - TIME_OFF + 2 másik request
+    // December 11 (Szerda) - TIME_OFF + 2 másik request
     const request1 = await prisma.shiftRequest.create({
         data: {
             weekScheduleId: week2.id,
             userId: users[2].id, // Szabó Éva
             positionId: null,
             type: 'TIME_OFF',
-            date: new Date('2025-10-08T00:00:00.000Z'),
+            date: new Date('2025-12-11T00:00:00.000Z'),
             preferredStartTime: null,
             preferredEndTime: null,
             status: 'APPROVED',
@@ -1030,7 +1030,7 @@ async function main() {
             userId: users[4].id, // Varga Tamás
             positionId: positions[4].id, // Delivery
             type: 'AVAILABLE_ALL_DAY',
-            date: new Date('2025-10-08T00:00:00.000Z'),
+            date: new Date('2025-12-11T00:00:00.000Z'),
             preferredStartTime: null,
             preferredEndTime: null,
             status: 'PENDING',
@@ -1044,22 +1044,22 @@ async function main() {
             userId: users[3].id, // Tóth Marcell
             positionId: positions[3].id, // Packer
             type: 'SPECIFIC_TIME',
-            date: new Date('2025-10-08T00:00:00.000Z'),
-            preferredStartTime: createBudapestTime('2025-10-08', 8, 0), // 8:00 Budapest = 6:00 UTC
-            preferredEndTime: createBudapestTime('2025-10-08', 16, 0), // 16:00 Budapest = 14:00 UTC
+            date: new Date('2025-12-11T00:00:00.000Z'),
+            preferredStartTime: createBudapestTime('2025-12-11', 8, 0), // 8:00 Budapest = 6:00 UTC
+            preferredEndTime: createBudapestTime('2025-12-11', 16, 0), // 16:00 Budapest = 14:00 UTC
             status: 'APPROVED',
             notes: 'Reggeli műszak preferált'
         }
     });
 
-    // Október 9 (Csütörtök) - 2 request
+    // December 12 (Csütörtök) - 2 request
     await prisma.shiftRequest.create({
         data: {
             weekScheduleId: week2.id,
             userId: users[5].id, // Molnár Zsuzsanna
             positionId: null,
             type: 'TIME_OFF',
-            date: new Date('2025-10-09T00:00:00.000Z'),
+            date: new Date('2025-12-12T00:00:00.000Z'),
             preferredStartTime: null,
             preferredEndTime: null,
             status: 'PENDING',
@@ -1075,7 +1075,7 @@ async function main() {
             userId: users[1].id, // Kovács Péter
             positionId: positions[0].id, // Manager
             type: 'AVAILABLE_ALL_DAY',
-            date: new Date('2025-10-09T00:00:00.000Z'),
+            date: new Date('2025-12-12T00:00:00.000Z'),
             preferredStartTime: null,
             preferredEndTime: null,
             status: 'APPROVED',
@@ -1083,16 +1083,16 @@ async function main() {
         }
     });
 
-    // Október 10 (Péntek) - 3 request
+    // December 13 (Péntek) - 3 request
     const request2 = await prisma.shiftRequest.create({
         data: {
             weekScheduleId: week2.id,
             userId: users[3].id, // Tóth Marcell
             positionId: positions[3].id, // Packer
             type: 'SPECIFIC_TIME',
-            date: new Date('2025-10-10T00:00:00.000Z'),
-            preferredStartTime: createBudapestTime('2025-10-10', 14, 0), // 14:00 Budapest = 12:00 UTC
-            preferredEndTime: createBudapestTime('2025-10-10', 22, 0), // 22:00 Budapest = 20:00 UTC
+            date: new Date('2025-12-13T00:00:00.000Z'),
+            preferredStartTime: createBudapestTime('2025-12-13', 14, 0), // 14:00 Budapest = 12:00 UTC
+            preferredEndTime: createBudapestTime('2025-12-13', 22, 0), // 22:00 Budapest = 20:00 UTC
             status: 'CONVERTED_TO_SHIFT',
             notes: 'Esti műszak kérése'
         }
@@ -1104,9 +1104,9 @@ async function main() {
             userId: users[2].id, // Szabó Éva
             positionId: positions[1].id, // Cashier
             type: 'SPECIFIC_TIME',
-            date: new Date('2025-10-10T00:00:00.000Z'),
-            preferredStartTime: createBudapestTime('2025-10-10', 10, 0), // 10:00 Budapest = 8:00 UTC
-            preferredEndTime: createBudapestTime('2025-10-10', 18, 0), // 18:00 Budapest = 16:00 UTC
+            date: new Date('2025-12-13T00:00:00.000Z'),
+            preferredStartTime: createBudapestTime('2025-12-13', 10, 0), // 10:00 Budapest = 8:00 UTC
+            preferredEndTime: createBudapestTime('2025-12-13', 18, 0), // 18:00 Budapest = 16:00 UTC
             status: 'APPROVED',
             notes: 'Délelőtti kezdés'
         }
@@ -1118,7 +1118,7 @@ async function main() {
             userId: users[4].id, // Varga Tamás
             positionId: positions[4].id, // Delivery
             type: 'AVAILABLE_ALL_DAY',
-            date: new Date('2025-10-10T00:00:00.000Z'),
+            date: new Date('2025-12-13T00:00:00.000Z'),
             preferredStartTime: null,
             preferredEndTime: null,
             status: 'PENDING',
@@ -1126,16 +1126,16 @@ async function main() {
         }
     });
 
-    // Október 11 (Szombat) - 2 request
+    // December 14 (Szombat) - 2 request
     await prisma.shiftRequest.create({
         data: {
             weekScheduleId: week2.id,
             userId: users[2].id, // Szabó Éva
             positionId: positions[1].id, // Cashier
             type: 'SPECIFIC_TIME',
-            date: new Date('2025-10-11T00:00:00.000Z'),
-            preferredStartTime: createBudapestTime('2025-10-11', 9, 0), // 9:00 Budapest = 7:00 UTC
-            preferredEndTime: createBudapestTime('2025-10-11', 17, 0), // 17:00 Budapest = 15:00 UTC
+            date: new Date('2025-12-14T00:00:00.000Z'),
+            preferredStartTime: createBudapestTime('2025-12-14', 9, 0), // 9:00 Budapest = 7:00 UTC
+            preferredEndTime: createBudapestTime('2025-12-14', 17, 0), // 17:00 Budapest = 15:00 UTC
             status: 'REJECTED',
             notes: 'Szombat délelőtt preferált',
             rejectionReason: 'Már elegendő létszám van erre a napra'
@@ -1148,7 +1148,7 @@ async function main() {
             userId: users[3].id, // Tóth Marcell
             positionId: positions[3].id, // Packer
             type: 'AVAILABLE_ALL_DAY',
-            date: new Date('2025-10-11T00:00:00.000Z'),
+            date: new Date('2025-12-14T00:00:00.000Z'),
             preferredStartTime: null,
             preferredEndTime: null,
             status: 'APPROVED',
@@ -1156,14 +1156,14 @@ async function main() {
         }
     });
 
-    // Október 12 (Vasárnap) - 2 request
+    // December 15 (Vasárnap) - 2 request
     await prisma.shiftRequest.create({
         data: {
             weekScheduleId: week2.id,
             userId: users[4].id, // Varga Tamás
             positionId: positions[4].id, // Delivery
             type: 'AVAILABLE_ALL_DAY',
-            date: new Date('2025-10-12T00:00:00.000Z'),
+            date: new Date('2025-12-15T00:00:00.000Z'),
             preferredStartTime: null,
             preferredEndTime: null,
             status: 'PENDING',
@@ -1177,9 +1177,9 @@ async function main() {
             userId: users[5].id, // Molnár Zsuzsanna
             positionId: positions[5].id, // Cleaning
             type: 'SPECIFIC_TIME',
-            date: new Date('2025-10-12T00:00:00.000Z'),
-            preferredStartTime: createBudapestTime('2025-10-12', 6, 0), // 6:00 Budapest = 4:00 UTC
-            preferredEndTime: createBudapestTime('2025-10-12', 10, 0), // 10:00 Budapest = 8:00 UTC
+            date: new Date('2025-12-15T00:00:00.000Z'),
+            preferredStartTime: createBudapestTime('2025-12-15', 6, 0), // 6:00 Budapest = 4:00 UTC
+            preferredEndTime: createBudapestTime('2025-12-15', 10, 0), // 10:00 Budapest = 8:00 UTC
             status: 'APPROVED',
             notes: 'Vasárnap reggel takarítás'
         }
@@ -1192,7 +1192,7 @@ async function main() {
             userId: users[2].id, // Szabó Éva
             positionId: null,
             type: 'TIME_OFF',
-            date: new Date('2025-10-15T00:00:00.000Z'),
+            date: new Date('2025-12-09T00:00:00.000Z'),
             preferredStartTime: null,
             preferredEndTime: null,
             status: 'PENDING',
@@ -1207,9 +1207,9 @@ async function main() {
             userId: users[5].id, // Molnár Zsuzsanna
             positionId: positions[5].id, // Cleaning
             type: 'SPECIFIC_TIME',
-            date: new Date('2025-10-17T00:00:00.000Z'),
-            preferredStartTime: createBudapestTime('2025-10-17', 10, 0), // 10:00 Budapest = 8:00 UTC
-            preferredEndTime: createBudapestTime('2025-10-17', 14, 0), // 14:00 Budapest = 12:00 UTC
+            date: new Date('2025-12-20T00:00:00.000Z'),
+            preferredStartTime: createBudapestTime('2025-12-20', 10, 0), // 10:00 Budapest = 8:00 UTC
+            preferredEndTime: createBudapestTime('2025-12-20', 14, 0), // 14:00 Budapest = 12:00 UTC
             status: 'REJECTED',
             notes: 'Délutáni műszak kérése',
             rejectionReason: 'Nincs elegendő létszám takarításhoz reggel'
@@ -1222,7 +1222,7 @@ async function main() {
             userId: users[4].id, // Varga Tamás
             positionId: null,
             type: 'TIME_OFF',
-            date: new Date('2025-10-16T00:00:00.000Z'),
+            date: new Date('2025-12-19T00:00:00.000Z'),
             preferredStartTime: null,
             preferredEndTime: null,
             status: 'APPROVED',
@@ -1239,7 +1239,7 @@ async function main() {
             userId: users[3].id, // Tóth Marcell
             positionId: positions[3].id, // Packer
             type: 'AVAILABLE_ALL_DAY',
-            date: new Date('2025-10-22T00:00:00.000Z'),
+            date: new Date('2025-12-25T00:00:00.000Z'),
             preferredStartTime: null,
             preferredEndTime: null,
             status: 'PENDING',
@@ -1253,9 +1253,9 @@ async function main() {
             userId: users[2].id, // Szabó Éva
             positionId: positions[0].id, // Cashier
             type: 'SPECIFIC_TIME',
-            date: new Date('2025-10-24T00:00:00.000Z'),
-            preferredStartTime: createBudapestTime('2025-10-24', 12, 0), // 12:00 Budapest = 10:00 UTC
-            preferredEndTime: createBudapestTime('2025-10-24', 20, 0), // 20:00 Budapest = 18:00 UTC
+            date: new Date('2025-12-27T00:00:00.000Z'),
+            preferredStartTime: createBudapestTime('2025-12-27', 12, 0), // 12:00 Budapest = 10:00 UTC
+            preferredEndTime: createBudapestTime('2025-12-27', 20, 0), // 20:00 Budapest = 18:00 UTC
             status: 'PENDING',
             notes: 'Délutáni-esti műszak kérése'
         }
@@ -1282,7 +1282,7 @@ async function main() {
 
     // CEO - 5 napot dolgozott (Hétfő-Péntek), mind PRESENT
     for (let i = 0; i < 5; i++) {
-        const dateStr = new Date('2025-09-29');
+        const dateStr = new Date('2025-12-02');
         dateStr.setDate(dateStr.getDate() + i);
         const shift = await getShift(week1.id, ceoUser.id, dateStr.toISOString().split('T')[0]);
         if (shift && shift.startTime && shift.endTime) {
@@ -1295,7 +1295,7 @@ async function main() {
                     actualHoursWorked: 8.0,
                     status: 'PRESENT',
                     recordedById: ceoUser.id,
-                    recordedAt: new Date('2025-10-06T10:00:00.000Z')
+                    recordedAt: new Date('2025-12-09T10:00:00.000Z')
                 }
             });
         }
@@ -1303,7 +1303,7 @@ async function main() {
 
     // GM - 6 napot dolgozott
     for (let i = 0; i < 6; i++) {
-        const dateStr = new Date('2025-09-29');
+        const dateStr = new Date('2025-12-02');
         dateStr.setDate(dateStr.getDate() + i);
         const shift = await getShift(week1.id, users[0].id, dateStr.toISOString().split('T')[0]);
         if (shift && shift.startTime && shift.endTime) {
@@ -1316,19 +1316,19 @@ async function main() {
                     actualHoursWorked: 8.0,
                     status: 'PRESENT',
                     recordedById: ceoUser.id,
-                    recordedAt: new Date('2025-10-06T10:00:00.000Z')
+                    recordedAt: new Date('2025-12-09T10:00:00.000Z')
                 }
             });
         }
     }
 
-    // Manager - 6 nap, de 2025-10-02 (csütörtök) SICK volt
+    // Manager - 6 nap, de 2025-12-05 (csütörtök) SICK volt
     for (let i = 1; i < 7; i++) {
-        const dateStr = new Date('2025-09-29');
+        const dateStr = new Date('2025-12-02');
         dateStr.setDate(dateStr.getDate() + i);
         const shift = await getShift(week1.id, users[1].id, dateStr.toISOString().split('T')[0]);
         if (shift) {
-            const isSick = dateStr.toISOString().split('T')[0] === '2025-10-02';
+            const isSick = dateStr.toISOString().split('T')[0] === '2025-12-05';
             await prisma.actualWorkHours.create({
                 data: {
                     shiftId: shift.id,
@@ -1339,14 +1339,14 @@ async function main() {
                     status: isSick ? 'SICK' : 'PRESENT',
                     notes: isSick ? 'Influenza' : null,
                     recordedById: ceoUser.id,
-                    recordedAt: new Date('2025-10-06T10:00:00.000Z')
+                    recordedAt: new Date('2025-12-09T10:00:00.000Z')
                 }
             });
         }
     }
 
     // Szabó Éva - 3 nap (hétfő, szerda, péntek)
-    const szaboShifts = ['2025-09-29', '2025-10-01', '2025-10-03'];
+    const szaboShifts = ['2025-12-02', '2025-12-04', '2025-12-06'];
     for (const dateStr of szaboShifts) {
         const shift = await getShift(week1.id, users[2].id, dateStr);
         if (shift && shift.startTime && shift.endTime) {
@@ -1359,18 +1359,18 @@ async function main() {
                     actualHoursWorked: 8.0,
                     status: 'PRESENT',
                     recordedById: ceoUser.id,
-                    recordedAt: new Date('2025-10-06T10:00:00.000Z')
+                    recordedAt: new Date('2025-12-09T10:00:00.000Z')
                 }
             });
         }
     }
 
-    // Tóth Marcell - 3 nap, de 2025-09-30 (kedd) ABSENT
-    const tothShifts = ['2025-09-30', '2025-10-02', '2025-10-04'];
+    // Tóth Marcell - 3 nap, de 2025-12-03 (kedd) ABSENT
+    const tothShifts = ['2025-12-03', '2025-12-05', '2025-12-07'];
     for (const dateStr of tothShifts) {
         const shift = await getShift(week1.id, users[3].id, dateStr);
         if (shift) {
-            const isAbsent = dateStr === '2025-09-30';
+            const isAbsent = dateStr === '2025-12-03';
             await prisma.actualWorkHours.create({
                 data: {
                     shiftId: shift.id,
@@ -1381,7 +1381,7 @@ async function main() {
                     status: isAbsent ? 'ABSENT' : 'PRESENT',
                     notes: isAbsent ? 'Igazolatlan hiányzás' : null,
                     recordedById: ceoUser.id,
-                    recordedAt: new Date('2025-10-06T10:00:00.000Z')
+                    recordedAt: new Date('2025-12-09T10:00:00.000Z')
                 }
             });
         }
@@ -1389,7 +1389,7 @@ async function main() {
 
     // Varga Tamás - 5 nap
     for (let i = 0; i < 5; i++) {
-        const dateStr = new Date('2025-09-29');
+        const dateStr = new Date('2025-12-02');
         dateStr.setDate(dateStr.getDate() + i);
         const shift = await getShift(week1.id, users[4].id, dateStr.toISOString().split('T')[0]);
         if (shift && shift.startTime && shift.endTime) {
@@ -1402,14 +1402,14 @@ async function main() {
                     actualHoursWorked: 8.0,
                     status: 'PRESENT',
                     recordedById: ceoUser.id,
-                    recordedAt: new Date('2025-10-06T10:00:00.000Z')
+                    recordedAt: new Date('2025-12-09T10:00:00.000Z')
                 }
             });
         }
     }
 
     // Molnár Zsuzsanna - 2 nap (4 óra/nap)
-    const molnarShifts = ['2025-09-29', '2025-10-01'];
+    const molnarShifts = ['2025-12-02', '2025-12-04'];
     for (const dateStr of molnarShifts) {
         const shift = await getShift(week1.id, users[5].id, dateStr);
         if (shift && shift.startTime && shift.endTime) {
@@ -1422,7 +1422,7 @@ async function main() {
                     actualHoursWorked: 4.0,
                     status: 'PRESENT',
                     recordedById: ceoUser.id,
-                    recordedAt: new Date('2025-10-06T10:00:00.000Z')
+                    recordedAt: new Date('2025-12-09T10:00:00.000Z')
                 }
             });
         }
@@ -1430,13 +1430,13 @@ async function main() {
 
     console.log('✅ ActualWorkHours rögzítve Week 1-hez!');
 
-    console.log('\n⏱️ ActualWorkHours rögzítése (Week 2 - Oct 6-12)...');
+    console.log('\n⏱️ ActualWorkHours rögzítése (Week 2 - Dec 9-15)...');
 
-    // Week 2 - múltbéli hét, már ledolgozva (Oct 6-12)
+    // Week 2 - jelenlegi hét, Dec 9-12 (H-Cs) már ledolgozva, Dec 13 (P) mai nap, Dec 14-15 jövőbeli
 
-    // Hétfő, Oct 6
+    // Hétfő, Dec 9
     // CEO
-    const ceoShiftOct6 = await getShift(week2.id, ceoUser.id, '2025-10-06');
+    const ceoShiftOct6 = await getShift(week2.id, ceoUser.id, '2025-12-09');
     if (ceoShiftOct6 && ceoShiftOct6.startTime && ceoShiftOct6.endTime) {
         await prisma.actualWorkHours.create({
             data: {
@@ -1447,13 +1447,13 @@ async function main() {
                 actualHoursWorked: 8.0,
                 status: 'PRESENT',
                 recordedById: ceoUser.id,
-                recordedAt: new Date('2025-10-13T10:00:00.000Z')
+                recordedAt: new Date('2025-12-16T10:00:00.000Z')
             }
         });
     }
 
     // GM (Nagy Anna)
-    const gmShiftOct6 = await getShift(week2.id, users[0].id, '2025-10-06');
+    const gmShiftOct6 = await getShift(week2.id, users[0].id, '2025-12-09');
     if (gmShiftOct6 && gmShiftOct6.startTime && gmShiftOct6.endTime) {
         await prisma.actualWorkHours.create({
             data: {
@@ -1464,13 +1464,13 @@ async function main() {
                 actualHoursWorked: 8.0,
                 status: 'PRESENT',
                 recordedById: ceoUser.id,
-                recordedAt: new Date('2025-10-13T10:00:00.000Z')
+                recordedAt: new Date('2025-12-16T10:00:00.000Z')
             }
         });
     }
 
     // Kovács Péter (Manager)
-    const managerShiftOct6 = await getShift(week2.id, users[1].id, '2025-10-06');
+    const managerShiftOct6 = await getShift(week2.id, users[1].id, '2025-12-09');
     if (managerShiftOct6 && managerShiftOct6.startTime && managerShiftOct6.endTime) {
         await prisma.actualWorkHours.create({
             data: {
@@ -1481,13 +1481,13 @@ async function main() {
                 actualHoursWorked: 8.0,
                 status: 'PRESENT',
                 recordedById: ceoUser.id,
-                recordedAt: new Date('2025-10-13T10:00:00.000Z')
+                recordedAt: new Date('2025-12-16T10:00:00.000Z')
             }
         });
     }
 
     // Szabó Éva
-    const szaboShiftOct6 = await getShift(week2.id, users[2].id, '2025-10-06');
+    const szaboShiftOct6 = await getShift(week2.id, users[2].id, '2025-12-09');
     if (szaboShiftOct6 && szaboShiftOct6.startTime && szaboShiftOct6.endTime) {
         await prisma.actualWorkHours.create({
             data: {
@@ -1498,13 +1498,13 @@ async function main() {
                 actualHoursWorked: 8.0,
                 status: 'PRESENT',
                 recordedById: ceoUser.id,
-                recordedAt: new Date('2025-10-13T10:00:00.000Z')
+                recordedAt: new Date('2025-12-16T10:00:00.000Z')
             }
         });
     }
 
     // Varga Tamás
-    const vargaShiftOct6 = await getShift(week2.id, users[4].id, '2025-10-06');
+    const vargaShiftOct6 = await getShift(week2.id, users[4].id, '2025-12-09');
     if (vargaShiftOct6 && vargaShiftOct6.startTime && vargaShiftOct6.endTime) {
         await prisma.actualWorkHours.create({
             data: {
@@ -1515,13 +1515,13 @@ async function main() {
                 actualHoursWorked: 8.0,
                 status: 'PRESENT',
                 recordedById: ceoUser.id,
-                recordedAt: new Date('2025-10-13T10:00:00.000Z')
+                recordedAt: new Date('2025-12-16T10:00:00.000Z')
             }
         });
     }
 
     // Molnár Zsuzsanna
-    const molnarShiftOct6 = await getShift(week2.id, users[5].id, '2025-10-06');
+    const molnarShiftOct6 = await getShift(week2.id, users[5].id, '2025-12-09');
     if (molnarShiftOct6 && molnarShiftOct6.startTime && molnarShiftOct6.endTime) {
         await prisma.actualWorkHours.create({
             data: {
@@ -1532,13 +1532,13 @@ async function main() {
                 actualHoursWorked: 4.0,
                 status: 'PRESENT',
                 recordedById: ceoUser.id,
-                recordedAt: new Date('2025-10-13T10:00:00.000Z')
+                recordedAt: new Date('2025-12-16T10:00:00.000Z')
             }
         });
     }
 
-    // Kedd, Oct 7
-    const week2Oct7Shifts = [
+    // Kedd, Dec 10
+    const week2Dec7Shifts = [
         { userId: ceoUser.id, hours: 8.0 },
         { userId: users[0].id, hours: 8.0 }, // Nagy Anna
         { userId: users[1].id, hours: 8.0 }, // Kovács Péter
@@ -1548,8 +1548,8 @@ async function main() {
         { userId: users[5].id, hours: 4.0 }, // Molnár Zsuzsanna
     ];
 
-    for (const { userId, hours } of week2Oct7Shifts) {
-        const shift = await getShift(week2.id, userId, '2025-10-07');
+    for (const { userId, hours } of week2Dec7Shifts) {
+        const shift = await getShift(week2.id, userId, '2025-12-10');
         if (shift && shift.startTime && shift.endTime) {
             await prisma.actualWorkHours.create({
                 data: {
@@ -1560,14 +1560,14 @@ async function main() {
                     actualHoursWorked: hours,
                     status: 'PRESENT',
                     recordedById: ceoUser.id,
-                    recordedAt: new Date('2025-10-13T10:00:00.000Z')
+                    recordedAt: new Date('2025-12-16T10:00:00.000Z')
                 }
             });
         }
     }
 
-    // Szerda, Oct 8 - Szabó Éva TIME_OFF, nincs ActualWorkHours
-    const week2Oct8Shifts = [
+    // Szerda, Dec 11 - Szabó Éva TIME_OFF, nincs ActualWorkHours
+    const week2Dec8Shifts = [
         { userId: ceoUser.id, hours: 8.0 },
         { userId: users[0].id, hours: 8.0 }, // Nagy Anna
         { userId: users[1].id, hours: 8.0 }, // Kovács Péter
@@ -1577,8 +1577,8 @@ async function main() {
         { userId: users[5].id, hours: 4.0 }, // Molnár Zsuzsanna
     ];
 
-    for (const { userId, hours } of week2Oct8Shifts) {
-        const shift = await getShift(week2.id, userId, '2025-10-08');
+    for (const { userId, hours } of week2Dec8Shifts) {
+        const shift = await getShift(week2.id, userId, '2025-12-11');
         if (shift && shift.startTime && shift.endTime) {
             await prisma.actualWorkHours.create({
                 data: {
@@ -1589,14 +1589,14 @@ async function main() {
                     actualHoursWorked: hours,
                     status: 'PRESENT',
                     recordedById: ceoUser.id,
-                    recordedAt: new Date('2025-10-13T10:00:00.000Z')
+                    recordedAt: new Date('2025-12-16T10:00:00.000Z')
                 }
             });
         }
     }
 
-    // Csütörtök, Oct 9 - Molnár Zsuzsanna TIME_OFF PENDING
-    const week2Oct9Shifts = [
+    // Csütörtök, Dec 12 - Molnár Zsuzsanna TIME_OFF PENDING
+    const week2Dec9Shifts = [
         { userId: ceoUser.id, hours: 8.0 },
         { userId: users[0].id, hours: 8.0 }, // Nagy Anna
         { userId: users[1].id, hours: 8.0 }, // Kovács Péter
@@ -1606,8 +1606,8 @@ async function main() {
         // Molnár Zsuzsanna - TIME_OFF, skip
     ];
 
-    for (const { userId, hours } of week2Oct9Shifts) {
-        const shift = await getShift(week2.id, userId, '2025-10-09');
+    for (const { userId, hours } of week2Dec9Shifts) {
+        const shift = await getShift(week2.id, userId, '2025-12-12');
         if (shift && shift.startTime && shift.endTime) {
             await prisma.actualWorkHours.create({
                 data: {
@@ -1618,165 +1618,14 @@ async function main() {
                     actualHoursWorked: hours,
                     status: 'PRESENT',
                     recordedById: ceoUser.id,
-                    recordedAt: new Date('2025-10-13T10:00:00.000Z')
+                    recordedAt: new Date('2025-12-16T10:00:00.000Z')
                 }
             });
         }
     }
 
-    // Péntek, Oct 10 - Varga Tamás ABSENT
-    // CEO
-    const ceoShiftOct10 = await getShift(week2.id, ceoUser.id, '2025-10-10');
-    if (ceoShiftOct10 && ceoShiftOct10.startTime && ceoShiftOct10.endTime) {
-        await prisma.actualWorkHours.create({
-            data: {
-                shiftId: ceoShiftOct10.id,
-                userId: ceoUser.id,
-                actualStartTime: ceoShiftOct10.startTime,
-                actualEndTime: ceoShiftOct10.endTime,
-                actualHoursWorked: 8.0,
-                status: 'PRESENT',
-                recordedById: ceoUser.id,
-                recordedAt: new Date('2025-10-13T10:00:00.000Z')
-            }
-        });
-    }
-
-    // Nagy Anna
-    const gmShiftOct10 = await getShift(week2.id, users[0].id, '2025-10-10');
-    if (gmShiftOct10 && gmShiftOct10.startTime && gmShiftOct10.endTime) {
-        await prisma.actualWorkHours.create({
-            data: {
-                shiftId: gmShiftOct10.id,
-                userId: users[0].id,
-                actualStartTime: gmShiftOct10.startTime,
-                actualEndTime: gmShiftOct10.endTime,
-                actualHoursWorked: 8.0,
-                status: 'PRESENT',
-                recordedById: ceoUser.id,
-                recordedAt: new Date('2025-10-13T10:00:00.000Z')
-            }
-        });
-    }
-
-    // Kovács Péter
-    const managerShiftOct10 = await getShift(week2.id, users[1].id, '2025-10-10');
-    if (managerShiftOct10 && managerShiftOct10.startTime && managerShiftOct10.endTime) {
-        await prisma.actualWorkHours.create({
-            data: {
-                shiftId: managerShiftOct10.id,
-                userId: users[1].id,
-                actualStartTime: managerShiftOct10.startTime,
-                actualEndTime: managerShiftOct10.endTime,
-                actualHoursWorked: 8.0,
-                status: 'PRESENT',
-                recordedById: ceoUser.id,
-                recordedAt: new Date('2025-10-13T10:00:00.000Z')
-            }
-        });
-    }
-
-    // Szabó Éva
-    const szaboShiftOct10 = await getShift(week2.id, users[2].id, '2025-10-10');
-    if (szaboShiftOct10 && szaboShiftOct10.startTime && szaboShiftOct10.endTime) {
-        await prisma.actualWorkHours.create({
-            data: {
-                shiftId: szaboShiftOct10.id,
-                userId: users[2].id,
-                actualStartTime: szaboShiftOct10.startTime,
-                actualEndTime: szaboShiftOct10.endTime,
-                actualHoursWorked: 8.0,
-                status: 'PRESENT',
-                recordedById: ceoUser.id,
-                recordedAt: new Date('2025-10-13T10:00:00.000Z')
-            }
-        });
-    }
-
-    // Tóth Marcell
-    const tothShiftOct10 = await getShift(week2.id, users[3].id, '2025-10-10');
-    if (tothShiftOct10 && tothShiftOct10.startTime && tothShiftOct10.endTime) {
-        await prisma.actualWorkHours.create({
-            data: {
-                shiftId: tothShiftOct10.id,
-                userId: users[3].id,
-                actualStartTime: tothShiftOct10.startTime,
-                actualEndTime: tothShiftOct10.endTime,
-                actualHoursWorked: 8.0,
-                status: 'PRESENT',
-                recordedById: ceoUser.id,
-                recordedAt: new Date('2025-10-13T10:00:00.000Z')
-            }
-        });
-    }
-
-    // Varga Tamás - ABSENT
-    const vargaShiftOct10 = await getShift(week2.id, users[4].id, '2025-10-10');
-    if (vargaShiftOct10) {
-        await prisma.actualWorkHours.create({
-            data: {
-                shiftId: vargaShiftOct10.id,
-                userId: users[4].id,
-                actualStartTime: null,
-                actualEndTime: null,
-                actualHoursWorked: null,
-                status: 'ABSENT',
-                notes: 'Igazolatlan hiányzás',
-                recordedById: ceoUser.id,
-                recordedAt: new Date('2025-10-13T10:00:00.000Z')
-            }
-        });
-    }
-
-    // Szombat, Oct 11
-    const week2Oct11Shifts = [
-        { userId: users[0].id, hours: 8.0 }, // Nagy Anna
-        { userId: users[1].id, hours: 8.0 }, // Kovács Péter
-        { userId: users[3].id, hours: 8.0 }, // Tóth Marcell
-    ];
-
-    for (const { userId, hours } of week2Oct11Shifts) {
-        const shift = await getShift(week2.id, userId, '2025-10-11');
-        if (shift && shift.startTime && shift.endTime) {
-            await prisma.actualWorkHours.create({
-                data: {
-                    shiftId: shift.id,
-                    userId,
-                    actualStartTime: shift.startTime,
-                    actualEndTime: shift.endTime,
-                    actualHoursWorked: hours,
-                    status: 'PRESENT',
-                    recordedById: ceoUser.id,
-                    recordedAt: new Date('2025-10-13T10:00:00.000Z')
-                }
-            });
-        }
-    }
-
-    // Vasárnap, Oct 12
-    const week2Oct12Shifts = [
-        { userId: users[1].id, hours: 8.0 }, // Kovács Péter
-        { userId: users[4].id, hours: 8.0 }, // Varga Tamás
-        { userId: users[5].id, hours: 4.0 }, // Molnár Zsuzsanna
-    ];
-
-    for (const { userId, hours } of week2Oct12Shifts) {
-        const shift = await getShift(week2.id, userId, '2025-10-12');
-        if (shift && shift.startTime && shift.endTime) {
-            await prisma.actualWorkHours.create({
-                data: {
-                    shiftId: shift.id,
-                    userId,
-                    actualStartTime: shift.startTime,
-                    actualEndTime: shift.endTime,
-                    actualHoursWorked: hours,
-                    status: 'PRESENT',
-                    recordedById: ceoUser.id,
-                    recordedAt: new Date('2025-10-13T10:00:00.000Z')
-                }
-            });
-        }
-    }
+    // Péntek, Szombat, Vasárnap (Dec 13-15) - NINCS ActualWorkHours
+    // Ma van Dec 13 (péntek), ezért csak H-Cs (Dec 9-12) lehet rögzítve
 
     console.log('✅ ActualWorkHours rögzítve Week 2-höz!');
 
@@ -1787,8 +1636,8 @@ async function main() {
         data: {
             userId: users[2].id, // Szabó Éva
             type: 'VACATION',
-            startDate: new Date('2025-10-21T00:00:00.000Z'),
-            endDate: new Date('2025-10-25T00:00:00.000Z'),
+            startDate: new Date('2025-12-24T00:00:00.000Z'),
+            endDate: new Date('2025-12-28T00:00:00.000Z'),
             daysCount: 5,
             status: 'PENDING',
             notes: 'Családi nyaralás',
@@ -1800,13 +1649,13 @@ async function main() {
         data: {
             userId: users[4].id, // Varga Tamás
             type: 'VACATION',
-            startDate: new Date('2025-10-28T00:00:00.000Z'),
-            endDate: new Date('2025-11-01T00:00:00.000Z'),
-            daysCount: 5,
+            startDate: new Date('2025-12-24T00:00:00.000Z'),
+            endDate: new Date('2025-12-26T00:00:00.000Z'),
+            daysCount: 3,
             status: 'APPROVED',
-            notes: 'Őszi pihenés',
+            notes: 'Karácsonyi pihenés',
             reviewedById: ceoUser.id,
-            reviewedAt: new Date('2025-10-15T14:00:00.000Z'),
+            reviewedAt: new Date('2025-12-09T14:00:00.000Z'),
             deductedFromBalance: true
         }
     });
@@ -1815,14 +1664,14 @@ async function main() {
         data: {
             userId: users[3].id, // Tóth Marcell
             type: 'VACATION',
-            startDate: new Date('2025-11-04T00:00:00.000Z'),
-            endDate: new Date('2025-11-08T00:00:00.000Z'),
+            startDate: new Date('2025-12-30T00:00:00.000Z'),
+            endDate: new Date('2025-01-03T00:00:00.000Z'),
             daysCount: 5,
             status: 'REJECTED',
             notes: 'Pihenés',
             rejectionReason: 'Túl sok dolgozó hiányzik abban a héten',
             reviewedById: users[0].id, // GM
-            reviewedAt: new Date('2025-10-20T10:00:00.000Z'),
+            reviewedAt: new Date('2025-12-10T10:00:00.000Z'),
             deductedFromBalance: false
         }
     });
@@ -1832,15 +1681,15 @@ async function main() {
         data: {
             userId: users[1].id, // Kovács Péter (Manager)
             type: 'SICK_LEAVE',
-            startDate: new Date('2025-10-02T00:00:00.000Z'),
-            endDate: new Date('2025-10-02T00:00:00.000Z'),
+            startDate: new Date('2025-12-05T00:00:00.000Z'),
+            endDate: new Date('2025-12-05T00:00:00.000Z'),
             daysCount: 1,
             status: 'APPROVED',
             notes: 'Influenza',
             sickLeaveDocumentUrl: '/uploads/sick_notes/sick_note_001.pdf',
-            documentUploadedAt: new Date('2025-10-03T08:00:00.000Z'),
+            documentUploadedAt: new Date('2025-12-06T08:00:00.000Z'),
             reviewedById: ceoUser.id,
-            reviewedAt: new Date('2025-10-03T09:00:00.000Z'),
+            reviewedAt: new Date('2025-12-06T09:00:00.000Z'),
             deductedFromBalance: false
         }
     });

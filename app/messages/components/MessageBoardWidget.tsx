@@ -11,6 +11,7 @@ import { MessageType } from "@prisma/client";
 import UserProfileImage from "@/app/components/UserProfileImage";
 import ReactionButtons from "./ReactionButtons";
 import CommentSection from "./CommentSection";
+import { realtimeBrowserClient as pusherClient } from "@/app/libs/pusher";
 
 export default function MessageBoardWidget() {
     const router = useRouter();
@@ -74,6 +75,54 @@ export default function MessageBoardWidget() {
         };
         fetchData();
     }, []);
+
+    // Pusher channel subscription for real-time updates
+    useEffect(() => {
+        if (!currentUser) return; // Csak akkor iratkozunk fel, ha van current user
+
+        const channelName = 'message-board';
+        console.log('MessageBoardWidget: Subscribing to Pusher channel:', channelName);
+        const channel = pusherClient.subscribe(channelName);
+
+        // Listen for new messages - frissítjük a latestMessage-t ha új üzenet jön
+        channel.bind('message:new', (newMessage: any) => {
+            console.log('MessageBoardWidget: New message received:', newMessage);
+            // Ha pinned üzenet, vagy nincs még latestMessage, vagy újabb mint a jelenlegi
+            if (newMessage.isPinned || !latestMessage ||
+                new Date(newMessage.createdAt) > new Date(latestMessage.createdAt)) {
+                setLatestMessage(newMessage);
+            }
+        });
+
+        // Listen for message updates (pin, reactions, comments)
+        channel.bind('message:update', (updatedMessage: any) => {
+            console.log('MessageBoardWidget: Message updated:', updatedMessage);
+            // Ha ez az üzenet van megjelenítve, frissítjük
+            if (latestMessage?.id === updatedMessage.id) {
+                setLatestMessage(updatedMessage);
+            }
+            // Ha a frissített üzenet lett pinnelve, azt mutatjuk
+            else if (updatedMessage.isPinned) {
+                setLatestMessage(updatedMessage);
+            }
+        });
+
+        // Listen for message deletion
+        channel.bind('message:delete', (data: { messageId: string }) => {
+            console.log('MessageBoardWidget: Message deleted:', data.messageId);
+            // Ha a megjelenített üzenet lett törölve, újratöltjük a listát
+            if (latestMessage?.id === data.messageId) {
+                handleRefresh();
+            }
+        });
+
+        // Cleanup
+        return () => {
+            console.log('MessageBoardWidget: Unsubscribing from Pusher channel:', channelName);
+            channel.unbind_all();
+            pusherClient.unsubscribe(channelName);
+        };
+    }, [currentUser, latestMessage]);
 
     const handleRefresh = async () => {
         try {
