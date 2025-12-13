@@ -9,6 +9,7 @@ import CreateMessageModal from "./components/CreateMessageModal";
 import MessageFilters from "./components/MessageFilters";
 import MessageList from "./components/MessageList";
 import LoadingModal from "../components/LoadingModal";
+import { realtimeBrowserClient as pusherClient } from "@/app/libs/pusher";
 
 export default function MessagesPage() {
     const { language } = useLanguage();
@@ -56,6 +57,43 @@ export default function MessagesPage() {
             }
         };
         fetchData();
+    }, []);
+
+    // Pusher channel subscription for real-time updates
+    useEffect(() => {
+        const channelName = 'message-board';
+        console.log('Subscribing to Pusher channel:', channelName);
+        const channel = pusherClient.subscribe(channelName);
+
+        // Listen for new messages
+        channel.bind('message:new', (newMessage: any) => {
+            console.log('New message received:', newMessage);
+            setMessages((prevMessages) => [newMessage, ...prevMessages]);
+        });
+
+        // Listen for message updates (pin, reactions, comments)
+        channel.bind('message:update', (updatedMessage: any) => {
+            console.log('Message updated:', updatedMessage);
+            setMessages((prevMessages) =>
+                prevMessages.map((msg) =>
+                    msg.id === updatedMessage.id ? updatedMessage : msg
+                )
+            );
+        });
+
+        // Listen for message deletion
+        channel.bind('message:delete', (data: { messageId: string }) => {
+            console.log('Message deleted:', data.messageId);
+            setMessages((prevMessages) =>
+                prevMessages.filter((msg) => msg.id !== data.messageId)
+            );
+        });
+
+        // Cleanup
+        return () => {
+            channel.unbind_all();
+            pusherClient.unsubscribe(channelName);
+        };
     }, []);
 
     // Apply filters

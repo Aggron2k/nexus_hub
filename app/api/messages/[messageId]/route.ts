@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
 import databaseClient from "@/app/libs/prismadb";
+import { realtimeServer } from "@/app/libs/pusher";
 
 
 export const dynamic = 'force-dynamic';
@@ -200,8 +201,8 @@ export async function DELETE(
             where: { id: messageId }
         });
 
-        // TODO: Pusher event - message:delete
-        // pusher.trigger('message-board', 'message:delete', { messageId });
+        // Pusher event - message:delete
+        await realtimeServer.trigger('message-board', 'message:delete', { messageId });
 
         return NextResponse.json({ success: true });
     } catch (error) {

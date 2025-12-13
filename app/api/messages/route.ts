@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
 import databaseClient from "@/app/libs/prismadb";
+import { realtimeServer } from "@/app/libs/pusher";
 
 const prisma = databaseClient;
 import { MessageType } from "@prisma/client";
@@ -137,8 +138,37 @@ export async function POST(request: Request) {
                         role: true
                     }
                 },
-                reactions: true,
-                comments: true,
+                pinnedBy: {
+                    select: {
+                        id: true,
+                        name: true
+                    }
+                },
+                reactions: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                image: true
+                            }
+                        }
+                    }
+                },
+                comments: {
+                    include: {
+                        author: {
+                            select: {
+                                id: true,
+                                name: true,
+                                image: true
+                            }
+                        }
+                    },
+                    orderBy: {
+                        createdAt: 'asc'
+                    }
+                },
                 _count: {
                     select: {
                         reactions: true,
@@ -148,8 +178,8 @@ export async function POST(request: Request) {
             }
         });
 
-        // TODO: Pusher event - message:new
-        // pusher.trigger('message-board', 'message:new', message);
+        // Pusher event - message:new
+        await realtimeServer.trigger('message-board', 'message:new', message);
 
         return NextResponse.json(message);
     } catch (error) {

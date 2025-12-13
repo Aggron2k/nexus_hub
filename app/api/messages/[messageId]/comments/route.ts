@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
 import databaseClient from "@/app/libs/prismadb";
+import { realtimeServer } from "@/app/libs/pusher";
 
 
 export const dynamic = 'force-dynamic';
@@ -101,8 +102,61 @@ export async function POST(
             }
         });
 
-        // TODO: Pusher event - comment:new
-        // pusher.trigger('message-board', 'comment:new', { messageId, comment });
+        // Get updated message with all relations
+        const updatedMessage = await prisma.messageBoard.findUnique({
+            where: { id: messageId },
+            include: {
+                author: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        image: true,
+                        role: true
+                    }
+                },
+                pinnedBy: {
+                    select: {
+                        id: true,
+                        name: true
+                    }
+                },
+                reactions: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                image: true
+                            }
+                        }
+                    }
+                },
+                comments: {
+                    include: {
+                        author: {
+                            select: {
+                                id: true,
+                                name: true,
+                                image: true
+                            }
+                        }
+                    },
+                    orderBy: {
+                        createdAt: 'asc'
+                    }
+                },
+                _count: {
+                    select: {
+                        reactions: true,
+                        comments: true
+                    }
+                }
+            }
+        });
+
+        // Pusher event - message:update
+        await realtimeServer.trigger('message-board', 'message:update', updatedMessage);
 
         return NextResponse.json(comment);
     } catch (error) {
@@ -156,6 +210,62 @@ export async function DELETE(
         await prisma.messageComment.delete({
             where: { id: commentId }
         });
+
+        // Get updated message with all relations
+        const updatedMessage = await prisma.messageBoard.findUnique({
+            where: { id: messageId },
+            include: {
+                author: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        image: true,
+                        role: true
+                    }
+                },
+                pinnedBy: {
+                    select: {
+                        id: true,
+                        name: true
+                    }
+                },
+                reactions: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                image: true
+                            }
+                        }
+                    }
+                },
+                comments: {
+                    include: {
+                        author: {
+                            select: {
+                                id: true,
+                                name: true,
+                                image: true
+                            }
+                        }
+                    },
+                    orderBy: {
+                        createdAt: 'asc'
+                    }
+                },
+                _count: {
+                    select: {
+                        reactions: true,
+                        comments: true
+                    }
+                }
+            }
+        });
+
+        // Pusher event - message:update
+        await realtimeServer.trigger('message-board', 'message:update', updatedMessage);
 
         return NextResponse.json({ success: true });
     } catch (error) {

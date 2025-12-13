@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
 import databaseClient from "@/app/libs/prismadb";
+import { realtimeServer } from "@/app/libs/pusher";
 
 
 export const dynamic = 'force-dynamic';
@@ -66,8 +67,31 @@ export async function POST(
                         name: true
                     }
                 },
-                reactions: true,
-                comments: true,
+                reactions: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                image: true
+                            }
+                        }
+                    }
+                },
+                comments: {
+                    include: {
+                        author: {
+                            select: {
+                                id: true,
+                                name: true,
+                                image: true
+                            }
+                        }
+                    },
+                    orderBy: {
+                        createdAt: 'asc'
+                    }
+                },
                 _count: {
                     select: {
                         reactions: true,
@@ -77,8 +101,8 @@ export async function POST(
             }
         });
 
-        // TODO: Pusher event - message:update
-        // pusher.trigger('message-board', 'message:update', message);
+        // Pusher event - message:update
+        await realtimeServer.trigger('message-board', 'message:update', message);
 
         return NextResponse.json(message);
     } catch (error) {
